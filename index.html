@@ -1485,7 +1485,7 @@ function openCabinet(bookings){
           </div>
           <!-- Кнопки управления -->
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="printBooking('${bk.booking_num}')" style="flex:1;min-width:120px;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center;gap:6px">
+            <button onclick="printBooking(${JSON.stringify(bk).replace(/'/g,String.fromCharCode(39)).replace(/"/g,'&quot;')})" style="flex:1;min-width:120px;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center;gap:6px">
               🖨 Распечатать ваучер
             </button>
             ${bk.status==='confirmed'&&new Date(bk.check_in)>new Date()?`
@@ -1498,29 +1498,65 @@ function openCabinet(bookings){
   document.getElementById('cabinet-modal').classList.add('open');
 }
 
-function printBooking(num){
-  // Открываем страницу для печати
-  const w=window.open('','_blank','width=600,height=700');
+function printBooking(bk){
+  // bk — объект брони, поддерживаем и старый вызов со строкой (fallback)
+  if(typeof bk==='string') bk={booking_num:bk};
+  const num=bk.booking_num||'—';
+  function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});}
+  const statusMap={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено'};
+  const statusLabel=statusMap[bk.status]||bk.status||'—';
+  const price=bk.total_price?parseFloat(bk.total_price).toFixed(0)+' '+(bk.currency||'BYN'):'—';
+  const w=window.open('','_blank','width=640,height=800');
   if(!w)return;
-  // Берём данные из текущего открытого кабинета
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Ваучер ${num}</title>
   <style>
-    body{font-family:Arial,sans-serif;max-width:500px;margin:40px auto;padding:20px;color:#111}
-    .logo{font-size:22px;font-weight:900;color:#0F2D1D;margin-bottom:24px}
-    .num{font-size:28px;font-weight:900;color:#0F2D1D;letter-spacing:1px;margin-bottom:8px}
-    .hotel{font-size:18px;font-weight:700;margin-bottom:4px}
-    .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
-    .label{color:#888}
-    .status{background:#e8f5e9;color:#0F2D1D;padding:4px 12px;border-radius:20px;font-weight:700;font-size:12px}
-    @media print{button{display:none}}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;max-width:520px;margin:40px auto;padding:24px;color:#111;background:#fff}
+    .logo{font-size:22px;font-weight:900;color:#0F2D1D;margin-bottom:4px;letter-spacing:-0.5px}
+    .logo-sub{font-size:12px;color:#888;margin-bottom:24px}
+    .num{font-size:30px;font-weight:900;color:#0F2D1D;letter-spacing:1px;margin-bottom:4px}
+    .voucher-label{font-size:12px;color:#888;margin-bottom:20px}
+    .hotel-name{font-size:18px;font-weight:700;margin-bottom:2px}
+    .room-name{font-size:13px;color:#666;margin-bottom:20px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f7f5f0;border-radius:10px;padding:16px;margin-bottom:20px}
+    .cell{padding:8px 10px}
+    .cell-label{font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:3px}
+    .cell-val{font-size:13px;font-weight:700}
+    .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+    .row:last-child{border-bottom:none}
+    .label{color:#888;font-size:13px}
+    .val{font-weight:600;font-size:13px}
+    .price-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0 0;margin-top:4px}
+    .price-label{font-size:13px;color:#555}
+    .price-val{font-size:22px;font-weight:900;color:#0F2D1D}
+    .status-badge{display:inline-block;background:#e8f5e9;color:#0F2D1D;padding:5px 14px;border-radius:20px;font-weight:700;font-size:12px;margin-bottom:20px}
+    .footer{margin-top:28px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center}
+    .print-btn{background:#0F2D1D;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:20px;display:block}
+    hr{border:none;border-top:2px solid #0F2D1D;margin:20px 0}
+    @media print{.print-btn{display:none!important}body{margin:10px auto}}
   </style></head><body>
+  <button class="print-btn" onclick="window.print()">🖨 Распечатать</button>
   <div class="logo">Заедем.by</div>
+  <div class="logo-sub">Белорусский агрегатор отелей · zaedem.by</div>
+  <hr>
   <div class="num">${num}</div>
-  <p style="color:#888;font-size:12px">Ваучер бронирования</p>
-  <hr style="margin:16px 0">
-  <button onclick="window.print()" style="background:#0F2D1D;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:16px">🖨 Печать</button>
-  <p style="font-size:12px;color:#888">Для уточнения деталей обращайтесь на сайт zaedem.by или по телефону отеля.</p>
+  <div class="voucher-label">Ваучер бронирования</div>
+  <div class="hotel-name">${bk.hotel_name||'—'}</div>
+  <div class="room-name">${bk.room_name||''}</div>
+  <span class="status-badge">${statusLabel}</span>
+  <div class="grid">
+    <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)}</div></div>
+    <div class="cell"><div class="cell-label">Выезд</div><div class="cell-val">${fd(bk.check_out)}</div></div>
+    <div class="cell"><div class="cell-label">Ночей</div><div class="cell-val">${bk.nights||'—'}</div></div>
+    <div class="cell"><div class="cell-label">Гостей</div><div class="cell-val">${bk.guests_count||1}</div></div>
+  </div>
+  <div class="row"><span class="label">Гость</span><span class="val">${bk.guest_name||'—'}</span></div>
+  <div class="row"><span class="label">Email</span><span class="val">${bk.guest_email||'—'}</span></div>
+  ${bk.guest_phone?`<div class="row"><span class="label">Телефон</span><span class="val">${bk.guest_phone}</span></div>`:''}
+  <div class="row"><span class="label">Способ оплаты</span><span class="val">${bk.payment_method||'—'}</span></div>
+  <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
+  <div class="footer">Заедем.by · ИП Горошко Жанна Витальевна · support@zaedem.by<br>Для вопросов обращайтесь на zaedem.by или по телефону отеля</div>
   </body></html>`);
   w.document.close();
 }
