@@ -855,7 +855,7 @@ function serpRender(){
   if(pr)priceMax=parseInt(pr.value)||0;
   var wantBfast=document.getElementById('sft-bfast')&&document.getElementById('sft-bfast').classList.contains('active');
   var wantSpa=document.getElementById('sft-spa')&&document.getElementById('sft-spa').classList.contains('active');
-  var hotels=window.HOTELS&&window.HOTELS.length?window.HOTELS:(window.FB||[]);
+  var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
   var city=(window._capState&&window._capState.city||'').toLowerCase().trim();
   // Фильтруем по городу если есть совпадения, иначе показываем всё
   var cityFiltered=city?hotels.filter(function(h){
@@ -960,7 +960,7 @@ function serpRender(){
 // Фото-слайдер в карточке
 var srpPhotoIdx={};
 function srpSlide(id,dir){
-  var hotels=window.HOTELS&&window.HOTELS.length?window.HOTELS:(window.FB||[]);
+  var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
   var h=hotels.find(function(x){return x.id===id;});
   if(!h||!h.photos||h.photos.length<2)return;
   if(srpPhotoIdx[id]==null)srpPhotoIdx[id]=0;
