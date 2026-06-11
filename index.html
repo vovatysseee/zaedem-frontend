@@ -2371,32 +2371,5 @@ loadHotels();
 
 
 
-<script>
-// Скрытие шапки при скролле вниз — только мобиле, без скачков
-(function(){
-  var nav = document.querySelector('nav');
-  if (!nav) return;
-  nav.style.transition = 'transform .25s ease';
-  var lastY = window.scrollY;
-  var ticking = false;
-  window.addEventListener('scroll', function(){
-    if (!ticking) {
-      requestAnimationFrame(function(){
-        if (window.innerWidth > 600) { ticking = false; return; }
-        var y = window.scrollY;
-        var diff = y - lastY;
-        if (diff > 4 && y > 80) {
-          nav.style.transform = 'translateY(-100%)';
-        } else if (diff < -4) {
-          nav.style.transform = 'translateY(0)';
-        }
-        lastY = y;
-        ticking = false;
-      });
-      ticking = true;
-    }
-  }, {passive: true});
-})();
-</script>
 </body>
 </html>
