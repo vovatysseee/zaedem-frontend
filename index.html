@@ -1277,15 +1277,17 @@ async function serpLoadOstrovok(){
       // Бэкенд уже конвертировал USD→BYN, используем цены как есть
       var local=(window.HOTELS||[]).filter(function(h){return h.source!=='ostrovok';});
       window.HOTELS=[...data.hotels,...local];
-      serpRender();
+      // Рендерим только если SERP ещё открыт (пользователь не перешёл на hotel-page)
+      var sp=document.getElementById('serp-page');
+      if(sp&&sp.classList.contains('open'))serpRender();
     } else {
-      // Ostrovok ничего не нашёл — показываем локальные
-      serpRender();
+      var sp=document.getElementById('serp-page');
+      if(sp&&sp.classList.contains('open'))serpRender();
     }
   }catch(e){
     console.warn('Ostrovok search error:',e.message);
-    // Fallback на локальные данные
-    serpRender();
+    var sp=document.getElementById('serp-page');
+    if(sp&&sp.classList.contains('open'))serpRender();
   }
 }
 
