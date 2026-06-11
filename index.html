@@ -1243,19 +1243,26 @@ function serpFmtDate(d){
 }
 
 async function serpLoadOstrovok(){
+  // Защита от повторного запуска
+  if(window._ostrovokLoading)return;
+
   var st=window._capState||{};
   var city=st.city||((document.getElementById('s-dest')||{}).value||'');
-  if(!city)return; // нет города — показываем статику
+  if(!city)return;
 
   var checkin=serpFmtDate(st.din);
   var checkout=serpFmtDate(st.dout);
-  if(!checkin||!checkout)return; // нет дат — показываем статику
+  if(!checkin||!checkout)return;
 
-  // Показываем лоадер
+  window._ostrovokLoading=true;
+
+  // Показываем лоадер только если SERP открыт
+  var sp=document.getElementById('serp-page');
   var cards=document.getElementById('serp-cards');
   var meta=document.getElementById('serp-meta');
-  if(meta)meta.textContent='Ищем отели...';
-  if(cards)cards.innerHTML='<div style="padding:40px;text-align:center;color:#888;font-size:14px">Загружаем предложения...</div>';
+  if(sp&&sp.classList.contains('open')){
+    if(meta)meta.textContent='Ищем отели...';
+  }
 
   try{
     var body={
@@ -1264,7 +1271,6 @@ async function serpLoadOstrovok(){
       checkout: checkout,
       adults:   st.adults||2,
       children: [],
-      currency: 'RUB', // Ostrovok работает в RUB, конвертируем на фронте
     };
     var resp=await fetch(API+'/api/ostrovok/search',{
       method:'POST',
@@ -1275,18 +1281,14 @@ async function serpLoadOstrovok(){
     var data=await resp.json();
 
     if(data.hotels&&data.hotels.length){
-      // Бэкенд уже конвертировал USD→BYN, используем цены как есть
       var local=(window.HOTELS||[]).filter(function(h){return h.source!=='ostrovok';});
       window.HOTELS=[...data.hotels,...local];
-      // Рендерим только если SERP ещё открыт (пользователь не перешёл на hotel-page)
-      var sp=document.getElementById('serp-page');
-      if(sp&&sp.classList.contains('open'))serpRender();
-    } else {
-      var sp=document.getElementById('serp-page');
-      if(sp&&sp.classList.contains('open'))serpRender();
     }
   }catch(e){
     console.warn('Ostrovok search error:',e.message);
+  }finally{
+    window._ostrovokLoading=false;
+    // Рендерим только если SERP ещё открыт
     var sp=document.getElementById('serp-page');
     if(sp&&sp.classList.contains('open'))serpRender();
   }
