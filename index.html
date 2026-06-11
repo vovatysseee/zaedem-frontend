@@ -12,7 +12,7 @@ html{scroll-behavior:smooth}
 body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink);line-height:1.6}
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
-nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(201,241,53,.1)}
+nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(201,241,53,.1);transition:transform .3s ease}
 .logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:1.15rem;color:var(--lime);letter-spacing:-1px;cursor:pointer}
 .logo em{color:rgba(255,255,255,.85);font-style:normal}
 .nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 18px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
@@ -2369,5 +2369,26 @@ loadHotels();
           <button onclick="capSheetSearch()" style="width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:14px;padding:18px;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.3px">Найти отели</button>
         </div>
 
+
+<script>
+// Скрытие/показ шапки при скролле (только мобиле)
+(function(){
+  var nav = document.querySelector('nav');
+  if (!nav) return;
+  var lastY = 0;
+  window.addEventListener('scroll', function(){
+    if (window.innerWidth > 600) return;
+    var y = window.scrollY;
+    if (y > lastY && y > 80) {
+      // Скролл вниз — прячем
+      nav.style.transform = 'translateY(-100%)';
+    } else {
+      // Скролл вверх — показываем
+      nav.style.transform = 'translateY(0)';
+    }
+    lastY = y;
+  }, {passive: true});
+})();
+</script>
 </body>
 </html>
