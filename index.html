@@ -756,6 +756,7 @@ function openHotel(id){
   var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');}else{window._fromSerp=false;}
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
   document.getElementById('hotel-page').classList.add('open');
+  document.getElementById('serp-page').classList.remove('open');
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
@@ -943,7 +944,7 @@ function serpRender(){
      // Один простой клик на всю карточку
      c.addEventListener('click',function(e){
        if(e.target.dataset.dir)return;
-       openHotel(this.dataset.id);
+       openHotel(this.dataset.hid);
      });
      cardEls.push(c);
   });
