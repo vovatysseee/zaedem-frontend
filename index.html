@@ -744,6 +744,14 @@ function openHotel(id){
   curHotel=HOTELS.find(h=>h.id===id);
   if(!curHotel)return;
   const h=curHotel,n=getNights();
+  // Защита для Ostrovok отелей — у них нет rooms/revs/phone
+  const rooms=h.rooms||[];
+  const revs=h.revs||[];
+  const amenities=h.amenities||[];
+  const phone=h.phone||'';
+  const desc=h.description_ru||h.description||'';
+  const pricePerNight=h.price||rooms[0]?.price||0;
+  const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
   var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');}else{window._fromSerp=false;}
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
@@ -758,22 +766,22 @@ function openHotel(id){
     <div class="hp-layout">
       <div>
         <h1 class="hp-title">${h.name_ru}</h1>
-        <div class="hp-meta"><span class="hp-rat">${parseFloat(h.rating).toFixed(1)} — Очень хорошо</span>${starsH(h.stars,14)}<span class="hp-addr">📍 ${h.address}</span><span style="font-size:12px;color:var(--muted)">📞 ${h.phone}</span></div>
-        <p class="hp-desc">${h.description_ru}</p>
-        <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3>
-        <div class="hp-amenities">${h.amenities.map(a=>`<div class="amen">${a.i} ${a.n}</div>`).join('')}</div>
+        <div class="hp-meta"><span class="hp-rat">${parseFloat(h.rating||0).toFixed(1)} — Очень хорошо</span>${starsH(h.stars,14)}<span class="hp-addr">📍 ${h.address||''}</span>${phone?`<span style="font-size:12px;color:var(--muted)">📞 ${phone}</span>`:''}</div>
+        ${desc?`<p class="hp-desc">${desc}</p>`:''}
+        ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen">${a.i||''} ${a.n||a}</div>`).join('')}</div>`:''}
+        ${rooms.length?`
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера</h3>
-        <div class="hp-rooms">${h.rooms.map(r=>`
+        <div class="hp-rooms">${rooms.map(r=>`
           <div class="room" onclick="selRoom(${r.id})">
             <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров. · ${r.desc}</div></div>
             <div style="text-align:right;flex-shrink:0">
-              <div class="rprice">$${r.price}<span style="font-size:10px;color:var(--hint);font-weight:400">/ночь</span></div>
+              <div class="rprice">${r.price} BYN<span style="font-size:10px;color:var(--hint);font-weight:400">/ночь</span></div>
               ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${r.avail}!</div>`:''}
               <button class="btn-select">Выбрать</button>
             </div>
           </div>`).join('')}
-        </div>
-        ${h.revs.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Отзывы</h3>${h.revs.map(r=>`<div class="rv"><div class="rv-head"><div class="rv-ava">${r.ava}</div><div style="flex:1"><div class="rv-name">${r.name} <span style="font-size:11px;color:var(--hint)">· ${r.city}</span></div><div class="rv-date">${r.date}</div></div><div class="rv-stars">${'★'.repeat(r.rat)}${'☆'.repeat(5-r.rat)}</div></div><p class="rv-text">${r.text}</p></div>`).join('')}`:''}
+        </div>`:''}
+        ${revs.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Отзывы</h3>${revs.map(r=>`<div class="rv"><div class="rv-head"><div class="rv-ava">${r.ava}</div><div style="flex:1"><div class="rv-name">${r.name} <span style="font-size:11px;color:var(--hint)">· ${r.city}</span></div><div class="rv-date">${r.date}</div></div><div class="rv-stars">${'★'.repeat(r.rat)}${'☆'.repeat(5-r.rat)}</div></div><p class="rv-text">${r.text}</p></div>`).join('')}`:''}
       </div>
       <div>
         <div class="bk-box">
@@ -787,16 +795,17 @@ function openHotel(id){
               <option>2 гостя</option><option selected>2 гостя</option><option>3 гостя</option>
             </select>
           </div>
+          ${rooms.length?`
           <div class="bk-field" style="margin-bottom:12px"><label>Тип номера</label>
             <select id="hp-room" style="background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);outline:none;width:100%" onchange="updSum()">
-              ${h.rooms.map((r,i)=>`<option value="${i}" data-price="${r.price}">${r.name} — $${r.price}/ночь</option>`).join('')}
+              ${rooms.map((r,i)=>`<option value="${i}" data-price="${r.price}">${r.name} — ${r.price} BYN/ночь</option>`).join('')}
             </select>
-          </div>
+          </div>`:''}
           <div class="bk-sum" id="bk-sum">
-            <div class="bk-row"><span>Цена за ночь</span><span id="bk-pn">$${h.rooms[0].price}</span></div>
+            <div class="bk-row"><span>Цена за ночь</span><span id="bk-pn">${pricePerNight} BYN</span></div>
             <div class="bk-row"><span>Ночей</span><span id="bk-nights">${n}</span></div>
-            <div class="bk-row"><span>Комиссия</span><span>$0</span></div>
-            <div class="bk-total"><span>Итого</span><span id="bk-tot">$${h.rooms[0].price*n}</span></div>
+            <div class="bk-row"><span>Комиссия</span><span>0 BYN</span></div>
+            <div class="bk-total"><span>Итого</span><span id="bk-tot">${pricePerNight*n} BYN</span></div>
           </div>
           <div class="pay-methods">
             <div class="pm on" id="pmc" onclick="setPM('card')"><div class="pm-ico">💳</div><div class="pm-lbl">Карта</div></div>
@@ -1329,19 +1338,21 @@ function setPM(m){payM=m;[['pmc','card'],['pme','erip'],['pmk','cash']].forEach(
 function openBookModal(){
   if(!curHotel)return;
   const h=curHotel,sel=document.getElementById('hp-room');
-  const room=h.rooms[sel?sel.selectedIndex:0]||h.rooms[0];
-  const n=getNights(),total=room.price*n;
+  const rooms=h.rooms||[];
+  const room=rooms.length?(rooms[sel?sel.selectedIndex:0]||rooms[0]):null;
+  const pricePerNight=room?room.price:(h.price||0);
+  const n=getNights(),total=pricePerNight*n;
   document.getElementById('bm-img').innerHTML=`${h.photos[0]?`<img src="${h.photos[0]}" alt="">`:''}<button class="modal-close" onclick="closeBK()">✕</button>`;
   document.getElementById('bm-body').innerHTML=`
     <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">${h.name_ru}</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${h.address} · ${room.name}</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${h.address||''}${room?' · '+room.name:''}</div>
     <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input type="tel" placeholder="+375 29 000-00-00"></div>
     <div class="fgrow"><div class="fg"><label>Заезд</label><input type="date" value="${getIn()}"></div><div class="fg"><label>Выезд</label><input type="date" value="${getOut()}"></div></div>
-    <div class="sumbox"><div class="srow2"><span>${room.name}</span><span>$${room.price}/ночь</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>$${total}</span></div></div>
+    <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
     ${payM==='erip'?`<div style="background:var(--sand2);border-radius:10px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:12px">🏧 После подтверждения получите счёт в ЕРИП. Оплатите через мобильный банк в течение 24 ч.</div>`:payM==='cash'?`<div style="background:var(--sand2);border-radius:10px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:12px">💵 Оплата при заезде.</div>`:`<div class="fg"><label>Номер карты</label><input placeholder="0000 0000 0000 0000"></div><div class="fgrow"><div class="fg"><label>Владелец</label><input placeholder="IVAN IVANOV"></div><div class="fg"><label>ММ/ГГ · CVV</label><input placeholder="06/28 · 123"></div></div>`}
-    <button class="btn-pay" onclick="confirmBook(${total})">🔒 Оплатить $${total}</button>
+    <button class="btn-pay" onclick="confirmBook(${total})">🔒 Оплатить ${total} BYN</button>
     <div class="secure">🛡️ SSL · Данные защищены</div>`;
   document.getElementById('bk-modal').classList.add('open');
 }
