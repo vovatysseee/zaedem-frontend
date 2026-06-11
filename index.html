@@ -943,7 +943,7 @@ function serpRender(){
      // Один простой клик на всю карточку
      c.addEventListener('click',function(e){
        if(e.target.dataset.dir)return;
-       openHotel(this.dataset.hid);
+       openHotel(this.dataset.id);
      });
      cardEls.push(c);
   });
