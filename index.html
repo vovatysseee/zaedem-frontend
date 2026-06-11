@@ -9,6 +9,14 @@
 :root{--ink:#0c0c0c;--ink2:#1e1e1e;--muted:#6b6b6b;--hint:#aaa;--sand:#faf8f4;--sand2:#f2efe8;--sand3:#e5e0d5;--green:#1a5c38;--green2:#246b44;--lime:#c9f135;--lime2:#d9f554;--green4:#0d3320;--white:#fff;--sh:0 2px 16px rgba(0,0,0,.06);--sh2:0 12px 40px rgba(0,0,0,.12)}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.sk-card{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:12px;border:1.5px solid var(--sand3)}
+.sk-img{height:200px;background:linear-gradient(90deg,#e8f0ea 25%,#d4e3d7 50%,#e8f0ea 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+.sk-body{padding:16px}
+.sk-line{height:12px;border-radius:6px;background:linear-gradient(90deg,#e8f0ea 25%,#d4e3d7 50%,#e8f0ea 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin-bottom:10px}
+.sk-line.w80{width:80%}.sk-line.w60{width:60%}.sk-line.w40{width:40%}.sk-line.w90{width:90%}
+.sk-price{height:20px;width:50%;border-radius:6px;background:linear-gradient(90deg,#e8f0ea 25%,#d4e3d7 50%,#e8f0ea 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin-top:16px}
+.sk-hint{text-align:center;color:#888;font-size:12px;padding:8px 0 4px;font-style:italic}
 body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink);line-height:1.6}
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
@@ -1258,12 +1266,23 @@ async function serpLoadOstrovok(){
 
   window._ostrovokLoading=true;
 
-  // Показываем лоадер только если SERP открыт
+  // Показываем скелетон пока грузится Ostrovok
   var sp=document.getElementById('serp-page');
   var cards=document.getElementById('serp-cards');
   var meta=document.getElementById('serp-meta');
   if(sp&&sp.classList.contains('open')){
-    if(meta)meta.textContent='Ищем отели...';
+    if(meta)meta.textContent='Проверяем актуальные цены...';
+    // Добавляем скелетон-карточки после локальных
+    var skWrap=document.getElementById('serp-skeleton');
+    if(!skWrap){
+      skWrap=document.createElement('div');
+      skWrap.id='serp-skeleton';
+      skWrap.style.cssText='padding:0 12px';
+      skWrap.innerHTML='<div class="sk-hint">Загружаем предложения от партнёров...</div>'+
+        [1,2,3].map(function(){return '<div class="sk-card"><div class="sk-img"></div><div class="sk-body"><div class="sk-line w80"></div><div class="sk-line w60"></div><div class="sk-line w40"></div><div class="sk-price"></div></div></div>';}).join('');
+      if(cards&&cards.parentNode)cards.parentNode.insertBefore(skWrap,cards.nextSibling);
+    }
+    skWrap.style.display='block';
   }
 
   try{
@@ -1290,6 +1309,9 @@ async function serpLoadOstrovok(){
     console.warn('Ostrovok search error:',e.message);
   }finally{
     window._ostrovokLoading=false;
+    // Убираем скелетон
+    var skWrap=document.getElementById('serp-skeleton');
+    if(skWrap)skWrap.style.display='none';
     // Рендерим только если SERP ещё открыт
     var sp=document.getElementById('serp-page');
     if(sp&&sp.classList.contains('open'))serpRender();
