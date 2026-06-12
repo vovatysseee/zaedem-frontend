@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Zaedem.by — Загрузка отелей из дампа Ostrovok</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: linear-gradient(160deg, #0F2D1D, #081C12 60%, #16402A);
+    min-height: 100vh; padding: 24px 12px; color: #1a1a1a;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { color: #fff; font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #9fc7ae; font-size: 14px; margin-bottom: 20px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 18px 20px;
+    margin-bottom: 14px; box-shadow: 0 4px 18px rgba(0,0,0,.25);
+  }
+  .card h2 { font-size: 16px; margin-bottom: 8px; }
+  .hint { font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.5; }
+  button {
+    background: #16402A; color: #fff; border: none; border-radius: 8px;
+    padding: 11px 18px; font-size: 14px; cursor: pointer; font-weight: 600;
+    margin-right: 8px; margin-bottom: 6px;
+  }
+  button:hover:not(:disabled) { background: #1d5638; }
+  button:disabled { background: #b9c9bf; cursor: not-allowed; }
+  button.secondary { background: #e8efe b; background: #eef3f0; color: #16402A; }
+  .status-box {
+    margin-top: 12px; background: #f4f7f5; border: 1px solid #e0e8e3;
+    border-radius: 10px; padding: 14px;
+  }
+  .state {
+    font-weight: 700; font-size: 15px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .state.idle { color: #777; }
+  .state.running { color: #9a6b00; }
+  .state.done { color: #156a38; }
+  .state.error { color: #b02a2a; }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat {
+    flex: 1; min-width: 120px; background: #fff; border-radius: 8px;
+    padding: 10px; text-align: center; border: 1px solid #e0e8e3;
+  }
+  .stat .v { font-size: 22px; font-weight: 800; color: #16402A; }
+  .stat .l { font-size: 11.5px; color: #777; margin-top: 2px; }
+  .meta { font-size: 12px; color: #888; margin-top: 10px; }
+  .err-text { color: #b02a2a; font-size: 13px; margin-top: 8px; word-break: break-all; }
+  .spin {
+    width: 14px; height: 14px; border: 2px solid #e8c777; border-top-color: #9a6b00;
+    border-radius: 50%; display: inline-block; animation: sp 1s linear infinite;
+  }
+  @keyframes sp { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📦 Загрузка отелей из дампа Ostrovok</h1>
+  <div class="sub">Полный дамп — весь каталог (фильтруем Беларусь). Занимает 10–40 минут, страницу можно закрывать — загрузка идёт на сервере.</div>
+
+  <div class="card">
+    <h2>Запуск</h2>
+    <div class="hint">
+      <b>Полный дамп</b> — первый раз и потом примерно раз в неделю.<br>
+      <b>Обновление (incremental)</b> — изменения за последние сутки, если не включено автообновление.
+    </div>
+    <button id="btnFull" onclick="startDump('full')">▶ Полный дамп</button>
+    <button id="btnInc" class="secondary" onclick="startDump('incremental')">↻ Обновление за сутки</button>
+    <div class="err-text" id="startErr"></div>
+
+    <div class="status-box">
+      <div class="state idle" id="stateLine">Статус: загружаю…</div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="sProcessed">—</div><div class="l">просмотрено отелей</div></div>
+        <div class="stat"><div class="v" id="sBelarus">—</div><div class="l">найдено по Беларуси</div></div>
+        <div class="stat"><div class="v" id="sSaved">—</div><div class="l">сохранено в базу</div></div>
+      </div>
+      <div class="meta" id="metaLine"></div>
+      <div class="err-text" id="jobErr"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var API = 'https://api.zaedem.by/api/ostrovok';
+
+async function startDump(type) {
+  document.getElementById('startErr').textContent = '';
+  document.getElementById('btnFull').disabled = true;
+  document.getElementById('btnInc').disabled = true;
+  try {
+    var r = await fetch(API + '/dump/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type })
+    });
+    var data = await r.json();
+    if (!r.ok) {
+      document.getElementById('startErr').textContent = '❌ ' + (data.error || ('HTTP ' + r.status));
+      document.getElementById('btnFull').disabled = false;
+      document.getElementById('btnInc').disabled = false;
+    }
+  } catch(e) {
+    document.getElementById('startErr').textContent = '❌ ' + e.message;
+    document.getElementById('btnFull').disabled = false;
+    document.getElementById('btnInc').disabled = false;
+  }
+  refresh();
+}
+
+var stateNames = {
+  idle:    ['Статус: не запускался', 'idle', ''],
+  running: ['Статус: ИДЁТ ЗАГРУЗКА', 'running', '<span class="spin"></span> '],
+  done:    ['Статус: ✅ ЗАВЕРШЕНО', 'done', ''],
+  error:   ['Статус: ❌ ОШИБКА', 'error', ''],
+};
+
+async function refresh() {
+  try {
+    var r = await fetch(API + '/dump/status');
+    var data = await r.json();
+    var job = data.job || {};
+    var st = stateNames[job.state] || stateNames.idle;
+    var line = document.getElementById('stateLine');
+    line.className = 'state ' + st[1];
+    line.innerHTML = st[2] + st[0] + (job.type ? ' (' + (job.type === 'full' ? 'полный' : 'обновление') + ')' : '');
+    document.getElementById('sProcessed').textContent = (job.processed != null) ? job.processed.toLocaleString('ru') : '—';
+    document.getElementById('sBelarus').textContent  = (job.belarus  != null) ? job.belarus.toLocaleString('ru')  : '—';
+    document.getElementById('sSaved').textContent    = (job.saved    != null) ? job.saved.toLocaleString('ru')    : '—';
+    var meta = [];
+    if (job.startedAt)  meta.push('начало: ' + new Date(job.startedAt).toLocaleTimeString('ru'));
+    if (job.finishedAt) meta.push('конец: ' + new Date(job.finishedAt).toLocaleTimeString('ru'));
+    document.getElementById('metaLine').textContent = meta.join(' · ');
+    document.getElementById('jobErr').textContent = job.error ? ('Ошибка: ' + job.error) : '';
+    var running = job.state === 'running';
+    document.getElementById('btnFull').disabled = running;
+    document.getElementById('btnInc').disabled = running;
+  } catch(e) {
+    document.getElementById('stateLine').textContent = 'Не удалось получить статус: ' + e.message;
+  }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
