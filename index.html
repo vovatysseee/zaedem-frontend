@@ -2317,6 +2317,7 @@ async function loadOstRates(h){
     var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:'by'})});
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
+    window._ostBookEnabled=!!data.booking_enabled;
     _ostRates=(data.rates||[]).filter(function(rt){return rt.book_hash&&rt.price_byn>0;});
     if(!_ostRates.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте изменить даты заезда и выезда.</div>';
@@ -2330,9 +2331,16 @@ async function loadOstRates(h){
         +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+ostCancelText(rt.cancellation)+'</div></div>'
         +'<div style="text-align:right;flex-shrink:0">'
         +'<div class="rprice">'+rt.price_byn+' BYN<span style="font-size:10px;color:var(--hint);font-weight:400"> за '+n+' '+nightsWord(n)+'</span></div>'
-        +'<button class="btn-select" onclick="ostSelectRate('+i+')">Выбрать</button>'
+        +(window._ostBookEnabled
+          ?'<button class="btn-select" onclick="ostSelectRate('+i+')">Выбрать</button>'
+          :'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px">Скоро откроем бронирование</div>')
         +'</div></div>';
     }).join('');
+    if(!window._ostBookEnabled){
+      box.insertAdjacentHTML('afterbegin','<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование этого отеля откроется совсем скоро. Цены актуальные, можно сравнивать.</div>');
+      var payBtn=document.querySelector('.bk-box .btn-pay');
+      if(payBtn){payBtn.textContent='Скоро откроем бронирование';payBtn.disabled=true;payBtn.style.opacity='.55';payBtn.style.cursor='default';payBtn.onclick=null;}
+    }
     var cheap=_ostRates[0];
     var pn=document.getElementById('bk-pn'),tot=document.getElementById('bk-tot'),nn=document.getElementById('bk-nights');
     if(pn)pn.textContent=Math.round(cheap.price_byn/Math.max(1,n))+' BYN';
@@ -2344,6 +2352,7 @@ async function loadOstRates(h){
 }
 
 function ostBookCheapest(){
+  if(!window._ostBookEnabled){var b0=document.getElementById('ost-rates');if(b0)b0.scrollIntoView({behavior:'smooth'});return;}
   if(_ostRates.length){ostSelectRate(0);return;}
   var b=document.getElementById('ost-rates');
   if(b)b.scrollIntoView({behavior:'smooth'});
@@ -2356,6 +2365,7 @@ function ostModalShell(){
 }
 
 async function ostSelectRate(i){
+  if(!window._ostBookEnabled)return;
   var rt=_ostRates[i];
   if(!rt||!curHotel)return;
   ostModalShell();
