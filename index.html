@@ -63,6 +63,9 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .sdot.on{background:var(--lime);width:22px;border-radius:3px}
 .cal-popup{display:none;position:fixed;z-index:99999;background:#fff;border-radius:18px;box-shadow:0 16px 50px rgba(0,0,0,.22);border:1.5px solid var(--sand3);padding:18px}
 .cal-popup.open{display:block}
+.bk-datebtn{cursor:pointer;transition:.15s}
+.bk-datebtn:hover{border-color:var(--green)}
+.bk-dateval{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px}
 .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .cal-title{font-family:'Unbounded',sans-serif;font-weight:800;font-size:14px;color:var(--ink)}
 .cal-nav{background:none;border:1.5px solid var(--sand3);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center}
@@ -616,6 +619,7 @@ function sameDay(a,b){return a&&b&&a.getTime()===b.getTime()}
 function closeAll(e){
   if(e){const t=e.target;if(t.closest('.cal-popup')||t.closest('.gpop')||t.closest('#sf-in')||t.closest('#sf-out')||t.closest('#sf-guests')||t.closest('#sf-dest')||t.closest('#city-drop'))return;}
   ['pop-in','pop-out'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn'))_hpc.classList.remove('open');
   var _pg=document.getElementById('pop-guests'); if(_pg)_pg.style.display='none';
   curPop=null;
 }
@@ -811,6 +815,94 @@ function doSearch(){renderHotels();scrollToHotels()}
 function scrollToHotels(){document.getElementById('hotels-section').scrollIntoView({behavior:'smooth'})}
 function getNights(){const a=new Date(document.getElementById('hp-in')?.value||getIn()),b=new Date(document.getElementById('hp-out')?.value||getOut());return Math.max(1,Math.round((b-a)/86400000))}
 
+// ── Красивый календарь диапазона на странице отеля (баг 3) ──
+var _hpCal={din:null,dout:null,nav:new Date()};
+function hpFmtLbl(v){
+  if(!v)return '—';
+  var d=new Date(v); if(isNaN(d))return '—';
+  var mn=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  return d.getDate()+' '+mn[d.getMonth()];
+}
+function hpOpenCal(e){
+  if(e)e.stopPropagation();
+  var pop=document.getElementById('hp-cal-pop');
+  if(!pop)return;
+  if(pop.classList.contains('open')){pop.classList.remove('open');return;}
+  // инициализируем из текущих значений
+  var iv=document.getElementById('hp-in')?.value, ov=document.getElementById('hp-out')?.value;
+  _hpCal.din=iv?new Date(iv):null;
+  _hpCal.dout=ov?new Date(ov):null;
+  _hpCal.nav=_hpCal.din?new Date(_hpCal.din.getFullYear(),_hpCal.din.getMonth(),1):new Date();
+  // позиционируем под датами
+  var anchor=document.querySelector('.bk-dates');
+  if(anchor){
+    var r=anchor.getBoundingClientRect();
+    pop.style.left=Math.max(8,r.left)+'px';
+    pop.style.top=(r.bottom+8)+'px';
+    pop.style.width=Math.min(320,window.innerWidth-16)+'px';
+  }
+  hpBuildCal();
+  pop.classList.add('open');
+}
+function hpNavCal(dir,e){
+  if(e)e.stopPropagation();
+  _hpCal.nav=new Date(_hpCal.nav.getFullYear(),_hpCal.nav.getMonth()+dir,1);
+  hpBuildCal();
+}
+function hpBuildCal(){
+  var pop=document.getElementById('hp-cal-pop');
+  if(!pop)return;
+  var mn=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var wd=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  var y=_hpCal.nav.getFullYear(), m=_hpCal.nav.getMonth();
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<button onclick="hpNavCal(-1,event)" style="background:var(--sand2);border:none;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">‹</button>'
+    +'<div style="font-weight:700;font-size:14px">'+mn[m]+' '+y+'</div>'
+    +'<button onclick="hpNavCal(1,event)" style="background:var(--sand2);border:none;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px">›</button></div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+  html+=wd.map(function(w){return '<div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;padding:3px 0">'+w+'</div>';}).join('');
+  var first=new Date(y,m,1); var sd=first.getDay(); sd=(sd===0)?6:sd-1;
+  for(var i=0;i<sd;i++)html+='<div></div>';
+  var daysIn=new Date(y,m+1,0).getDate();
+  var today=new Date(); today.setHours(0,0,0,0);
+  for(var day=1;day<=daysIn;day++){
+    var dt=new Date(y,m,day);
+    var past=dt<today;
+    var isIn=_hpCal.din&&dt.getTime()===_hpCal.din.getTime();
+    var isOut=_hpCal.dout&&dt.getTime()===_hpCal.dout.getTime();
+    var inRange=_hpCal.din&&_hpCal.dout&&dt>_hpCal.din&&dt<_hpCal.dout;
+    var bg='transparent',col='#111',fw='400';
+    if(isIn||isOut){bg='#0F2D1D';col='#fff';fw='700';}
+    else if(inRange){bg='rgba(15,45,29,.1)';}
+    html+='<div onclick="'+(past?'':'hpPickDay('+y+','+m+','+day+',event)')+'" style="text-align:center;padding:7px 0;border-radius:8px;cursor:'+(past?'default':'pointer')+';opacity:'+(past?'.3':'1')+';background:'+bg+';color:'+col+';font-weight:'+fw+';font-size:13px">'+day+'</div>';
+  }
+  html+='</div>';
+  html+='<div id="hp-cal-hint" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center">'+
+    (_hpCal.din&&!_hpCal.dout?'Выберите дату выезда':(_hpCal.din&&_hpCal.dout?(getNights()+' '+nightsWord(getNights())):'Выберите дату заезда'))+'</div>';
+  pop.innerHTML=html;
+}
+function hpPickDay(y,m,day,e){
+  if(e)e.stopPropagation();
+  var dt=new Date(y,m,day);
+  if(!_hpCal.din||_hpCal.dout){_hpCal.din=dt;_hpCal.dout=null;}
+  else if(dt.getTime()<=_hpCal.din.getTime()){_hpCal.din=dt;_hpCal.dout=null;}
+  else{_hpCal.dout=dt;}
+  hpBuildCal();
+  if(_hpCal.din&&_hpCal.dout){
+    var fmtV=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+    document.getElementById('hp-in').value=fmtV(_hpCal.din);
+    document.getElementById('hp-out').value=fmtV(_hpCal.dout);
+    document.getElementById('hp-in-lbl').textContent=hpFmtLbl(fmtV(_hpCal.din));
+    document.getElementById('hp-out-lbl').textContent=hpFmtLbl(fmtV(_hpCal.dout));
+    setTimeout(function(){
+      document.getElementById('hp-cal-pop').classList.remove('open');
+      // пересчёт цены: и для наших отелей, и для Ostrovok
+      if(typeof updSum==='function')try{updSum();}catch(_){}
+      if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+    },250);
+  }
+}
+
 function openHotel(id){
   curHotel=HOTELS.find(h=>h.id===id);
   if(!curHotel)return;
@@ -860,9 +952,10 @@ function openHotel(id){
         <div class="bk-box">
           <div class="bk-title">Забронировать</div>
           <div class="bk-dates">
-            <div class="bk-field"><label>Заезд</label><input type="date" id="hp-in" value="${getIn()}" onchange="updSum()"></div>
-            <div class="bk-field"><label>Выезд</label><input type="date" id="hp-out" value="${getOut()}" onchange="updSum()"></div>
+            <div class="bk-field bk-datebtn" onclick="hpOpenCal(event)"><label>Заезд</label><div class="bk-dateval" id="hp-in-lbl">${hpFmtLbl(getIn())}</div><input type="hidden" id="hp-in" value="${getIn()}"></div>
+            <div class="bk-field bk-datebtn" onclick="hpOpenCal(event)"><label>Выезд</label><div class="bk-dateval" id="hp-out-lbl">${hpFmtLbl(getOut())}</div><input type="hidden" id="hp-out" value="${getOut()}"></div>
           </div>
+          <div class="cal-popup" id="hp-cal-pop"></div>
           <div class="bk-field" style="margin-bottom:10px"><label>Гостей</label>
             <select style="background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);outline:none;width:100%">
               <option ${gCnt===1?'selected':''}>1 гость</option><option ${gCnt===2?'selected':''}>2 гостя</option><option ${gCnt===3?'selected':''}>3 гостя</option><option ${gCnt===4?'selected':''}>4 гостя</option>
@@ -1337,7 +1430,7 @@ function serpEditSearch(){
   var pill=document.querySelector('.serp-sticky-pill');
   if(!pill)return;
   var r=pill.getBoundingClientRect();
-  var W=420,left=r.left+r.width/2-W/2;
+  var W=Math.min(420,window.innerWidth-16),left=r.left+r.width/2-W/2;
   if(left<8)left=8;if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
   // Создаём модал
   var modal=document.createElement('div');
@@ -1346,10 +1439,10 @@ function serpEditSearch(){
   modal.addEventListener('click',function(e){e.stopPropagation();});
   // Шапка
   modal.innerHTML=
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f0f0f0">'+
-      '<button id="ssd-back" onclick="serpSearchStep(_serpSD.step-1)" style="background:none;border:none;font-size:13px;color:#0F2D1D;font-weight:700;cursor:pointer;visibility:hidden">← Назад</button>'+
-      '<div id="ssd-title" style="font-size:14px;font-weight:700;color:#111">Куда едете?</div>'+
-      '<button onclick="serpSearchClose()" style="background:#f5f5f5;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;color:#666">✕</button>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid #f0f0f0">'+
+      '<button id="ssd-back" onclick="serpSearchStep(_serpSD.step-1)" style="background:none;border:none;font-size:13px;color:#0F2D1D;font-weight:700;cursor:pointer;visibility:hidden;flex-shrink:0;width:60px;text-align:left">← Назад</button>'+
+      '<div id="ssd-title" style="font-size:15px;font-weight:700;color:#111;flex:1;text-align:center">Куда едете?</div>'+
+      '<button onclick="serpSearchClose()" style="background:#f5f5f5;border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;color:#666;flex-shrink:0">✕</button>'+
     '</div>'+
     // Шаг 1: Города
     '<div id="ssd-step1">'+
