@@ -267,11 +267,11 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 
 /* Layout */
 .serp-layout{display:flex;gap:0;height:calc(100vh - 62px);position:sticky;top:62px}
-.serp-list{flex:0 0 60%;overflow-y:auto;overflow-x:visible;padding:24px 28px;scrollbar-width:thin;scrollbar-color:var(--sand3) transparent}
+.serp-list{flex:0 0 64%;overflow-y:auto;overflow-x:visible;padding:24px 28px;scrollbar-width:thin;scrollbar-color:var(--sand3) transparent}
 .serp-list::-webkit-scrollbar{width:4px}
 .serp-list::-webkit-scrollbar-track{background:transparent}
 .serp-list::-webkit-scrollbar-thumb{background:var(--sand3);border-radius:2px}
-.serp-map{flex:0 0 40%;position:sticky;top:0;background:#e8e4dc}
+.serp-map{flex:0 0 36%;position:sticky;top:0;background:#e8e4dc}
 
 /* Filter bar */
 .serp-filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:nowrap;overflow:visible;padding-bottom:2px;position:relative;z-index:10}
@@ -287,7 +287,12 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .serp-sort-wrap label{font-size:12px;color:var(--muted);font-weight:600}
 .serp-sort{border:1.5px solid var(--sand3);border-radius:50px;padding:7px 32px 7px 14px;font-size:12px;font-weight:600;color:var(--ink);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%231a5c38' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 13px center;cursor:pointer;appearance:none;-webkit-appearance:none;transition:.15s}
 .serp-sort:hover{border-color:var(--green)}
-.leaflet-marker-price{background:var(--green);color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:50px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff;cursor:pointer;transition:.15s}
+.leaflet-marker-price{background:var(--green);color:#fff;font-size:12px;font-weight:700;padding:5px 10px;border-radius:50px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid #fff;cursor:pointer;transition:transform .18s ease,background .18s ease}
+.leaflet-cluster{background:var(--green4);color:#fff;font-size:13px;font-weight:800;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.3);transition:transform .18s ease}
+.leaflet-cluster:hover{transform:scale(1.12);background:var(--green)}
+.lmp-wrap{background:none!important;border:none!important}
+@keyframes pinDrop{0%{opacity:0;transform:translateY(-12px)}100%{opacity:1;transform:translateY(0)}}
+.leaflet-marker-icon .leaflet-marker-price,.leaflet-marker-icon .leaflet-cluster{animation:pinDrop .25s ease both}
 .leaflet-marker-price:hover,.leaflet-marker-price.hover{background:var(--lime);color:var(--green4);transform:scale(1.08)}
 .leaflet-marker-price.active{background:var(--lime);color:var(--green4)}
 .lmp-wrap{background:none!important;border:none!important}
@@ -300,12 +305,14 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 
 /* Result cards — redesign v2 (фото-первые, чистый стиль) */
 .serp-meta{font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500}
-.sr-card{display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;border:0.5px solid var(--sand3);cursor:pointer;transition:.2s;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.sr-card{display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;border:0.5px solid var(--sand3);cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.04);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .sr-card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.10);border-color:#d8d3c8}
+.serp-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.serp-cards-grid{grid-template-columns:1fr}}
 .sr-card.map-hover{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
-.sr-img{position:relative;width:100%;height:175px;overflow:hidden;background:var(--sand2)}
+.sr-img{position:relative;width:100%;height:150px;overflow:hidden;background:var(--sand2)}
 .sr-img.noimg{background:var(--sand2);display:flex;align-items:center;justify-content:center}
-.sr-img.noimg::after{content:"\\1F3E0";font-size:34px;opacity:.28;filter:grayscale(1)}
+.sr-img.noimg::after{content:"\1F3E0";font-size:30px;opacity:.25;filter:grayscale(1)}
 .sr-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s,opacity .25s}
 .sr-img img.fading{opacity:0}
 .sr-card:hover .sr-img img{transform:scale(1.05)}
@@ -320,16 +327,16 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .sr-badge-free{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.95);color:var(--green);font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px;z-index:2}
 .sr-fav{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.35);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:15px;cursor:pointer;transition:.15s}
 .sr-fav:hover{background:rgba(0,0,0,.55)}
-.sr-body{padding:14px 16px;display:flex;flex-direction:column;gap:0}
+.sr-body{padding:13px 15px;display:flex;flex-direction:column;gap:0}
 .sr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .sr-type{font-size:11px;color:var(--hint);font-weight:500;margin-bottom:3px;letter-spacing:.2px}
-.sr-name{font-weight:700;font-size:16px;color:var(--ink);line-height:1.3}
+.sr-name{font-weight:700;font-size:15px;color:var(--ink);line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .sr-rating{display:flex;align-items:center;gap:8px;margin-top:6px}
 .sr-score{background:var(--green);color:#fff;font-size:12px;font-weight:700;padding:3px 9px;border-radius:7px;line-height:1.3;flex-shrink:0}
 .sr-rtxt{font-size:12px;color:var(--muted)}
 .sr-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
 .sr-tag{background:var(--sand2);color:var(--muted);font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600}
-.sr-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px}
+.sr-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}
 .sr-price-old{font-size:11px;color:var(--hint);text-decoration:line-through;margin-bottom:2px}
 .sr-price-main{font-family:'Unbounded',sans-serif;font-size:.98rem;font-weight:800;color:var(--green)}
 .sr-price-sub{font-size:11px;color:var(--muted);margin-top:1px}
@@ -365,6 +372,8 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 </head>
 <body>
 <nav>
@@ -491,7 +500,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
           </select>
         </div>
       </div>
-      <div id="serp-cards"></div>
+      <div id="serp-cards" class="serp-cards-grid"></div>
     </div>
 
     <!-- Map -->
@@ -1092,25 +1101,40 @@ function srpSlide(id,dir){
 
 // Пины
 var _serpMap=null;
+var _serpCluster=null;
 var _serpMarkers={};
 function serpRenderPins(list){
-  if(typeof L==='undefined')return; // Leaflet не загрузился
+  if(typeof L==='undefined')return;
   var withGeo=list.filter(function(h){return h.latitude&&h.longitude;});
 
-  // Инициализация карты один раз
   var el=document.getElementById('serp-leaflet');
   if(!el)return;
   if(!_serpMap){
     _serpMap=L.map('serp-leaflet',{zoomControl:true,attributionControl:false}).setView([53.9,27.56],11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(_serpMap);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(_serpMap);
   }
 
-  // Чистим старые маркеры
-  Object.values(_serpMarkers).forEach(function(m){_serpMap.removeLayer(m);});
+  // Группа кластеризации — объединяет близкие метки в один кружок
+  if(_serpCluster){_serpMap.removeLayer(_serpCluster);}
+  if(typeof L.markerClusterGroup==='function'){
+    _serpCluster=L.markerClusterGroup({
+      maxClusterRadius:48,
+      showCoverageOnHover:false,
+      iconCreateFunction:function(cluster){
+        return L.divIcon({
+          className:'lmp-wrap',
+          html:'<div class="leaflet-cluster">'+cluster.getChildCount()+'</div>',
+          iconSize:null
+        });
+      }
+    });
+  } else {
+    _serpCluster=L.layerGroup();
+  }
   _serpMarkers={};
 
   if(!withGeo.length){
-    // нет координат — центрируем по умолчанию (Минск)
+    _serpCluster.addTo(_serpMap);
     setTimeout(function(){_serpMap.invalidateSize();},100);
     return;
   }
@@ -1118,15 +1142,16 @@ function serpRenderPins(list){
   var bounds=[];
   withGeo.forEach(function(h){
     var icon=L.divIcon({className:'lmp-wrap',html:'<div class="leaflet-marker-price" id="mpin-'+h.id+'">'+h.price+' BYN</div>',iconSize:null});
-    var m=L.marker([h.latitude,h.longitude],{icon:icon}).addTo(_serpMap);
+    var m=L.marker([h.latitude,h.longitude],{icon:icon});
     m.on('click',function(){openHotel(h.id);});
     _serpMarkers[h.id]=m;
+    _serpCluster.addLayer(m);
     bounds.push([h.latitude,h.longitude]);
   });
+  _serpCluster.addTo(_serpMap);
 
-  // Подгоняем зум под все маркеры
   if(bounds.length){
-    try{_serpMap.fitBounds(bounds,{padding:[40,40],maxZoom:15});}catch(e){}
+    try{_serpMap.fitBounds(bounds,{padding:[40,40],maxZoom:14});}catch(e){}
   }
   setTimeout(function(){_serpMap.invalidateSize();},100);
 }
