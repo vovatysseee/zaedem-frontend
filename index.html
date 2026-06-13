@@ -122,6 +122,7 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .hotel-page.open{display:block}
 .hp-gallery{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:185px 185px;gap:8px;border-radius:16px;overflow:hidden;margin-bottom:1.75rem}
 .gp{background:var(--sand2);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.gp:empty::after{content:"\1F3E0";font-size:30px;opacity:.25;filter:grayscale(1)}
 .gp img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .gp:hover img{transform:scale(1.04)}
 .gp:first-child{grid-row:1/3}
@@ -138,7 +139,7 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .room:hover{border-color:var(--green)}
 .rname{font-weight:700;font-size:14px;margin-bottom:3px}
 .rmeta{font-size:12px;color:var(--muted)}
-.rprice{font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;color:var(--green)}
+.rprice{font-family:'Unbounded',sans-serif;font-size:.9rem;font-weight:800;color:var(--green);white-space:nowrap}
 .btn-select{background:var(--green);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .bk-box{background:#fff;border:0.5px solid var(--sand3);border-radius:18px;padding:1.5rem;position:sticky;top:74px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
 .bk-title{font-family:'Unbounded',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:1rem;color:var(--green)}
@@ -302,7 +303,9 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .sr-card{display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;border:0.5px solid var(--sand3);cursor:pointer;transition:.2s;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .sr-card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.10);border-color:#d8d3c8}
 .sr-card.map-hover{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
-.sr-img{position:relative;width:100%;height:190px;overflow:hidden;background:var(--sand2)}
+.sr-img{position:relative;width:100%;height:175px;overflow:hidden;background:var(--sand2)}
+.sr-img.noimg{background:var(--sand2);display:flex;align-items:center;justify-content:center}
+.sr-img.noimg::after{content:"\\1F3E0";font-size:34px;opacity:.28;filter:grayscale(1)}
 .sr-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s,opacity .25s}
 .sr-img img.fading{opacity:0}
 .sr-card:hover .sr-img img{transform:scale(1.05)}
@@ -328,7 +331,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .sr-tag{background:var(--sand2);color:var(--muted);font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600}
 .sr-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px}
 .sr-price-old{font-size:11px;color:var(--hint);text-decoration:line-through;margin-bottom:2px}
-.sr-price-main{font-family:'Unbounded',sans-serif;font-size:1.15rem;font-weight:800;color:var(--green)}
+.sr-price-main{font-family:'Unbounded',sans-serif;font-size:.98rem;font-weight:800;color:var(--green)}
 .sr-price-sub{font-size:11px;color:var(--muted);margin-top:1px}
 .sr-book{background:var(--green4);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;flex-shrink:0}
 .sr-book:hover{background:var(--green)}
@@ -817,7 +820,7 @@ function openHotel(id){
     <div class="hp-layout">
       <div>
         <h1 class="hp-title">${h.name_ru}</h1>
-        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">${parseFloat(h.rating||0).toFixed(1)} — Очень хорошо</span>`:``}${starsH(h.stars,14)}<span class="hp-addr">📍 ${h.address||''}</span>${phone?`<span style="font-size:12px;color:var(--muted)">📞 ${phone}</span>`:''}</div>
+        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr">📍 ${h.address||''}</span>${phone?`<span style="font-size:12px;color:var(--muted)">📞 ${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen">${a.i||''} ${a.n||a}</div>`).join('')}</div>`:''}
         ${isOst?`
@@ -829,7 +832,7 @@ function openHotel(id){
           <div class="room" onclick="selRoom(${r.id})">
             <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров. · ${r.desc}</div></div>
             <div style="text-align:right;flex-shrink:0">
-              <div class="rprice">${r.price} BYN<span style="font-size:10px;color:var(--hint);font-weight:400">/ночь</span></div>
+              <div class="rprice">${r.price} BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>
               ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${r.avail}!</div>`:''}
               <button class="btn-select">Выбрать</button>
             </div>
@@ -969,7 +972,7 @@ function serpRender(){
     });
     var img=photos[0]||'';
     var typeLbl=serpCatLabel(h);
-    var ratLbl=h.rating>=9?'Исключительно':h.rating>=8?'Великолепно':h.rating>=7?'Очень хорошо':'Хорошо';
+    var rn=parseFloat(h.rating||0);var ratLbl=rn>=5?'5 звёзд':rn>=4?'4 звезды':rn>=3?'3 звезды':rn>=2?'2 звезды':'';
     var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+a.i+' '+a.n+'</span>';}).join('');
     var dots=photos.length>1?photos.map(function(_,i){return '<div class="sr-dot'+(i===0?' on':'')+'"></div>';}).join(''):'';
 
@@ -977,6 +980,7 @@ function serpRender(){
      var c=document.createElement('div');
      c.className='sr-card';c.id='src-'+h.id;c.dataset.hid=h.id;
      var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" alt="" loading="lazy">':'';
+     var imgCls=img?'sr-img':'sr-img noimg';
      var navHtml=photos.length>1?'<button class="sr-img-nav prev" data-id="'+h.id+'" data-dir="-1">&#8249;</button><button class="sr-img-nav next" data-id="'+h.id+'" data-dir="1">&#8250;</button>':'';
      var cntHtml=photos.length>1?'<div id="srcnt-'+h.id+'" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">1/'+photos.length+'</div>':'';
      var dotsHtml=dots?'<div class="sr-img-dots" id="srdots-'+h.id+'">'+dots+'</div>':'';
@@ -986,10 +990,10 @@ function serpRender(){
      var favBtn='<span class="sr-fav" data-fav="1">&#9825;</span>';
      var ratNum=parseFloat(h.rating||0);
      var ratHtml=ratNum>0?'<div class="sr-rating">'
-       +'<span class="sr-score">'+ratNum.toFixed(1)+'</span>'
+       +'<span class="sr-score">★ '+ratNum.toFixed(0)+'</span>'
        +'<span class="sr-rtxt">'+ratLbl+(h.reviews_count?' ('+h.reviews_count+' отзывов)':'')+'</span>'
        +'</div>':'';
-     c.innerHTML='<div class="sr-img">'+imgHtml+freeBadge+favBtn+navHtml+dotsHtml+cntHtml+'</div>'
+     c.innerHTML='<div class="'+imgCls+'">'+imgHtml+freeBadge+favBtn+navHtml+dotsHtml+cntHtml+'</div>'
        +'<div class="sr-body">'
          +'<div class="sr-head">'
            +'<div style="min-width:0">'
@@ -2446,7 +2450,7 @@ async function loadOstRates(h){
         +'<div class="rmeta">🍽 '+ostMeal(rt.meal)+'</div>'
         +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+ostCancelText(rt.cancellation)+'</div></div>'
         +'<div style="text-align:right;flex-shrink:0">'
-        +'<div class="rprice">'+rt.price_byn+' BYN<span style="font-size:10px;color:var(--hint);font-weight:400"> за '+n+' '+nightsWord(n)+'</span></div>'
+        +'<div class="rprice">'+rt.price_byn+' BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">за '+n+' '+nightsWord(n)+'</div>'
         +(window._ostBookEnabled
           ?'<button class="btn-select" onclick="ostSelectRate('+i+')">Выбрать</button>'
           :'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px">Скоро откроем бронирование</div>')
