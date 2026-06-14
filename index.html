@@ -1811,11 +1811,11 @@ async function startPayment(total){
   if(!em?.value){em?.focus();return;}
 
   if(!window._BEPAID_PUBLIC_KEY){
-    // bePaid ещё не подключён — показываем понятное сообщение
+    // bePaid ещё не подключён — показываем сообщение, бронь НЕ создаём
     document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:36px 20px">
-      <div style="font-size:2rem;margin-bottom:14px">💳</div>
-      <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:10px">Скоро откроем онлайн-оплату</div>
-      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы подключаем безопасную оплату картой, ЕРИП, Apple/Samsung&nbsp;Pay. Совсем скоро бронирование заработает полностью.</p>
+      <div style="font-size:2.2rem;margin-bottom:14px">⏳</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Онлайн-оплата скоро появится</div>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты — картой, ЕРИП, Apple&nbsp;Pay и Samsung&nbsp;Pay. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>
       <button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button>
     </div>`;
     return;
@@ -1826,7 +1826,7 @@ async function startPayment(total){
   //   public_key: window._BEPAID_PUBLIC_KEY,
   //   order:{ amount: total*100, currency:'BYN', description:'Бронь '+curHotel.name_ru } } };
   // new BeGateway(params).createWidget();  // при success → confirmBook(total)
-  confirmBook(total); // временно: прямой вызов (пока без реальной оплаты)
+  confirmBook(total);
 }
 
 async function confirmBook(total){
@@ -2857,9 +2857,9 @@ function ostStartPayment(){
   if(!em||!em.value.trim()){if(em)em.focus();return;}
   if(!window._BEPAID_PUBLIC_KEY){
     document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:36px 20px">'
-      +'<div style="font-size:2rem;margin-bottom:14px">💳</div>'
-      +'<div style="font-family:\'Unbounded\',sans-serif;font-size:1rem;font-weight:800;margin-bottom:10px">Скоро откроем онлайн-оплату</div>'
-      +'<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Подключаем безопасную оплату картой, ЕРИП, Apple/Samsung&nbsp;Pay. Бронирование заработает совсем скоро.</p>'
+      +'<div style="font-size:2.2rem;margin-bottom:14px">⏳</div>'
+      +'<div style="font-family:\'Unbounded\',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Онлайн-оплата скоро появится</div>'
+      +'<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты — картой, ЕРИП, Apple&nbsp;Pay и Samsung&nbsp;Pay. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>'
       +'<button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button></div>';
     return;
   }
