@@ -63,6 +63,10 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .sdot.on{background:var(--lime);width:22px;border-radius:3px}
 .cal-popup{display:none;position:fixed;z-index:99999;background:#fff;border-radius:18px;box-shadow:0 16px 50px rgba(0,0,0,.22);border:1.5px solid var(--sand3);padding:18px}
 .cal-popup.open{display:block}
+.cat-head{cursor:pointer;display:inline-block;transition:.15s}
+.cat-head:hover .cat-all{color:var(--green);transform:translateX(3px)}
+.cat-all{font-size:13px;font-weight:600;color:var(--muted);transition:.2s;display:inline-block;white-space:nowrap;margin-left:6px}
+@media(max-width:600px){.cat-all{display:block;margin-left:0;margin-top:2px;font-size:12px}}
 .bk-datebtn{cursor:pointer;transition:.15s}
 .bk-datebtn:hover{border-color:var(--green)}
 .bk-dateval{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px}
@@ -145,6 +149,7 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .rprice{font-family:'Unbounded',sans-serif;font-size:.9rem;font-weight:800;color:var(--green);white-space:nowrap}
 .btn-select{background:var(--green);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ost-rate-row.picked{border:2px solid var(--green)!important;background:var(--green-pale,#e8f4ed)!important}
+.hp-room-row.picked{border:2px solid var(--green)!important;background:var(--green-pale,#e8f4ed)!important}
 .bk-box{background:#fff;border:0.5px solid var(--sand3);border-radius:18px;padding:1.5rem;position:sticky;top:74px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
 .bk-title{font-family:'Unbounded',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:1rem;color:var(--green)}
 .bk-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
@@ -420,17 +425,17 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   </div>
 <section class="hotels-section" id="hotels-section" style="background:var(--sand);padding:0">
   <div style="padding:3rem 2rem 2rem">
-        <h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Отели и концепты</h2>
+        <div class="cat-head" onclick="openCategory('hotel')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Отели и концепты <span class="cat-all">Все по Беларуси →</span></h2></div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Авторские пространства с характером</p>
     <div id="carousel-hotel" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
   </div>
   <div style="border-top:1px solid var(--sand2);padding:2.5rem 2rem 2rem">
-        <h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Агроусадьбы и шале</h2>
+        <div class="cat-head" onclick="openCategory('guest')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Агроусадьбы и шале <span class="cat-all">Все по Беларуси →</span></h2></div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Дизайнерские усадьбы, барнхаусы, эко-комплексы</p>
     <div id="carousel-guest" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
   </div>
   <div style="border-top:1px solid var(--sand2);padding:2.5rem 2rem 3rem">
-        <h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Городские апартаменты</h2>
+        <div class="cat-head" onclick="openCategory('apart')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Городские апартаменты <span class="cat-all">Все по Беларуси →</span></h2></div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Топовый евроремонт в центре города</p>
     <div id="carousel-apart" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
   </div>
@@ -555,7 +560,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
     </div>
     <div class="ft-bottom">
       <span>© 2026 Заедем.by · ИП Горошко Жанна Витальевна · УНП [—]</span>
-      <span>Принимаем к оплате: ЕРИП, МИР, Visa, Mastercard, Apple/Samsung Pay</span>
+      <span class="ft-pay" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="margin-right:2px">Принимаем:</span><span id="ft-pay-icons"></span></span>
     </div>
   </div>
 </footer><script>
@@ -620,6 +625,7 @@ function closeAll(e){
   if(e){const t=e.target;if(t.closest('.cal-popup')||t.closest('.gpop')||t.closest('#sf-in')||t.closest('#sf-out')||t.closest('#sf-guests')||t.closest('#sf-dest')||t.closest('#city-drop'))return;}
   ['pop-in','pop-out'].forEach(id=>document.getElementById(id).classList.remove('open'));
   var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn'))_hpc.classList.remove('open');
+  var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop'))_hpg.classList.remove('open');
   var _pg=document.getElementById('pop-guests'); if(_pg)_pg.style.display='none';
   curPop=null;
 }
@@ -780,7 +786,7 @@ async function loadHotels(){
 }
 
 // Вызываем renderHotels при загрузке для каруселей главной
-document.addEventListener('DOMContentLoaded',function(){renderHotels();});
+document.addEventListener('DOMContentLoaded',function(){renderHotels();var fp=document.getElementById('ft-pay-icons');if(fp&&typeof payIconsHTML==='function')fp.innerHTML=payIconsHTML();});
 
 function starsH(n,sz){return n?`<span style="color:#f5b700;font-size:${sz||12}px">${'★'.repeat(n)}${'☆'.repeat(5-n)}</span>`:''}
 function catLabel(h){return h.stars?'★'.repeat(h.stars):(h.category==='guest'?'Агроусадьба':h.category==='apart'?'Апартаменты':'Отель')}
@@ -903,6 +909,92 @@ function hpPickDay(y,m,day,e){
   }
 }
 
+// ── Модуль гостей на странице отеля (взрослые + дети с возрастом) ──
+function hpGuestsLabel(){
+  var s=window._capState||{};
+  var a=s.adults||2, k=s.kids||0;
+  var t=a+' '+(a===1?'взрослый':a<=4?'взрослых':'взрослых');
+  if(k>0)t+=', '+k+' '+(k===1?'ребёнок':k<=4?'ребёнка':'детей');
+  return t;
+}
+function hpOpenGuests(e){
+  if(e)e.stopPropagation();
+  var pop=document.getElementById('hp-guests-pop');
+  if(!pop)return;
+  if(pop.classList.contains('open')){pop.classList.remove('open');return;}
+  var anchor=pop.previousElementSibling;
+  if(anchor){
+    var r=anchor.getBoundingClientRect();
+    pop.style.left=Math.max(8,r.left)+'px';
+    pop.style.top=(r.bottom+6)+'px';
+    pop.style.width=Math.min(300,window.innerWidth-16)+'px';
+  }
+  hpBuildGuests();
+  pop.classList.add('open');
+}
+function hpBuildGuests(){
+  var pop=document.getElementById('hp-guests-pop');
+  if(!pop)return;
+  var s=window._capState||{}; var a=s.adults||2, k=s.kids||0;
+  var ages=window._capState.childAges||[];
+  var html='<div style="padding:4px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">'
+      +'<div><div style="font-weight:700;font-size:14px">Взрослые</div></div>'
+      +'<div style="display:flex;align-items:center;gap:12px">'
+        +'<button onclick="hpChG(\'a\',-1,event)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:16px;color:var(--green);opacity:'+(a<=1?'.3':'1')+'">−</button>'
+        +'<span style="min-width:18px;text-align:center;font-weight:700">'+a+'</span>'
+        +'<button onclick="hpChG(\'a\',1,event)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:16px;color:var(--green)">+</button>'
+      +'</div></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid #f0f0f0">'
+      +'<div><div style="font-weight:700;font-size:14px">Дети</div><div style="font-size:11px;color:var(--muted)">до 17 лет</div></div>'
+      +'<div style="display:flex;align-items:center;gap:12px">'
+        +'<button onclick="hpChG(\'k\',-1,event)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:16px;color:var(--green);opacity:'+(k<=0?'.3':'1')+'">−</button>'
+        +'<span style="min-width:18px;text-align:center;font-weight:700">'+k+'</span>'
+        +'<button onclick="hpChG(\'k\',1,event)" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-size:16px;color:var(--green)">+</button>'
+      +'</div></div>';
+  // возраст каждого ребёнка
+  if(k>0){
+    html+='<div style="border-top:1px solid #f0f0f0;padding-top:8px;margin-top:4px">';
+    for(var i=0;i<k;i++){
+      var age=ages[i]!=null?ages[i]:7;
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">'
+        +'<span style="font-size:12px;color:var(--muted)">Возраст ребёнка '+(i+1)+'</span>'
+        +'<select onchange="hpSetAge('+i+',this.value)" style="border:1.5px solid #ddd;border-radius:7px;padding:4px 8px;font-family:inherit;font-size:13px">';
+      for(var ag=0;ag<=17;ag++)html+='<option value="'+ag+'"'+(ag===age?' selected':'')+'>'+ag+' '+(ag===1?'год':ag>=2&&ag<=4?'года':'лет')+'</option>';
+      html+='</select></div>';
+    }
+    html+='</div>';
+  }
+  html+='<button onclick="hpApplyGuests(event)" style="width:100%;margin-top:10px;background:var(--green);color:#fff;border:none;padding:10px;border-radius:10px;font-family:inherit;font-weight:700;cursor:pointer">Готово</button>';
+  html+='</div>';
+  pop.innerHTML=html;
+}
+function hpChG(type,d,e){
+  if(e)e.stopPropagation();
+  window._capState=window._capState||{adults:2,kids:0};
+  if(type==='a')window._capState.adults=Math.max(1,Math.min(10,(window._capState.adults||2)+d));
+  else{
+    window._capState.kids=Math.max(0,Math.min(6,(window._capState.kids||0)+d));
+    window._capState.childAges=window._capState.childAges||[];
+    if(d>0)window._capState.childAges.push(7);
+    else window._capState.childAges.pop();
+  }
+  hpBuildGuests();
+}
+function hpSetAge(i,v){
+  window._capState.childAges=window._capState.childAges||[];
+  window._capState.childAges[i]=parseInt(v);
+}
+function hpApplyGuests(e){
+  if(e)e.stopPropagation();
+  document.getElementById('hp-guests-pop').classList.remove('open');
+  var lbl=document.getElementById('hp-guests-lbl');
+  if(lbl)lbl.textContent=hpGuestsLabel();
+  // пересчёт тарифов под новое число гостей
+  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+  if(typeof updSum==='function')try{updSum();}catch(_){}
+}
+
 function openHotel(id){
   curHotel=HOTELS.find(h=>h.id===id);
   if(!curHotel)return;
@@ -936,13 +1028,13 @@ function openHotel(id){
         <div id="ost-rates"><div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">⏳ Загружаем актуальные тарифы и цены…</div></div>`:``}
         ${rooms.length?`
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера</h3>
-        <div class="hp-rooms">${rooms.map(r=>`
-          <div class="room" onclick="selRoom(${r.id})">
+        <div class="hp-rooms">${rooms.map((r,i)=>`
+          <div class="room hp-room-row" data-ridx="${i}" onclick="selRoomPick(${i})" style="cursor:pointer">
             <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров. · ${r.desc}</div></div>
             <div style="text-align:right;flex-shrink:0">
               <div class="rprice">${r.price} BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>
               ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${r.avail}!</div>`:''}
-              <button class="btn-select">Выбрать</button>
+              <button class="btn-select" onclick="event.stopPropagation();selRoomBook(${i})">Выбрать</button>
             </div>
           </div>`).join('')}
         </div>`:''}
@@ -956,11 +1048,10 @@ function openHotel(id){
             <div class="bk-field bk-datebtn" onclick="hpOpenCal(event)"><label>Выезд</label><div class="bk-dateval" id="hp-out-lbl">${hpFmtLbl(getOut())}</div><input type="hidden" id="hp-out" value="${getOut()}"></div>
           </div>
           <div class="cal-popup" id="hp-cal-pop"></div>
-          <div class="bk-field" style="margin-bottom:10px"><label>Гостей</label>
-            <select style="background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);outline:none;width:100%">
-              <option ${gCnt===1?'selected':''}>1 гость</option><option ${gCnt===2?'selected':''}>2 гостя</option><option ${gCnt===3?'selected':''}>3 гостя</option><option ${gCnt===4?'selected':''}>4 гостя</option>
-            </select>
+          <div class="bk-field bk-datebtn" style="margin-bottom:10px" onclick="hpOpenGuests(event)"><label>Гости</label>
+            <div class="bk-dateval" id="hp-guests-lbl">${hpGuestsLabel()}</div>
           </div>
+          <div class="cal-popup" id="hp-guests-pop"></div>
           ${rooms.length?`
           <div class="bk-field" style="margin-bottom:12px"><label>Тип номера</label>
             <select id="hp-room" style="background:none;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);outline:none;width:100%" onchange="updSum()">
@@ -974,14 +1065,14 @@ function openHotel(id){
             <div class="bk-total"><span>Итого</span><span id="bk-tot">${pricePerNight*n} BYN</span></div>
           </div>
           <div class="pay-icons">
-            <span class="pay-ic" title="Visa">VISA</span>
-            <span class="pay-ic" title="Mastercard">MC</span>
-            <span class="pay-ic" title="МИР">МИР</span>
-            <span class="pay-ic" title="ЕРИП">ЕРИП</span>
-            <span class="pay-ic" title="Apple Pay"> Pay</span>
-            <span class="pay-ic" title="Samsung Pay">Samsung</span>
+            <span class="pay-ic" title="Visa"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" font-style="italic" fill="#1A1F71">VISA</text></svg></span>
+            <span class="pay-ic" title="Mastercard"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><circle cx="16" cy="12" r="6.5" fill="#EB001B"/><circle cx="24" cy="12" r="6.5" fill="#F79E1B" fill-opacity=".9"/></svg></span>
+            <span class="pay-ic" title="МИР"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="#0F754E">МИР</text></svg></span>
+            <span class="pay-ic" title="ЕРИП"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#C8102E">ЕРИП</text></svg></span>
+            <span class="pay-ic" title="Apple Pay"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#000"> Pay</text></svg></span>
+            <span class="pay-ic" title="Samsung Pay"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="15.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="800" fill="#1428A0">SAMSUNG</text></svg></span>
           </div>
-          <button class="btn-pay" onclick="openBookModal()">🔒 Забронировать</button>
+          <button class="btn-pay" onclick="hpModuleBook()">Выбрать</button>
           <div class="secure">🛡️ SSL · Мгновенное подтверждение</div>
         </div>
       </div>
@@ -1593,6 +1684,21 @@ async function serpLoadOstrovok(){
   }
 }
 
+// Клик по категории на главной → поиск со всей Беларусью + фильтр этой категории
+function openCategory(cat){
+  // ставим только нужную категорию
+  var map={hotel:'flt-hotel',guest:'flt-guest',apart:'flt-apart'};
+  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){
+    var e=document.getElementById(id); if(e)e.checked=(id===map[cat]);
+  });
+  // без города = вся Беларусь
+  window._capState=window._capState||{};
+  if(!window._capState.city){
+    var sd=document.getElementById('s-dest'); if(sd)sd.value='';
+  }
+  window._serpReset=true;
+  serpOpen();
+}
 function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
@@ -1639,7 +1745,29 @@ function serpMapToggle(){
   if(serpMapOpen&&_serpMap)setTimeout(function(){_serpMap.invalidateSize();},250);
 }
 function updSum(){const sel=document.getElementById('hp-room');if(!sel)return;const p=parseInt(sel.options[sel.selectedIndex].dataset.price);const n=getNights();document.getElementById('bk-pn').textContent=p+' BYN';document.getElementById('bk-nights').textContent=n;document.getElementById('bk-tot').textContent=(p*n)+' BYN'}
-function selRoom(rid){const sel=document.getElementById('hp-room');if(sel&&curHotel){const idx=curHotel.rooms.findIndex(r=>r.id===rid);if(idx>=0)sel.selectedIndex=idx;updSum();}openBookModal()}
+function selRoomPick(idx){
+  const sel=document.getElementById('hp-room');
+  if(sel){sel.selectedIndex=idx;updSum();}
+  document.querySelectorAll('.hp-room-row').forEach(function(el){
+    el.classList.toggle('picked',String(el.dataset.ridx)===String(idx));
+  });
+}
+function selRoomBook(idx){
+  selRoomPick(idx);
+  openBookModal();
+}
+// Кнопка "Выбрать" в правом модуле → бронь выбранного номера
+function hpModuleBook(){
+  if(!curHotel)return;
+  if(curHotel.source==='ostrovok'){
+    // бронируем выбранный тариф Островка (или первый)
+    var i=window._ostPicked||0;
+    if(typeof ostSelectRate==='function')ostSelectRate(i);
+    return;
+  }
+  openBookModal();
+}
+function selRoom(rid){const sel=document.getElementById('hp-room');if(sel&&curHotel){const idx=curHotel.rooms.findIndex(r=>r.id===rid);if(idx>=0){sel.selectedIndex=idx;updSum();}}openBookModal()}
 function setPM(m){payM=m;[['pmc','card'],['pme','erip'],['pmk','cash']].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.classList.toggle('on',v===m)})}
 
 function openBookModal(){
@@ -1656,13 +1784,54 @@ function openBookModal(){
     <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${h.address||''}${room?' · '+room.name:''}</div>
     <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
-    <div class="fg"><label>Телефон</label><input type="tel" placeholder="+375 29 000-00-00"></div>
-    <div class="fgrow"><div class="fg"><label>Заезд</label><input type="date" value="${getIn()}"></div><div class="fg"><label>Выезд</label><input type="date" value="${getOut()}"></div></div>
+    <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
-    ${payM==='erip'?`<div style="background:var(--sand2);border-radius:10px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:12px">🏧 После подтверждения получите счёт в ЕРИП. Оплатите через мобильный банк в течение 24 ч.</div>`:payM==='cash'?`<div style="background:var(--sand2);border-radius:10px;padding:12px;font-size:13px;color:var(--muted);margin-bottom:12px">💵 Оплата при заезде.</div>`:`<div class="fg"><label>Номер карты</label><input placeholder="0000 0000 0000 0000"></div><div class="fgrow"><div class="fg"><label>Владелец</label><input placeholder="IVAN IVANOV"></div><div class="fg"><label>ММ/ГГ · CVV</label><input placeholder="06/28 · 123"></div></div>`}
-    <button class="btn-pay" onclick="confirmBook(${total})">🔒 Оплатить ${total} BYN</button>
-    <div class="secure">🛡️ SSL · Данные защищены</div>`;
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
+      ${payIconsHTML()}
+    </div>
+    <button class="btn-pay" onclick="startPayment(${total})">🔒 Забронировать и оплатить ${total} BYN</button>
+    <div class="secure">🛡️ Оплата защищена · карту обрабатывает банк</div>`;
   document.getElementById('bk-modal').classList.add('open');
+}
+
+// Красивые значки оплаты (переиспользуемые)
+function payIconsHTML(){
+  return ''
+    +'<span class="pay-ic" title="Visa"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" font-style="italic" fill="#1A1F71">VISA</text></svg></span>'
+    +'<span class="pay-ic" title="Mastercard"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><circle cx="16" cy="12" r="6.5" fill="#EB001B"/><circle cx="24" cy="12" r="6.5" fill="#F79E1B" fill-opacity=".9"/></svg></span>'
+    +'<span class="pay-ic" title="МИР"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="#0F754E">МИР</text></svg></span>'
+    +'<span class="pay-ic" title="ЕРИП"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="800" fill="#C8102E">ЕРИП</text></svg></span>'
+    +'<span class="pay-ic" title="Apple Pay"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#000"> Pay</text></svg></span>'
+    +'<span class="pay-ic" title="Samsung Pay"><svg viewBox="0 0 40 24" width="38" height="23"><rect width="40" height="24" rx="4" fill="#fff" stroke="#e8e4dc"/><text x="20" y="15.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="800" fill="#1428A0">SAMSUNG</text></svg></span>';
+}
+
+// Точка входа оплаты. Сейчас — заглушка (оплата выключена).
+// Когда придут ключи bePaid → здесь запустится виджет bePaid:
+//   собрать данные гостя → создать токен платежа → открыть виджет →
+//   при успехе вызвать confirmBook(total) → бронь уходит на сервер.
+async function startPayment(total){
+  // Валидация данных гостя
+  const fn=document.getElementById('f-fn'), em=document.getElementById('f-em');
+  if(!fn?.value){fn?.focus();return;}
+  if(!em?.value){em?.focus();return;}
+
+  if(!window._BEPAID_PUBLIC_KEY){
+    // bePaid ещё не подключён — показываем понятное сообщение
+    document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:36px 20px">
+      <div style="font-size:2rem;margin-bottom:14px">💳</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:10px">Скоро откроем онлайн-оплату</div>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы подключаем безопасную оплату картой, ЕРИП, Apple/Samsung&nbsp;Pay. Совсем скоро бронирование заработает полностью.</p>
+      <button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button>
+    </div>`;
+    return;
+  }
+
+  // ── СЮДА ВСТАНЕТ ВИДЖЕТ bePaid (когда будут ключи) ──
+  // const params = { checkout:{ test:false, transaction_type:'payment',
+  //   public_key: window._BEPAID_PUBLIC_KEY,
+  //   order:{ amount: total*100, currency:'BYN', description:'Бронь '+curHotel.name_ru } } };
+  // new BeGateway(params).createWidget();  // при success → confirmBook(total)
+  confirmBook(total); // временно: прямой вызов (пока без реальной оплаты)
 }
 
 async function confirmBook(total){
@@ -1673,7 +1842,7 @@ async function confirmBook(total){
   const rooms=h.rooms||[];const room=rooms[sel?sel.selectedIndex:0]||rooms[0]||{name:'Стандарт',price:h.price||0};
   document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:40px"><div style="font-size:2rem;margin-bottom:12px">⏳</div><div style="font-family:'Unbounded',sans-serif">Оформляем бронь…</div></div>`;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.querySelector('#bm-body input[type="tel"]')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:gCnt,total_price:total,currency:'BYN',payment_method:payM})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:gCnt,total_price:total,currency:'BYN',payment_method:'card'})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -2635,7 +2804,7 @@ function ostPickRate(i){
   });
   // кнопка «Забронировать» в панели бронирует именно выбранный тариф
   var payBtn=document.querySelector('.bk-box .btn-pay');
-  if(payBtn&&window._ostBookEnabled){ payBtn.onclick=function(){ostSelectRate(window._ostPicked||0);}; }
+  if(payBtn&&window._ostBookEnabled){ payBtn.textContent='Выбрать'; payBtn.onclick=function(){hpModuleBook();}; }
 }
 
 function ostBookCheapest(){
@@ -2687,9 +2856,26 @@ function ostRenderForm(oldPrice){
     +'<div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
-    <div class="fg"><label>Номер карты</label><input placeholder="0000 0000 0000 0000"></div><div class="fgrow"><div class="fg"><label>Владелец</label><input placeholder="IVAN IVANOV"></div><div class="fg"><label>ММ/ГГ · CVV</label><input placeholder="06/28 · 123"></div></div>\
-    <button class="btn-pay" onclick="ostConfirm()">🔒 Оплатить '+rt.price_byn+' BYN</button>\
-    <div class="secure">🛡️ SSL · Мгновенное подтверждение от партнёра</div>';
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
+    <button class="btn-pay" onclick="ostStartPayment()">🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
+    <div class="secure">🛡️ Оплата защищена · подтверждение от партнёра</div>';
+}
+
+// Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
+function ostStartPayment(){
+  var em=document.getElementById('f-em'), fn=document.getElementById('f-fn');
+  if(!fn||!fn.value.trim()){if(fn)fn.focus();return;}
+  if(!em||!em.value.trim()){if(em)em.focus();return;}
+  if(!window._BEPAID_PUBLIC_KEY){
+    document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:36px 20px">'
+      +'<div style="font-size:2rem;margin-bottom:14px">💳</div>'
+      +'<div style="font-family:\'Unbounded\',sans-serif;font-size:1rem;font-weight:800;margin-bottom:10px">Скоро откроем онлайн-оплату</div>'
+      +'<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Подключаем безопасную оплату картой, ЕРИП, Apple/Samsung&nbsp;Pay. Бронирование заработает совсем скоро.</p>'
+      +'<button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button></div>';
+    return;
+  }
+  // ── СЮДА ВСТАНЕТ ВИДЖЕТ bePaid → при success вызвать ostConfirm() ──
+  ostConfirm();
 }
 
 async function ostConfirm(){
