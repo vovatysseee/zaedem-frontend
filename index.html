@@ -125,8 +125,10 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .btn-book{background:var(--green);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-right:0}
 .btn-book:hover{background:var(--green2)}
 .api-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(26,92,56,.08);border:1px solid rgba(26,92,56,.15);color:var(--green2);font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;margin-bottom:6px}
-.hotel-page{display:none;background:var(--sand);min-height:100vh}
+.hotel-page{display:none;background:var(--sand);min-height:100vh;padding-bottom:3rem}
 .hotel-page.open{display:block}
+body.on-serp footer{display:none}
+.serp-page .wrap,.hotel-page .wrap{padding-bottom:2rem}
 .hp-gallery{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:185px 185px;gap:8px;border-radius:16px;overflow:hidden;margin-bottom:1.75rem}
 .gp{background:var(--sand2);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .gp:empty::after{content:"\1F3E0";font-size:30px;opacity:.25;filter:grayscale(1)}
@@ -1013,10 +1015,10 @@ function openHotel(id){
   const pricePerNight=h.price||rooms[0]?.price||0;
   const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
-  var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');}else{window._fromSerp=false;}
+  var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');document.body.classList.remove('on-serp');}else{window._fromSerp=false;}
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
   document.getElementById('hotel-page').classList.add('open');
-  document.getElementById('serp-page').classList.remove('open');
+  document.getElementById('serp-page').classList.remove('open');document.body.classList.remove('on-serp');
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
@@ -1081,7 +1083,7 @@ function goBack(){
   document.getElementById('hotel-page').classList.remove('open');
   var nav=document.querySelector('nav');
   if(window._fromSerp){
-    var sp=document.getElementById('serp-page');if(sp)sp.classList.add('open');
+    var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
     if(nav)nav.style.display='none';
     window._fromSerp=false;
   } else {
@@ -1716,7 +1718,7 @@ function serpOpen(){
   window._serpReset=true;
   var mp=document.getElementById('main-page');if(mp)mp.style.display='none';
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');
-  var sp=document.getElementById('serp-page');if(sp)sp.classList.add('open');
+  var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
   var nav=document.querySelector('nav');if(nav)nav.style.display='none';
   // Обновляем pill
   var dest=(window._capState&&window._capState.city?window._capState.city:((document.getElementById('s-dest')||{}).value||'')).trim();
@@ -1739,7 +1741,7 @@ function serpOpen(){
   serpLoadOstrovok();
 }
 function serpClose(){
-  var sp=document.getElementById('serp-page');if(sp)sp.classList.remove('open');
+  var sp=document.getElementById('serp-page');if(sp){sp.classList.remove('open');document.body.classList.remove('on-serp');}
   var mp=document.getElementById('main-page');if(mp)mp.style.display='block';
   var nav=document.querySelector('nav');if(nav)nav.style.display='';
   serpMapOpen=false;
