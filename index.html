@@ -163,6 +163,8 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .pay-icons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center}
 .pay-ic{background:#fff;border:1px solid var(--sand3);border-radius:7px;padding:5px 9px;font-size:11px;font-weight:800;color:var(--ink2);letter-spacing:.3px;display:inline-flex;align-items:center;min-height:26px}
 .pay-ic-dark{background:transparent!important;border:none!important;padding:2px 4px!important;min-height:auto}
+.btn-pay-soon{opacity:.45!important;cursor:not-allowed!important;filter:grayscale(.3)}
+.pay-soon-note{text-align:center;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
 .pm{background:var(--sand);border:1.5px solid var(--sand3);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer;transition:.15s}
 .pm.on{border-color:var(--green);background:rgba(26,92,56,.06)}
 .pm-ico{font-size:19px;margin-bottom:3px}
@@ -214,7 +216,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .ft-logo{font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;color:var(--lime);letter-spacing:-1px;margin-bottom:10px}
 .ft-desc{font-size:12px;line-height:1.8;color:rgba(255,255,255,.4)}
 .ft-badge{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.45);font-size:11px;font-weight:400;margin-top:16px;background:none;border:none;padding:0}
-.ft-col h4{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+.ft-col h4{font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
 .ft-col a{display:block;font-size:12px;color:rgba(255,255,255,.65);margin-bottom:8px;cursor:pointer;transition:.15s}
 .ft-col a:hover{color:var(--lime)}
 .ft-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:1.5rem;font-size:11px;color:rgba(255,255,255,.35);display:flex;flex-direction:column;gap:6px}
@@ -376,8 +378,9 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   .sr-card:hover{transform:none!important;box-shadow:var(--sh)!important;border-color:var(--sand3)!important}
   .sr-img{height:200px;min-height:0}
   .serp-sticky-pill{max-width:none}
-  .serp-filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;padding-bottom:6px}
-  .serp-filters::-webkit-scrollbar{display:none}
+  .serp-filters{flex-wrap:wrap;overflow:visible;max-width:100%;padding-bottom:6px;gap:6px;position:relative;z-index:50}
+  .serp-filters .sf-tag{flex-shrink:1}
+  .sf-dropdown{position:absolute;left:0;right:auto;min-width:200px;max-width:calc(100vw - 32px);z-index:9999}
   .serp-cards-grid{grid-template-columns:1fr!important}
   .serp-sortbar{flex-direction:column;align-items:stretch;gap:8px}
 }
@@ -561,7 +564,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
     </div>
     <div class="ft-bottom">
       <span>© 2026 Заедем.by · ИП Горошко Жанна Витальевна · УНП [—]</span>
-      <span class="ft-pay" style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="margin-right:2px">Принимаем:</span><span id="ft-pay-icons"></span></span>
+      <span class="ft-pay" id="ft-pay-icons" style="display:inline-flex;align-items:center;flex-wrap:wrap"></span>
     </div>
   </div>
 </footer><script>
@@ -1415,6 +1418,8 @@ var DWS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 function serpSearchClose(){
   var el=document.getElementById('serp-sd-modal');
   if(el)el.remove();
+  var bd=document.getElementById('serp-sd-backdrop');
+  if(bd)bd.remove();
   _serpSD.step=0;
   document.removeEventListener('click',window._serpSDOutside);
 }
@@ -1514,12 +1519,25 @@ function serpEditSearch(){
   var pill=document.querySelector('.serp-sticky-pill');
   if(!pill)return;
   var r=pill.getBoundingClientRect();
-  var W=Math.min(420,window.innerWidth-16),left=r.left+r.width/2-W/2;
-  if(left<8)left=8;if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
+  var isMobile=window.innerWidth<=600;
   // Создаём модал
   var modal=document.createElement('div');
   modal.id='serp-sd-modal';
-  modal.style.cssText='position:fixed;top:'+(r.bottom+8)+'px;left:'+left+'px;width:'+W+'px;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.25);border:1.5px solid #e8e4dc;z-index:999999;overflow:hidden';
+  if(isMobile){
+    // На мобиле — оверлей по центру, не привязан к pill (не уедет при скролле)
+    var Wm=Math.min(420,window.innerWidth-24);
+    modal.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:'+Wm+'px;max-height:85vh;overflow-y:auto;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.35);border:1.5px solid #e8e4dc;z-index:999999';
+    // затемнение фона
+    var backdrop=document.createElement('div');
+    backdrop.id='serp-sd-backdrop';
+    backdrop.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999998';
+    backdrop.onclick=function(){serpSearchClose();};
+    document.body.appendChild(backdrop);
+  } else {
+    var W=Math.min(420,window.innerWidth-16),left=r.left+r.width/2-W/2;
+    if(left<8)left=8;if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
+    modal.style.cssText='position:fixed;top:'+(r.bottom+8)+'px;left:'+left+'px;width:'+W+'px;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.25);border:1.5px solid #e8e4dc;z-index:999999;overflow:hidden';
+  }
   modal.addEventListener('click',function(e){e.stopPropagation();});
   // Шапка
   modal.innerHTML=
@@ -1782,22 +1800,24 @@ function openBookModal(){
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
       ${payIconsHTML()}
     </div>
-    <button class="btn-pay" onclick="startPayment(${total})">🔒 Забронировать и оплатить ${total} BYN</button>
-    <div class="secure">🛡️ Оплата защищена · карту обрабатывает банк</div>`;
+    <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>`;
   document.getElementById('bk-modal').classList.add('open');
 }
 
 // Красивые значки оплаты (переиспользуемые)
 function payIconsHTML(dark){
-  // dark=true → для тёмного фона (футер): прозрачный фон, цветные лого
-  var cls=dark?'pay-ic pay-ic-dark':'pay-ic';
-  return ''
-    +'<span class="'+cls+'" title="Visa"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="800" font-style="italic" fill="'+(dark?'#fff':'#1A1F71')+'">VISA</text></svg></span>'
-    +'<span class="'+cls+'" title="Mastercard"><svg viewBox="0 0 40 24" width="40" height="24"><circle cx="16" cy="12" r="7" fill="#EB001B"/><circle cx="24" cy="12" r="7" fill="#F79E1B" fill-opacity=".85"/></svg></span>'
-    +'<span class="'+cls+'" title="МИР"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="'+(dark?'#5FC28A':'#0F754E')+'">МИР</text></svg></span>'
-    +'<span class="'+cls+'" title="ЕРИП"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="'+(dark?'#FF6B6B':'#C8102E')+'">ЕРИП</text></svg></span>'
-    +'<span class="'+cls+'" title="Apple Pay"><svg viewBox="0 0 40 24" width="40" height="24"><path d="M11.5 8.6c-.3.4-.8.7-1.3.6 0-.5.2-1 .5-1.3.3-.4.8-.6 1.2-.7.1.5-.1 1-.4 1.4zm.4.7c-.7 0-1.3.4-1.6.4-.3 0-.8-.4-1.4-.4-.7 0-1.4.4-1.7 1.1-.7 1.3-.2 3.1.5 4.1.4.5.8 1 1.3 1 .5 0 .7-.3 1.4-.3s.8.3 1.4.3c.6 0 .9-.5 1.3-1 .3-.4.4-.8.5-.9-1.2-.5-1.3-2.2-.1-2.8-.4-.6-.9-.6-1.4-.6z" fill="'+(dark?'#fff':'#000')+'"/><text x="27" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="600" fill="'+(dark?'#fff':'#000')+'">Pay</text></svg></span>'
-    +'<span class="'+cls+'" title="Samsung Pay"><svg viewBox="0 0 44 24" width="44" height="24"><text x="22" y="15.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" letter-spacing="-.3" fill="'+(dark?'#7EA0FF':'#1428A0')+'">SAMSUNG</text></svg></span>';
+  // Единый тихий стиль: серый текст без квадратов, компактно (1 строка на мобиле)
+  var col=dark?'rgba(255,255,255,.65)':'#9a9a9a';
+  var s='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';letter-spacing:.3px;white-space:nowrap';
+  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap">'
+    +'<span style="'+s+';font-style:italic">VISA</span>'
+    +'<span style="'+s+'">Mastercard</span>'
+    +'<span style="'+s+'">МИР</span>'
+    +'<span style="'+s+'">ЕРИП</span>'
+    +'<span style="'+s+'"> Pay</span>'
+    +'<span style="'+s+'">Samsung Pay</span>'
+    +'</span>';
 }
 
 // Точка входа оплаты. Сейчас — заглушка (оплата выключена).
@@ -2846,8 +2866,8 @@ function ostRenderForm(oldPrice){
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
-    <button class="btn-pay" onclick="ostStartPayment()">🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
-    <div class="secure">🛡️ Оплата защищена · подтверждение от партнёра</div>';
+    <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>';
 }
 
 // Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
