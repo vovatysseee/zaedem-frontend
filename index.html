@@ -1323,7 +1323,7 @@ function serpRenderPins(list){
   if(!el)return;
   if(!_serpMap){
     _serpMap=L.map('serp-leaflet',{zoomControl:true,attributionControl:false}).setView([53.9,27.56],11);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(_serpMap);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(_serpMap);
   }
 
   // Группа кластеризации — объединяет близкие метки в один кружок
@@ -1793,11 +1793,11 @@ function payIconsHTML(dark){
   var cls=dark?'pay-ic pay-ic-dark':'pay-ic';
   return ''
     +'<span class="'+cls+'" title="Visa"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="800" font-style="italic" fill="'+(dark?'#fff':'#1A1F71')+'">VISA</text></svg></span>'
-    +'<span class="'+cls+'" title="Mastercard"><svg viewBox="0 0 40 24" width="40" height="24"><circle cx="16" cy="12" r="7" fill="#EB001B"/><circle cx="24" cy="12" r="7" fill="#F79E1B" fill-opacity=".9"/></svg></span>'
+    +'<span class="'+cls+'" title="Mastercard"><svg viewBox="0 0 40 24" width="40" height="24"><circle cx="16" cy="12" r="7" fill="#EB001B"/><circle cx="24" cy="12" r="7" fill="#F79E1B" fill-opacity=".85"/></svg></span>'
     +'<span class="'+cls+'" title="МИР"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="800" fill="'+(dark?'#5FC28A':'#0F754E')+'">МИР</text></svg></span>'
     +'<span class="'+cls+'" title="ЕРИП"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="'+(dark?'#FF6B6B':'#C8102E')+'">ЕРИП</text></svg></span>'
     +'<span class="'+cls+'" title="Apple Pay"><svg viewBox="0 0 40 24" width="40" height="24"><path d="M11.5 8.6c-.3.4-.8.7-1.3.6 0-.5.2-1 .5-1.3.3-.4.8-.6 1.2-.7.1.5-.1 1-.4 1.4zm.4.7c-.7 0-1.3.4-1.6.4-.3 0-.8-.4-1.4-.4-.7 0-1.4.4-1.7 1.1-.7 1.3-.2 3.1.5 4.1.4.5.8 1 1.3 1 .5 0 .7-.3 1.4-.3s.8.3 1.4.3c.6 0 .9-.5 1.3-1 .3-.4.4-.8.5-.9-1.2-.5-1.3-2.2-.1-2.8-.4-.6-.9-.6-1.4-.6z" fill="'+(dark?'#fff':'#000')+'"/><text x="27" y="16" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="600" fill="'+(dark?'#fff':'#000')+'">Pay</text></svg></span>'
-    +'<span class="'+cls+'" title="Samsung Pay"><svg viewBox="0 0 40 24" width="40" height="24"><text x="20" y="15.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="800" fill="'+(dark?'#7EA0FF':'#1428A0')+'">SAMSUNG</text></svg></span>';
+    +'<span class="'+cls+'" title="Samsung Pay"><svg viewBox="0 0 44 24" width="44" height="24"><text x="22" y="15.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" letter-spacing="-.3" fill="'+(dark?'#7EA0FF':'#1428A0')+'">SAMSUNG</text></svg></span>';
 }
 
 // Точка входа оплаты. Сейчас — заглушка (оплата выключена).
@@ -2768,15 +2768,11 @@ async function loadOstRates(h){
         +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+ostCancelText(rt.cancellation)+'</div></div>'
         +'<div style="text-align:right;flex-shrink:0">'
         +'<div class="rprice">'+rt.price_byn+' BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">за '+n+' '+nightsWord(n)+'</div>'
-        +(window._ostBookEnabled
-          ?'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button>'
-          :'<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px">Скоро откроем бронирование</div>')
+        +'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button>'
         +'</div></div>';
     }).join('');
     if(!window._ostBookEnabled){
-      box.insertAdjacentHTML('afterbegin','<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование этого отеля откроется совсем скоро. Цены актуальные, можно сравнивать.</div>');
-      var payBtn=document.querySelector('.bk-box .btn-pay');
-      if(payBtn){payBtn.textContent='Скоро откроем бронирование';payBtn.disabled=true;payBtn.style.opacity='.55';payBtn.style.cursor='default';payBtn.onclick=null;}
+      box.insertAdjacentHTML('afterbegin','<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование откроется совсем скоро. Можно выбрать номер и посмотреть детали.</div>');
     }
     ostPickRate(0); // по умолчанию выбран первый (самый дешёвый)
   }catch(e){
@@ -2799,11 +2795,10 @@ function ostPickRate(i){
   });
   // кнопка «Забронировать» в панели бронирует именно выбранный тариф
   var payBtn=document.querySelector('.bk-box .btn-pay');
-  if(payBtn&&window._ostBookEnabled){ payBtn.textContent='Выбрать'; payBtn.onclick=function(){hpModuleBook();}; }
+  if(payBtn){ payBtn.textContent='Выбрать'; payBtn.disabled=false; payBtn.style.opacity='1'; payBtn.style.cursor='pointer'; payBtn.onclick=function(){hpModuleBook();}; }
 }
 
 function ostBookCheapest(){
-  if(!window._ostBookEnabled){var b0=document.getElementById('ost-rates');if(b0)b0.scrollIntoView({behavior:'smooth'});return;}
   if(_ostRates.length){ostSelectRate(0);return;}
   var b=document.getElementById('ost-rates');
   if(b)b.scrollIntoView({behavior:'smooth'});
@@ -2816,7 +2811,6 @@ function ostModalShell(){
 }
 
 async function ostSelectRate(i){
-  if(!window._ostBookEnabled)return;
   var rt=_ostRates[i];
   if(!rt||!curHotel)return;
   ostModalShell();
