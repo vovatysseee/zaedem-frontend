@@ -161,10 +161,11 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .bk-total{display:flex;justify-content:space-between;border-top:1.5px solid var(--sand3);margin-top:7px;padding-top:9px;font-size:15px;font-weight:800;color:var(--green)}
 .pay-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .pay-icons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;justify-content:center}
-.pay-ic{background:#fff;border:1px solid var(--sand3);border-radius:7px;padding:5px 9px;font-size:11px;font-weight:800;color:var(--ink2);letter-spacing:.3px;display:inline-flex;align-items:center;min-height:26px}
+.pay-ic{display:inline-flex;align-items:center;transition:.2s}
 .pay-ic-dark{background:transparent!important;border:none!important;padding:2px 4px!important;min-height:auto}
 .btn-pay-soon{opacity:.45!important;cursor:not-allowed!important;filter:grayscale(.3)}
 .pay-soon-note{text-align:center;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
+.pay-ic:hover{opacity:1!important;filter:none}
 .pm{background:var(--sand);border:1.5px solid var(--sand3);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer;transition:.15s}
 .pm.on{border-color:var(--green);background:rgba(26,92,56,.06)}
 .pm-ico{font-size:19px;margin-bottom:3px}
@@ -558,13 +559,13 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 <footer>
   <div class="wrap">
     <div class="ft-inner">
-      <div><div class="ft-logo">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования отелей. Принимаем белорусские и российские карты.</p><div class="ft-badge"><svg width="16" height="10" viewBox="0 0 22 14" style="border-radius:2px;flex-shrink:0" xmlns="http://www.w3.org/2000/svg"><rect width="22" height="14" fill="#CF101A"/><rect y="9.5" width="22" height="4.5" fill="#4AA657"/><rect width="3.5" height="14" fill="#fff"/><rect x="0.5" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="2" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="4" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="6" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="8" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="10" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="12" width="2.5" height="2" fill="#CF101A"/></svg> Сделано в Беларуси</div></div>
+      <div><div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования отелей. Принимаем белорусские и российские карты.</p><div class="ft-pay-block" style="margin-top:12px"><span id="ft-pay-icons"></span></div></div>
       <div class="ft-col"><h4>Отелям</h4><a onclick="openHotelApp()">Добавить свой отель</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div>
       <div class="ft-col"><h4>Компания</h4><a>О Заедем.by</a><a>Контакты</a><a>Политика конфиденциальности</a><a>Публичная оферта</a></div>
     </div>
     <div class="ft-bottom">
       <span>© 2026 Заедем.by · ИП Горошко Жанна Витальевна · УНП [—]</span>
-      <span class="ft-pay" id="ft-pay-icons" style="display:inline-flex;align-items:center;flex-wrap:wrap"></span>
+      <span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="10" viewBox="0 0 22 14" style="border-radius:2px;flex-shrink:0" xmlns="http://www.w3.org/2000/svg"><rect width="22" height="14" fill="#CF101A"/><rect y="9.5" width="22" height="4.5" fill="#4AA657"/><rect width="3.5" height="14" fill="#fff"/><rect x="0.5" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="2" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="4" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="6" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="8" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="10" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="12" width="2.5" height="2" fill="#CF101A"/></svg> Сделано в Беларуси</span>
     </div>
   </div>
 </footer><script>
@@ -1807,16 +1808,16 @@ function openBookModal(){
 
 // Красивые значки оплаты (переиспользуемые)
 function payIconsHTML(dark){
-  // Единый тихий стиль: серый текст без квадратов, компактно (1 строка на мобиле)
-  var col=dark?'rgba(255,255,255,.65)':'#9a9a9a';
-  var s='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';letter-spacing:.3px;white-space:nowrap';
-  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap">'
-    +'<span style="'+s+';font-style:italic">VISA</span>'
-    +'<span style="'+s+'">Mastercard</span>'
-    +'<span style="'+s+'">МИР</span>'
-    +'<span style="'+s+'">ЕРИП</span>'
-    +'<span style="'+s+'"> Pay</span>'
-    +'<span style="'+s+'">Samsung Pay</span>'
+  // Без плашек. Спокойный приглушённый тон: текст серый, значки (яблоко/кружки) в тот же цвет.
+  var col=dark?'rgba(255,255,255,.55)':'#9a9a9a';
+  var t='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';white-space:nowrap;display:inline-flex;align-items:center';
+  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap">'
+    +'<span class="pay-ic" style="'+t+';font-style:italic">VISA</span>'
+    +'<span class="pay-ic" style="'+t+'" title="Mastercard"><svg viewBox="0 0 30 18" width="28" height="17"><circle cx="12" cy="9" r="6.5" fill="'+col+'"/><circle cx="18" cy="9" r="6.5" fill="'+col+'" fill-opacity=".5"/></svg></span>'
+    +'<span class="pay-ic" style="'+t+'">МИР</span>'
+    +'<span class="pay-ic" style="'+t+'">ЕРИП</span>'
+    +'<span class="pay-ic" style="'+t+'" title="Apple Pay"><svg viewBox="0 0 14 16" width="11" height="13" style="margin-right:3px"><path d="M9.5 4.6c-.3.4-.8.7-1.3.6 0-.5.2-1 .5-1.3.3-.4.8-.6 1.2-.7.1.5-.1 1-.4 1.4zm.4.7c-.7 0-1.3.4-1.6.4-.3 0-.8-.4-1.4-.4-.7 0-1.4.4-1.7 1.1-.7 1.3-.2 3.1.5 4.1.4.5.8 1 1.3 1 .5 0 .7-.3 1.4-.3s.8.3 1.4.3c.6 0 .9-.5 1.3-1 .3-.4.4-.8.5-.9-1.2-.5-1.3-2.2-.1-2.8-.4-.6-.9-.6-1.4-.6z" fill="'+col+'"/></svg>Pay</span>'
+    +'<span class="pay-ic" style="'+t+'">Samsung</span>'
     +'</span>';
 }
 
