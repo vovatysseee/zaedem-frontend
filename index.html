@@ -1060,7 +1060,7 @@ function openHotel(id){
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
-      ${(function(){var p=(h.photos||[]).map(function(u){return (u||'').replace('/extranet/','/content/');});return '<div class="gp" onclick="openGal(0)">'+(p[0]?'<img src="'+p[0]+'" alt="'+h.name_ru+'">':'')+'</div>'+'<div class="gp" onclick="openGal(1)">'+(p[1]?'<img src="'+p[1]+'" alt="">':'')+'</div>'+'<div class="gp" onclick="openGal(2)">'+(p[2]?'<img src="'+p[2]+'" alt="">':'')+'</div>';})()}
+      ${(function(){var p=(h.photos||[]).map(function(u){return (u||'');});return '<div class="gp" onclick="openGal(0)">'+(p[0]?'<img src="'+p[0]+'" alt="'+h.name_ru+'">':'')+'</div>'+'<div class="gp" onclick="openGal(1)">'+(p[1]?'<img src="'+p[1]+'" alt="">':'')+'</div>'+'<div class="gp" onclick="openGal(2)">'+(p[2]?'<img src="'+p[2]+'" alt="">':'')+'</div>';})()}
     </div>
     <div class="hp-layout">
       <div>
@@ -1243,8 +1243,8 @@ function serpRender(){
 
   var cardEls=[];pageList.forEach(function(h,idx){
     var photos=(h.photos||[]).map(function(u){
-      // грузим как есть из БД (там уже рабочий размер). Только /extranet/ → /content/ на всякий
-      return (u||'').replace('/extranet/','/content/');
+      // грузим URL ровно как в БД (рабочие, 200 OK, путь /carsolize/ или /content/)
+      return (u||'');
     });
     var img=photos[0]||'';
     var typeLbl=serpCatLabel(h);
@@ -1347,7 +1347,7 @@ function serpClearFilters(){
 var srpPhotoIdx={};
 function srNormPhoto(u){
   if(!u)return '';
-  return (u||'').replace('/extranet/','/content/');
+  return (u||'');
 }
 function srpSlide(id,dir){
   var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
@@ -2244,7 +2244,7 @@ async function submitApp(){
 function openGal(idx){if(!curHotel?.photos?.length)return;gPhotos=curHotel.photos;gIdx=idx;showG();document.getElementById('gal-ov').classList.add('open')}
 function closeGal(){document.getElementById('gal-ov').classList.remove('open')}
 function galNav(d){gIdx=(gIdx+d+gPhotos.length)%gPhotos.length;showG()}
-function showG(){var src=(gPhotos[gIdx]||'').replace('/extranet/','/content/');document.getElementById('g-img').src=src;document.getElementById('g-cnt').textContent=(gIdx+1)+' / '+gPhotos.length;document.getElementById('g-dots').innerHTML=gPhotos.map((_,i)=>`<div class="g-dot${i===gIdx?' on':''}" onclick="gIdx=${i};showG()"></div>`).join('')}
+function showG(){var src=(gPhotos[gIdx]||'');document.getElementById('g-img').src=src;document.getElementById('g-cnt').textContent=(gIdx+1)+' / '+gPhotos.length;document.getElementById('g-dots').innerHTML=gPhotos.map((_,i)=>`<div class="g-dot${i===gIdx?' on':''}" onclick="gIdx=${i};showG()"></div>`).join('')}
 document.addEventListener('keydown',e=>{if(!document.getElementById('gal-ov').classList.contains('open'))return;if(e.key==='ArrowRight')galNav(1);else if(e.key==='ArrowLeft')galNav(-1);else if(e.key==='Escape')closeGal()});
 
 
