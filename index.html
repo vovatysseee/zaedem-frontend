@@ -395,9 +395,12 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 @media(max-width:900px){
   .serp-layout{flex-direction:column;height:auto;position:static}
   .serp-list{flex:none;padding:16px;height:auto;max-width:100vw;overflow-x:hidden}
-  .serp-map{flex:none;display:none;position:fixed;top:62px;left:0;right:0;bottom:0;z-index:70}
+  .serp-map{flex:none;display:none;position:fixed;inset:0;z-index:70}
   .serp-map.mob-open{display:block}
-  body.map-open .serp-sticky{position:fixed;top:0;left:0;right:0;z-index:100;height:62px}
+  body.map-open .leaflet-top{top:62px}
+  body.map-open .serp-map-close{top:74px!important}
+  .serp-map .serp-map-inner,.serp-map>div,.serp-map .leaflet-container{width:100%!important;height:100%!important}
+  body.map-open .serp-sticky{position:fixed;top:0;left:0;right:0;z-index:90;height:62px}
   body.map-open .serp-list{overflow:hidden}
   body.map-open{overflow:hidden}
   .serp-map-toggle{display:flex}
