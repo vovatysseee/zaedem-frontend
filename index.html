@@ -488,7 +488,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-type-dd" onclick="event.stopPropagation()">
             <label class="sf-chk"><input type="checkbox" id="flt-hotel" checked onchange="serpFilterChange()"> Отели и концепты</label>
-            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange()"> Загородные резиденции</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange()"> Агроусадьбы / шале</label>
             <label class="sf-chk"><input type="checkbox" id="flt-apart" checked onchange="serpFilterChange()"> Городские апартаменты</label>
           </div>
         </div>
@@ -517,7 +517,6 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
         </div>
         <div class="sf-tag" id="sft-bfast" onclick="serpToggleTag('sft-bfast')">Завтрак включён</div>
         <div class="sf-tag" id="sft-free"  onclick="serpToggleTag('sft-free')">Бесплатная отмена</div>
-        <div class="sf-tag" id="sft-spa"   onclick="serpToggleTag('sft-spa')">Бассейн / SPA</div>
       </div>
 
       <div class="serp-sortbar">
@@ -1109,11 +1108,23 @@ var serpMapOpen = false;
 
 function serpCatLabel(h){
   if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель') + ' • ' + (h.address||'').split(',').slice(-2,-1)[0]||'';
-  if(h.category==='guest') return 'Загородная резиденция • ' + ((h.address||'').split(',').pop().trim()||'');
+  if(h.category==='guest') return 'Агроусадьба / шале • ' + ((h.address||'').split(',').pop().trim()||'');
   if(h.category==='apart') return 'Дизайнерские апартаменты • ' + ((h.address||'').split(',').pop().trim()||'');
   return h.address||'';
 }
 
+// Цена за весь период: price_total если есть (Островок), иначе price × ночи
+function srNightsCount(){
+  var s=window._capState||{};
+  var din=s.din||(document.getElementById('s-din')||{}).value;
+  var dout=s.dout||(document.getElementById('s-dout')||{}).value;
+  if(din&&dout){return Math.max(1,Math.round((new Date(dout)-new Date(din))/86400000));}
+  return 1;
+}
+function srTotalPrice(h){
+  if(h&&h.price_total)return h.price_total;
+  return (h&&h.price?h.price:0)*srNightsCount();
+}
 function srNightsLabel(){
   var s=window._capState||{};
   var din=s.din||(document.getElementById('s-din')||{}).value;
@@ -1149,7 +1160,6 @@ function serpRender(){
   var pr=document.querySelector('input[name="price-r"]:checked');
   if(pr)priceMax=parseInt(pr.value)||0;
   var wantBfast=document.getElementById('sft-bfast')&&document.getElementById('sft-bfast').classList.contains('active');
-  var wantSpa=document.getElementById('sft-spa')&&document.getElementById('sft-spa').classList.contains('active');
   var wantFree=document.getElementById('sft-free')&&document.getElementById('sft-free').classList.contains('active');
   var starsMin=0;
   var sr=document.querySelector('input[name="stars-r"]:checked');
@@ -1168,13 +1178,12 @@ function serpRender(){
     if(priceMax>0&&h.price>priceMax)return false;
     if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
     if(wantBfast&&!(h.amenities||[]).some(function(a){return a.n&&a.n.toLowerCase().indexOf('завтрак')!==-1}))return false;
-    if(wantSpa&&!(h.amenities||[]).some(function(a){return a.n&&a.n.toLowerCase().match(/spa|спа|бассейн/)}))return false;
     if(wantFree&&!h.cancellation)return false;
     return true;
   });
 
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantBfast||wantSpa||wantFree;
+  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantBfast||wantFree;
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -1243,7 +1252,7 @@ function serpRender(){
          +tagsHtml
          +'<div class="sr-foot">'
            +'<div class="sr-price">'+oldPriceHtml
-             +'<div class="sr-price-main">от '+h.price+' BYN</div>'
+             +'<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
              +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>'
            +'</div>'
            +'<button class="sr-book">Смотреть</button>'
@@ -1300,7 +1309,7 @@ function serpClearFilters(){
   ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
   var pr=document.querySelector('input[name="price-r"][value="0"]');if(pr)pr.checked=true;
   var sr=document.querySelector('input[name="stars-r"][value="0"]');if(sr)sr.checked=true;
-  ['sft-bfast','sft-spa','sft-free'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  ['sft-bfast','sft-free'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
   window._serpReset=true;serpRender();
 }
 
