@@ -395,11 +395,11 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 @media(max-width:900px){
   .serp-layout{flex-direction:column;height:auto;position:static}
   .serp-list{flex:none;padding:16px;height:auto;max-width:100vw;overflow-x:hidden}
-  .serp-map{flex:none;height:calc(100vh - 62px);display:none;position:fixed;top:62px;left:0;right:0;bottom:0;z-index:70}
-  body.map-open .serp-sticky{position:fixed;top:0;left:0;right:0;z-index:100}
-  body.map-open .serp-list{overflow:hidden}
+  .serp-map{flex:none;display:none;position:fixed;top:62px;left:0;right:0;bottom:0;z-index:70}
   .serp-map.mob-open{display:block}
-  .serp-sticky{z-index:100}
+  body.map-open .serp-sticky{position:fixed;top:0;left:0;right:0;z-index:100;height:62px}
+  body.map-open .serp-list{overflow:hidden}
+  body.map-open{overflow:hidden}
   .serp-map-toggle{display:flex}
   .sr-card{grid-template-columns:1fr;transition:none!important}
   .sr-card:hover{transform:none!important;box-shadow:var(--sh)!important;border-color:var(--sand3)!important}
@@ -1480,7 +1480,13 @@ function serpSearchStep(n){
   var back=document.getElementById('ssd-back');
   if(back)back.style.visibility=n>1?'visible':'hidden';
   if(n===2)serpSearchBuildCal();
-  if(n===3)serpRenderAges();
+  if(n===3){
+    var an=document.getElementById('ssd-an');if(an)an.textContent=_serpSD.adults;
+    var kn=document.getElementById('ssd-kn');if(kn)kn.textContent=_serpSD.kids;
+    var am=document.getElementById('ssd-am');if(am)am.style.opacity=_serpSD.adults<=1?'0.3':'1';
+    var km=document.getElementById('ssd-km');if(km)km.style.opacity=_serpSD.kids<=0?'0.3':'1';
+    serpRenderAges();
+  }
 }
 
 function serpSearchBuildCal(){
@@ -1591,8 +1597,15 @@ function serpEditSearch(){
   if(window.innerWidth<=768){capSheetOpen();return;}
   var existing=document.getElementById('serp-sd-modal');
   if(existing){serpSearchClose();return;}
-  // Сброс состояния
-  _serpSD.step=1;_serpSD.din=null;_serpSD.dout=null;
+  // Загружаем ТЕКУЩЕЕ состояние поиска (не сбрасываем на дефолт)
+  var cs=window._capState||{};
+  _serpSD.step=1;
+  _serpSD.city=cs.city||_serpSD.city||'';
+  _serpSD.din=cs.din||null;
+  _serpSD.dout=cs.dout||null;
+  _serpSD.adults=cs.adults||2;
+  _serpSD.kids=cs.kids||0;
+  _serpSD.childAges=(cs.childAges||[]).slice();
   _serpSD.nav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
   // Позиция под pill
   var pill=document.querySelector('.serp-sticky-pill');
