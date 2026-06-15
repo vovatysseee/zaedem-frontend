@@ -348,7 +348,9 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .serp-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:1100px){.serp-cards-grid{grid-template-columns:1fr}}
 .sr-card.map-hover{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
-.sr-img{position:relative;width:100%;height:150px;overflow:hidden;background:var(--sand2)}
+.sr-img{position:relative;width:100%;height:150px;overflow:hidden;background:linear-gradient(110deg,var(--sand2) 30%,#f0ece5 50%,var(--sand2) 70%);background-size:200% 100%;animation:srShimmer 1.4s ease-in-out infinite}
+@keyframes srShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sr-img.loaded{animation:none;background:var(--sand2)}
 .sr-img.noimg{background:var(--sand2);display:flex;align-items:center;justify-content:center}
 .sr-img.noimg::after{content:"\1F3E0";font-size:30px;opacity:.25;filter:grayscale(1)}
 .sr-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s,opacity .25s}
@@ -1242,7 +1244,8 @@ function serpRender(){
 
   var cardEls=[];pageList.forEach(function(h,idx){
     var photos=(h.photos||[]).map(function(u){
-      return u.replace('/extranet/','/content/').replace('800x520','640x400');
+      // для карточек — компактный размер (быстрее грузится), любой размер в URL → 640x400
+      return u.replace('/extranet/','/content/').replace(/\/t\/[^/]+\//,'/t/640x400/');
     });
     var img=photos[0]||'';
     var typeLbl=serpCatLabel(h);
@@ -1253,7 +1256,7 @@ function serpRender(){
 
      var c=document.createElement('div');
      c.className='sr-card';c.id='src-'+h.id;c.dataset.hid=h.id;
-     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" alt="" loading="lazy">':'';
+     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" alt="" loading="lazy" style="opacity:0;transition:opacity .4s" onload="this.style.opacity=1;this.parentNode.classList.add(\'loaded\')">':'';
      var imgCls=img?'sr-img':'sr-img noimg';
      var navHtml=photos.length>1?'<button class="sr-img-nav prev" data-id="'+h.id+'" data-dir="-1">&#8249;</button><button class="sr-img-nav next" data-id="'+h.id+'" data-dir="1">&#8250;</button>':'';
      var cntHtml=photos.length>1?'<div id="srcnt-'+h.id+'" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">1/'+photos.length+'</div>':'';
