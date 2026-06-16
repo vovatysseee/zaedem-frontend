@@ -3013,9 +3013,21 @@ async function ostSelectRate(i){
 function ostRenderForm(oldPrice){
   var h=curHotel,rt=_ostSel.rate,n=getNights();
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
+  var kids=(window._capState&&window._capState.kids)||0;
+  var childAges=(window._capState&&window._capState.childAges)||[];
   var extra='';
   for(var g=1;g<adults;g++){
     extra+='<div class="fgrow"><div class="fg"><label>Имя гостя '+(g+1)+'</label><input id="f-fn'+g+'" placeholder="Anna"></div><div class="fg"><label>Фамилия гостя '+(g+1)+'</label><input id="f-ln'+g+'" placeholder="Ivanova"></div></div>';
+  }
+  // Поля для детей (имя, фамилия, возраст)
+  if(kids>0){
+    extra+='<div style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-weight:600">Дети</div>';
+    for(var c=0;c<kids;c++){
+      var cage=(childAges[c]!=null?childAges[c]:7);
+      var ageOpts='';
+      for(var a=0;a<=17;a++)ageOpts+='<option value="'+a+'"'+(a===cage?' selected':'')+'>'+a+' '+(a===1?'год':a>=2&&a<=4?'года':'лет')+'</option>';
+      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:110px"><label>Возраст</label><select id="f-cage'+c+'" style="width:100%;border:1.5px solid var(--sand3);border-radius:10px;padding:11px;font-family:inherit;font-size:14px">'+ageOpts+'</select></div></div>';
+    }
   }
   document.getElementById('bm-body').innerHTML='\
     <div style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">'+h.name_ru+'</div>\
@@ -3065,13 +3077,17 @@ async function ostConfirm(){
     var gl=(document.getElementById('f-ln'+g)?.value||'').trim()||ln;
     guests.push({first_name:gf,last_name:gl});
   }
-  // Дети — с пометкой is_child и возрастом (важно для Островка: цена/условия)
+  // Дети — с пометкой is_child и возрастом (из полей формы или поиска)
   for(var c=0;c<kids;c++){
+    var cfn=(document.getElementById('f-cfn'+c)?.value||'').trim()||('Child'+(c+1));
+    var cln=(document.getElementById('f-cln'+c)?.value||'').trim()||ln;
+    var cageEl=document.getElementById('f-cage'+c);
+    var cage=cageEl?parseInt(cageEl.value):(childAges[c]!=null?childAges[c]:7);
     guests.push({
-      first_name:'Child'+(c+1),
-      last_name:ln,
+      first_name:cfn,
+      last_name:cln,
       is_child:true,
-      age:(childAges[c]!=null?childAges[c]:7)
+      age:cage
     });
   }
   var h=curHotel,rt=_ostSel.rate;
