@@ -36,7 +36,9 @@ body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink)
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
 nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(201,241,53,.1);transition:transform .3s ease}
-.logo{font-family:'Unbounded',sans-serif;font-weight:700;font-size:1rem;color:var(--lime);letter-spacing:-1.5px;cursor:pointer;font-style:italic}
+.logo{font-family:'Golos Text',sans-serif;font-weight:700;font-size:1rem;color:var(--lime);letter-spacing:-.3px;cursor:pointer}
+.hero-cat-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 18px;border-radius:50px;cursor:pointer;transition:.18s;backdrop-filter:blur(8px);white-space:nowrap}
+.hero-cat-chip:hover{background:var(--lime);color:#0F2D1D;border-color:var(--lime);transform:translateY(-2px)}
 .logo em{color:rgba(255,255,255,.85);font-style:normal}
 .nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 18px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .nav-btn:hover{background:rgba(255,255,255,.18)}
@@ -441,8 +443,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
     
   </div>
   <div class="hero-content">
-    <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;margin-bottom:.7rem;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap">Забронируй своё жильё в Беларуси</h1>
-    <p style="animation:fadeUp .7s .2s both;font-size:14px;color:rgba(255,255,255,.55);margin-bottom:2.5rem;letter-spacing:.3px">Отели · Апартаменты · Усадьбы</p>
+    <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap;margin-bottom:2.2rem">Забронируй своё жильё в Беларуси</h1>
     <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative">
       <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
@@ -452,6 +453,12 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
         <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:46px;height:46px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
+      </div>
+      <!-- Категории-значки под капсулой -->
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap;animation:fadeUp .7s .4s both">
+        <button onclick="openCategory('hotel')" class="hero-cat-chip">🏨 Отели</button>
+        <button onclick="openCategory('apart')" class="hero-cat-chip">🏢 Апартаменты</button>
+        <button onclick="openCategory('guest')" class="hero-cat-chip">🌲 Усадьбы</button>
       </div>
       <!-- MOBILE: полноэкранная шторка снизу -->
       <!-- МОБИЛЬНЫЙ ПОЛНОЭКРАННЫЙ МОДУЛЬ -->
