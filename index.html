@@ -1696,8 +1696,14 @@ function serpEditSearch(){
   document.removeEventListener('click',window._serpSDOutside);
   setTimeout(function(){document.addEventListener('click',window._serpSDOutside);},50);
   serpSearchFilterCities('');
-  serpSearchStep(1);
-  var inp=document.getElementById('ssd-city-inp');if(inp)inp.focus();
+  // Если город уже выбран (повторное редактирование) — открываем сразу на ДАТАХ.
+  // Если города нет (новый поиск) — с выбора города.
+  if(_serpSD.city){
+    serpSearchStep(2);
+  }else{
+    serpSearchStep(1);
+    var inp=document.getElementById('ssd-city-inp');if(inp)inp.focus();
+  }
 }
 
 function serpSearchFilterCities(val){
