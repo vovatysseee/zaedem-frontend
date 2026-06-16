@@ -1967,8 +1967,10 @@ async function confirmBook(total){
   const h=curHotel,sel=document.getElementById('hp-room');
   const rooms=h.rooms||[];const room=rooms[sel?sel.selectedIndex:0]||rooms[0]||{name:'Стандарт',price:h.price||0};
   document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:40px"><div style="font-size:2rem;margin-bottom:12px">⏳</div><div style="font-family:'Unbounded',sans-serif">Оформляем бронь…</div></div>`;
+  const _kids=(window._capState&&window._capState.kids)||0;
+  const _totalGuests=gCnt+_kids;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:gCnt,total_price:total,currency:'BYN',payment_method:'card'})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card'})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -3055,11 +3057,22 @@ async function ostConfirm(){
   var ln=(document.getElementById('f-ln')?.value||'').trim();
   if(!fn||!ln){(document.getElementById('f-fn')||{focus:function(){}}).focus();return;}
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
+  var kids=(window._capState&&window._capState.kids)||0;
+  var childAges=(window._capState&&window._capState.childAges)||[];
   var guests=[{first_name:fn,last_name:ln}];
   for(var g=1;g<adults;g++){
     var gf=(document.getElementById('f-fn'+g)?.value||'').trim()||('Guest'+(g+1));
     var gl=(document.getElementById('f-ln'+g)?.value||'').trim()||ln;
     guests.push({first_name:gf,last_name:gl});
+  }
+  // Дети — с пометкой is_child и возрастом (важно для Островка: цена/условия)
+  for(var c=0;c<kids;c++){
+    guests.push({
+      first_name:'Child'+(c+1),
+      last_name:ln,
+      is_child:true,
+      age:(childAges[c]!=null?childAges[c]:7)
+    });
   }
   var h=curHotel,rt=_ostSel.rate;
   var ci=document.getElementById('hp-in')?.value||getIn();
