@@ -1529,7 +1529,7 @@ function serpSearchStep(n){
   if(s3)s3.style.display=n===3?'block':'none';
   var back=document.getElementById('ssd-back');
   if(back)back.style.visibility=n>1?'visible':'hidden';
-  if(n===2)serpSearchBuildCal();
+  if(n===2){serpSearchBuildCal();var snb2=document.getElementById('ssd-next-btn');if(snb2)snb2.style.display=(_serpSD.din&&_serpSD.dout)?'block':'none';}
   if(n===3){
     var an=document.getElementById('ssd-an');if(an)an.textContent=_serpSD.adults;
     var kn=document.getElementById('ssd-kn');if(kn)kn.textContent=_serpSD.kids;
@@ -1578,11 +1578,12 @@ function serpSearchBuildCal(){
           else{_serpSD.dout=new Date(dt.getTime());}
           serpSearchBuildCal();
           var hint=document.getElementById('ssd-chint');
-          if(_serpSD.din&&!_serpSD.dout&&hint)hint.textContent='Выберите дату выезда';
+          var snb=document.getElementById('ssd-next-btn');
+          if(_serpSD.din&&!_serpSD.dout){if(hint)hint.textContent='Выберите дату выезда';if(snb)snb.style.display='none';}
           if(_serpSD.din&&_serpSD.dout){
             var mn=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
             if(hint)hint.textContent=_serpSD.din.getDate()+' '+mn[_serpSD.din.getMonth()]+' — '+_serpSD.dout.getDate()+' '+mn[_serpSD.dout.getMonth()];
-            setTimeout(function(){serpSearchStep(3);},300);
+            if(snb)snb.style.display='block';
           }
         });
       }
@@ -1705,6 +1706,7 @@ function serpEditSearch(){
       '</div>'+
       '<div id="ssd-cgrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>'+
       '<div id="ssd-chint" style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;min-height:16px">Выберите дату заезда</div>'+
+      '<button id="ssd-next-btn" onclick="serpSearchStep(3)" style="display:none;width:100%;margin-top:14px;background:#0F2D1D;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Далее</button>'+
     '</div>'+
     // Шаг 3: Гости + кнопка
     '<div id="ssd-step3" style="display:none;padding:14px 18px">'+
@@ -2619,19 +2621,12 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
             ddcBuild();
             var hint=document.getElementById('ddc-hint');
             var sbtn=document.getElementById('ddc-search');
-            if(ddcDin&&!ddcDout){if(hint)hint.textContent='Выберите дату выезда';}
+            if(ddcDin&&!ddcDout){if(hint)hint.textContent='Выберите дату выезда';var nbx=document.getElementById('ddc-next-btn');if(nbx)nbx.style.display='none';}
             if(ddcDin&&ddcDout){
               if(hint)hint.textContent=ddcFmt(ddcDin)+' — '+ddcFmt(ddcDout);
               window._capState.din=ddcDin;window._capState.dout=ddcDout;
               updCapDisplay();
-              // скрываем календарь, показываем гостей
-              var cs=document.getElementById('ddc-cal-section');
-              if(cs)cs.style.display='none';
-              var gs=document.getElementById('ddc-guests-section');
-              if(gs)gs.style.display='block';
-              if(sbtn)sbtn.style.display='block';
-              var dl=document.getElementById('ddc-dates-label');
-              if(dl)dl.textContent=ddcFmt(ddcDin)+' — '+ddcFmt(ddcDout);
+              var nbx2=document.getElementById('ddc-next-btn');if(nbx2)nbx2.style.display='block';
             }
           });
         }
@@ -2651,6 +2646,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var sbtn=document.getElementById('ddc-search');if(sbtn)sbtn.style.display='none';
     var gs=document.getElementById('ddc-guests-section');if(gs)gs.style.display='none';
     var cs=document.getElementById('ddc-cal-section');if(cs)cs.style.display='block';
+    var nbr=document.getElementById('ddc-next-btn');if(nbr)nbr.style.display='none';
     ddcNav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
     ddcBuild();
     posUnderCenter(cal,300);
@@ -2788,12 +2784,12 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
             else{csDout=new Date(dt.getTime());}
             csBuildCal();
             var hint=document.getElementById('cs-chint');
-            if(csDin&&!csDout){if(hint)hint.textContent='Выберите дату выезда';}
+            if(csDin&&!csDout){if(hint)hint.textContent='Выберите дату выезда';var nb0=document.getElementById('cs-next-btn');if(nb0)nb0.style.display='none';}
             if(csDin&&csDout){
               if(hint)hint.textContent=fmtC(csDin)+' — '+fmtC(csDout);
               window._capState.din=csDin;window._capState.dout=csDout;
               updCapDisplay();
-              setTimeout(function(){csStep(3);},320);
+              var nb=document.getElementById('cs-next-btn');if(nb)nb.style.display='block';
             }
           });
         }
@@ -2804,6 +2800,10 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var next=document.getElementById('cs-cnext');
     if(prev){prev.onclick=function(e){e.stopPropagation();csNav=new Date(csNav.getFullYear(),csNav.getMonth()-1,1);csBuildCal();};}
     if(next){next.onclick=function(e){e.stopPropagation();csNav=new Date(csNav.getFullYear(),csNav.getMonth()+1,1);csBuildCal();};}
+    var _nb=document.getElementById('cs-next-btn');var _hh=document.getElementById('cs-chint');
+    if(csDin&&csDout){if(_hh)_hh.textContent=fmtC(csDin)+' — '+fmtC(csDout);if(_nb)_nb.style.display='block';}
+    else if(csDin&&!csDout){if(_hh)_hh.textContent='Выберите дату выезда';if(_nb)_nb.style.display='none';}
+    else{if(_hh)_hh.textContent='Выберите дату заезда';if(_nb)_nb.style.display='none';}
   }
 
   window._csChildAges=window._csChildAges||[];
@@ -3222,6 +3222,7 @@ function ostFail(e){
     </div>
     <div id="ddc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
     <div id="ddc-hint" style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;min-height:16px">Выберите дату заезда</div>
+    <button id="ddc-next-btn" style="display:none;width:100%;margin-top:12px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer" onclick="(function(){var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';var s=document.getElementById('ddc-search');if(s)s.style.display='block';var dl=document.getElementById('ddc-dates-label');var h=document.getElementById('ddc-hint');if(dl&&h)dl.textContent=h.textContent;})()">Далее</button>
   </div>
   <!-- Гости — появляются после выбора дат -->
   <div id="ddc-guests-section" style="display:none">
@@ -3295,6 +3296,7 @@ function ostFail(e){
               </div>
               <div id="cs-cgrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
               <div id="cs-chint" style="font-size:13px;color:#aaa;text-align:center;margin-top:16px;min-height:18px">Выберите дату заезда</div>
+              <button id="cs-next-btn" onclick="csStep(3)" style="display:none;width:100%;margin-top:18px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Далее</button>
             </div>
           </div>
 
