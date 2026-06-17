@@ -36,9 +36,17 @@ body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink)
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
 nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(201,241,53,.1);transition:transform .3s ease}
-.logo{font-family:'Golos Text',sans-serif;font-weight:700;font-size:1rem;color:var(--lime);letter-spacing:-.3px;cursor:pointer}
+.logo{font-family:'Golos Text',sans-serif;font-weight:800;font-size:1.05rem;color:var(--lime);letter-spacing:.4px;cursor:pointer}
 .hero-cat-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 18px;border-radius:50px;cursor:pointer;transition:.18s;backdrop-filter:blur(8px);white-space:nowrap}
 .hero-cat-chip:hover{background:var(--lime);color:#0F2D1D;border-color:var(--lime);transform:translateY(-2px)}
+.hero-cats{display:flex;gap:clamp(22px,7vw,46px);justify-content:center;margin-top:34px;flex-wrap:wrap;animation:fadeUp .7s .4s both}
+.hero-cat{background:none;border:none;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:9px;padding:6px 6px 4px;color:rgba(255,255,255,.8);transition:color .2s,transform .2s;position:relative}
+.hero-cat svg{width:30px;height:30px;stroke:currentColor;fill:none;transition:.2s}
+.hero-cat span{font-size:13.5px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+.hero-cat::after{content:"";position:absolute;left:50%;bottom:-7px;width:0;height:2px;background:var(--lime);border-radius:2px;transform:translateX(-50%);transition:width .22s}
+.hero-cat:hover{color:var(--lime);transform:translateY(-2px)}
+.hero-cat:hover::after{width:calc(100% - 10px)}
+.hero-cat:focus-visible{outline:2px solid var(--lime);outline-offset:5px;border-radius:10px}
 .logo em{color:rgba(255,255,255,.85);font-style:normal}
 .nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 18px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .nav-btn:hover{background:rgba(255,255,255,.18)}
@@ -454,11 +462,20 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
           <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
       </div>
-      <!-- Категории-значки под капсулой -->
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:32px;flex-wrap:wrap;animation:fadeUp .7s .4s both">
-        <button onclick="openCategory('hotel')" class="hero-cat-chip">🏨 Отели</button>
-        <button onclick="openCategory('apart')" class="hero-cat-chip">🏢 Апартаменты</button>
-        <button onclick="openCategory('guest')" class="hero-cat-chip">🌲 Усадьбы</button>
+      <!-- Категории-значки под капсулой (стиль Airbnb) -->
+      <div class="hero-cats">
+        <button onclick="openCategory('hotel')" class="hero-cat" aria-label="Отели">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V5.6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1V21"/><line x1="3" y1="21" x2="21" y2="21"/><line x1="8.5" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="15.5" y2="8"/><line x1="8.5" y1="11.5" x2="10" y2="11.5"/><line x1="14" y1="11.5" x2="15.5" y2="11.5"/><path d="M10 21v-3.4a2 2 0 0 1 4 0V21"/></svg>
+          <span>Отели</span>
+        </button>
+        <button onclick="openCategory('apart')" class="hero-cat" aria-label="Апартаменты">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21V4.6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1V21"/><line x1="5" y1="21" x2="19" y2="21"/><line x1="10.5" y1="7" x2="13.5" y2="7"/><line x1="10.5" y1="10.5" x2="13.5" y2="10.5"/><path d="M8 14.5h8"/><path d="M8 14.5v3M11 14.5v3M14 14.5v3M16 14.5v3"/></svg>
+          <span>Апартаменты</span>
+        </button>
+        <button onclick="openCategory('guest')" class="hero-cat" aria-label="Усадьбы">
+          <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 11 8 6l5.5 5"/><path d="M4 10v9h8v-9"/><path d="M6.5 19v-3.4h3V19"/><path d="M18.5 7.5 21 12h-5z"/><path d="M18.5 10.5 22.5 16h-8z"/><line x1="18.5" y1="16" x2="18.5" y2="19"/></svg>
+          <span>Усадьбы</span>
+        </button>
       </div>
       <!-- MOBILE: полноэкранная шторка снизу -->
       <!-- МОБИЛЬНЫЙ ПОЛНОЭКРАННЫЙ МОДУЛЬ -->
