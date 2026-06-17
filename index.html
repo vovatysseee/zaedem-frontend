@@ -36,7 +36,8 @@ body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink)
 a{text-decoration:none;color:inherit}
 img{display:block;max-width:100%}
 nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;height:62px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(201,241,53,.1);transition:transform .3s ease}
-.logo{font-family:'Golos Text',sans-serif;font-weight:800;font-size:1.05rem;color:var(--lime);letter-spacing:.4px;cursor:pointer}
+.logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:1.1rem;color:var(--lime);letter-spacing:-1px;cursor:pointer}
+.logo em{font-style:normal}
 .hero-cat-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:inherit;font-size:13px;font-weight:600;padding:9px 18px;border-radius:50px;cursor:pointer;transition:.18s;backdrop-filter:blur(8px);white-space:nowrap}
 .hero-cat-chip:hover{background:var(--lime);color:#0F2D1D;border-color:var(--lime);transform:translateY(-2px)}
 .hero-cats{display:flex;gap:clamp(22px,7vw,46px);justify-content:center;margin-top:34px;flex-wrap:wrap;animation:fadeUp .7s .4s both}
@@ -295,7 +296,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 @keyframes heroGradient{0%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:100% 100%}75%{background-position:0% 100%}100%{background-position:0% 50%}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:900px){.hp-layout{grid-template-columns:1fr}.hp-gallery{grid-template-columns:1fr;grid-template-rows:220px 140px 140px}.gp:first-child{grid-row:auto}.ft-inner{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){nav{padding:0 1.25rem;position:sticky;top:0;z-index:300}.hero{height:auto!important;min-height:0!important}.hero-content{padding:70px 1.25rem 140px!important;overflow:visible}.hero-sub{margin-bottom:32px}.ft-inner{grid-template-columns:1fr}.sbtn{border-radius:0 0 18px 18px;padding:14px 0;justify-content:center;align-items:center;width:100%;display:flex;gap:8px}}
+@media(max-width:600px){nav{padding:0 1.25rem;position:sticky;top:0;z-index:300}.hero{height:auto!important;min-height:80vh!important;justify-content:center!important}.hero-content{padding:54px 1.25rem 60px!important;overflow:visible}.hero-sub{margin-bottom:32px}.ft-inner{grid-template-columns:1fr}.sbtn{border-radius:0 0 18px 18px;padding:14px 0;justify-content:center;align-items:center;width:100%;display:flex;gap:8px}}
 
 /* ===== SERP PAGE ===== */
 .serp-page{display:none;background:var(--sand);min-height:100vh}
@@ -490,14 +491,14 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
     <div id="carousel-hotel" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
   </div>
   <div style="border-top:1px solid var(--sand2);padding:2.5rem 2rem 2rem">
-        <div class="cat-head" onclick="openCategory('guest')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Агроусадьбы и шале <span class="cat-all">Все по Беларуси →</span></h2></div>
-    <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Усадьбы, барнхаусы, эко-комплексы</p>
-    <div id="carousel-guest" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
-  </div>
-  <div style="border-top:1px solid var(--sand2);padding:2.5rem 2rem 3rem">
         <div class="cat-head" onclick="openCategory('apart')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Городские апартаменты <span class="cat-all">Все по Беларуси →</span></h2></div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Дизайнерские апартаменты в центре города</p>
     <div id="carousel-apart" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
+  </div>
+  <div style="border-top:1px solid var(--sand2);padding:2.5rem 2rem 3rem">
+        <div class="cat-head" onclick="openCategory('guest')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Агроусадьбы и шале <span class="cat-all">Все по Беларуси →</span></h2></div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Усадьбы, барнхаусы, эко-комплексы</p>
+    <div id="carousel-guest" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
   </div>
   <div id="hotel-grid" style="display:none"></div>
 </section>
@@ -534,8 +535,8 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-type-dd" onclick="event.stopPropagation()">
             <label class="sf-chk"><input type="checkbox" id="flt-hotel" checked onchange="serpFilterChange()"> Отели и концепты</label>
-            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange()"> Агроусадьбы / шале</label>
             <label class="sf-chk"><input type="checkbox" id="flt-apart" checked onchange="serpFilterChange()"> Городские апартаменты</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange()"> Агроусадьбы / шале</label>
           </div>
         </div>
         <!-- Цена -->
