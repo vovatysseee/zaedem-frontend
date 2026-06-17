@@ -1644,7 +1644,7 @@ function serpSearchSubmit(){
 }
 
 function serpEditSearch(){
-  if(window.innerWidth<=768){capSheetOpen();return;}
+  if(window.innerWidth<=768){capSheetOpen(2);return;}
   var existing=document.getElementById('serp-sd-modal');
   if(existing){serpSearchClose();return;}
   // Загружаем ТЕКУЩЕЕ состояние поиска (не сбрасываем на дефолт)
@@ -2710,12 +2710,12 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   });
 
   // ---- MOBILE SHEET ----
-  window.capSheetOpen=function(){
+  window.capSheetOpen=function(startStep){
     var sheet=document.getElementById('cap-sheet');
     if(!sheet)return;
     sheet.style.display='flex';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
-    csStep(1);
+    csStep(startStep||1);
   };
 
   window.capSheetClose=function(){
