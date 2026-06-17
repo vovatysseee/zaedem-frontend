@@ -2733,6 +2733,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var back=document.getElementById('cs-back-btn');
     if(back)back.style.visibility=n>1?'visible':'hidden';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
+    var ft=document.getElementById('cs-footer');if(ft)ft.style.display=(n===3?'block':'none');
     if(n===2)csBuildCal();
   };
   window.csGoBack=function(){if(csCurrentStep>1)csStep(csCurrentStep-1);};
@@ -3333,7 +3334,7 @@ function ostFail(e){
         </div>
 
         <!-- КНОПКА — часть flex-колонки, не fixed -->
-        <div style="flex-shrink:0;padding:16px 20px 28px;background:#fff;border-top:1px solid #f0f0f0">
+        <div id="cs-footer" style="flex-shrink:0;padding:16px 20px 28px;background:#fff;border-top:1px solid #f0f0f0">
           <button onclick="capSheetSearch()" style="width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:14px;padding:18px;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.3px">Найти отели</button>
         </div>
 
