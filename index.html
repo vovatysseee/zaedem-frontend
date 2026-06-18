@@ -858,6 +858,7 @@ function fitHeroTitle(){
   if(window.innerWidth>600){ h.style.fontSize=''; return; }
   h.style.fontSize='';
   var maxW=h.parentElement.clientWidth-16;
+  if(maxW<120)return; // ширина ещё не готова (например, при возврате назад) — не ужимаем
   if(h.scrollWidth>maxW){
     var base=parseFloat(getComputedStyle(h).fontSize);
     var size=Math.floor(base*maxW/h.scrollWidth); // одним шагом, без видимого «сжатия»
@@ -867,9 +868,10 @@ function fitHeroTitle(){
     while(h.scrollWidth>maxW&&size>11&&guard<8){size-=1;h.style.fontSize=size+'px';guard++;}
   }
 }
-// Пересчёт после загрузки шрифта и при возврате «назад» (bfcache) — чтобы не прыгал
+// Пересчёт после загрузки шрифта и при возврате «назад» (bfcache) — на следующем кадре, когда вёрстка готова
+function fitHeroTitleDeferred(){requestAnimationFrame(function(){requestAnimationFrame(fitHeroTitle);});}
 if(document.fonts&&document.fonts.ready){document.fonts.ready.then(fitHeroTitle);}
-window.addEventListener('pageshow',fitHeroTitle);
+window.addEventListener('pageshow',fitHeroTitleDeferred);
 window.addEventListener('orientationchange',function(){setTimeout(fitHeroTitle,200);});
 document.addEventListener('DOMContentLoaded',function(){renderHotels();var fp=document.getElementById('ft-pay-icons');if(fp&&typeof payIconsHTML==='function')fp.innerHTML=payIconsHTML(true);fitHeroTitle();});
 window.addEventListener('resize',fitHeroTitle);
