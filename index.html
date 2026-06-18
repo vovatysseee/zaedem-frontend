@@ -296,7 +296,6 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .gp-num{font-size:15px;font-weight:700;min-width:16px;text-align:center;color:var(--ink)}
 @keyframes heroGradient{0%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:100% 100%}75%{background-position:0% 100%}100%{background-position:0% 50%}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-#main-page.anim-done .hero-content *{animation:none!important}
 @media(max-width:900px){.hp-layout{grid-template-columns:1fr}.hp-gallery{grid-template-columns:1fr;grid-template-rows:220px 140px 140px}.gp:first-child{grid-row:auto}.ft-inner{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){nav{padding:0 1.25rem;position:sticky;top:0;z-index:300}.hero{height:auto!important;min-height:65vh!important;min-height:65svh!important;justify-content:center!important}.hero-content{padding:32px 1.25rem 32px!important;overflow:visible}.hero-title{font-size:clamp(12px,3.7vw,17px)!important;white-space:nowrap!important}.hero-sub{margin-bottom:32px}.ft-inner{grid-template-columns:1fr}.sbtn{border-radius:0 0 18px 18px;padding:14px 0;justify-content:center;align-items:center;width:100%;display:flex;gap:8px}}
 
@@ -1089,7 +1088,6 @@ function openHotel(id){
   const pricePerNight=h.price||rooms[0]?.price||0;
   const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
-  document.getElementById('main-page').classList.add('anim-done');
   var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');document.body.classList.remove('on-serp');}else{window._fromSerp=false;}
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
   document.getElementById('hotel-page').classList.add('open');
@@ -1856,7 +1854,7 @@ function openCategory(cat){
 function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
-  var mp=document.getElementById('main-page');if(mp){mp.style.display='none';mp.classList.add('anim-done');}
+  var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');
   var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
   var nav=document.querySelector('nav');if(nav)nav.style.display='none';
