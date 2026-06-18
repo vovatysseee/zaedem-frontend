@@ -1092,6 +1092,7 @@ function openHotel(id){
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
   document.getElementById('hotel-page').classList.add('open');
   document.getElementById('serp-page').classList.remove('open');document.body.classList.remove('on-serp');
+  zbSaveRoute('hotel', id);
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
@@ -1152,6 +1153,64 @@ function openHotel(id){
   if(isOst)loadOstRates(h);
 }
 
+// ── Запоминание текущего экрана, чтобы при обновлении страницы не кидало на главную ──
+function zbSaveRoute(view, hotelId){
+  try{
+    var cs = window._capState || {};
+    sessionStorage.setItem('zb_route', JSON.stringify({
+      view: view, hotelId: hotelId || null,
+      cap: {
+        city: cs.city || '',
+        din:  cs.din  ? cs.din.getTime()  : null,
+        dout: cs.dout ? cs.dout.getTime() : null,
+        adults: cs.adults || 2, kids: cs.kids || 0,
+        childAges: cs.childAges || []
+      },
+      filters: {
+        hotel: !!(document.getElementById('flt-hotel')||{}).checked,
+        guest: !!(document.getElementById('flt-guest')||{}).checked,
+        apart: !!(document.getElementById('flt-apart')||{}).checked,
+        sort:  (document.getElementById('serp-sort')||{}).value || ''
+      }
+    }));
+  }catch(e){}
+}
+function zbClearRoute(){ try{ sessionStorage.removeItem('zb_route'); }catch(e){} }
+function zbRestoreRoute(){
+  var r;
+  try{ var raw = sessionStorage.getItem('zb_route'); if(!raw) return; r = JSON.parse(raw); }
+  catch(e){ return; }
+  if(!r || !r.view || r.view==='home') return;
+  if(r.cap){
+    window._capState = window._capState || {};
+    window._capState.city   = r.cap.city || '';
+    window._capState.din    = r.cap.din  ? new Date(r.cap.din)  : null;
+    window._capState.dout   = r.cap.dout ? new Date(r.cap.dout) : null;
+    window._capState.adults = r.cap.adults || 2;
+    window._capState.kids   = r.cap.kids || 0;
+    window._capState.childAges = r.cap.childAges || [];
+  }
+  try{ serpOpen(); }catch(e){ return; }
+  // вернуть фильтры
+  if(r.filters){
+    var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
+        fa=document.getElementById('flt-apart'), ss=document.getElementById('serp-sort');
+    if(fh) fh.checked=r.filters.hotel; if(fg) fg.checked=r.filters.guest; if(fa) fa.checked=r.filters.apart;
+    if(ss && r.filters.sort) ss.value=r.filters.sort;
+    try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
+  }
+  // если был открыт конкретный отель — открыть его, когда подгрузится список
+  if(r.view==='hotel' && r.hotelId){
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      var h=(typeof HOTELS!=='undefined') && HOTELS.find(function(x){return x.id===r.hotelId;});
+      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} }
+      else if(tries>25){ clearInterval(iv); } // не нашли за ~7.5с — остаёмся на результатах
+    },300);
+  }
+}
+
 function goBack(){
   document.getElementById('hotel-page').classList.remove('open');
   var nav=document.querySelector('nav');
@@ -1159,9 +1218,11 @@ function goBack(){
     var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
     if(nav)nav.style.display='none';
     window._fromSerp=false;
+    zbSaveRoute('serp');
   } else {
     document.getElementById('main-page').style.display='block';
     if(nav)nav.style.display='';
+    zbClearRoute();
   }
   window.scrollTo(0,0);
   fitHeroTitleDeferred();
@@ -1479,7 +1540,7 @@ function serpToggleTag(tagId){
   var el=document.getElementById(tagId);
   if(el){el.classList.toggle('active');window._serpReset=true;serpRender();}
 }
-function serpFilterChange(){window._serpReset=true;serpRender();}
+function serpFilterChange(){window._serpReset=true;serpRender();if(typeof zbSaveRoute==='function')zbSaveRoute('serp');}
 document.addEventListener('click',function(){
   document.querySelectorAll('.sf-dropdown.open').forEach(function(d){d.classList.remove('open');});
 });
@@ -1854,6 +1915,7 @@ function openCategory(cat){
 function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
+  if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');
   var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
@@ -2945,7 +3007,8 @@ function ddcChG(t,d){
   window.updCapDisplay&&window.updCapDisplay();
 }
 
-loadHotels();
+loadHotels().then(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} })
+            .catch(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} });
 
 // ═════════════════════════════════════════════════════
 // OSTROVOK: бронирование на сайте
