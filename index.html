@@ -437,8 +437,10 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style>.zb-restoring #main-page{display:none!important}</style>
 </head>
 <body>
+<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){document.documentElement.classList.add('zb-restoring');setTimeout(function(){document.documentElement.classList.remove('zb-restoring');},6000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
   <div><button class="nav-btn" onclick="openAuth()">Войти</button></div>
@@ -1177,10 +1179,11 @@ function zbSaveRoute(view, hotelId){
 }
 function zbClearRoute(){ try{ sessionStorage.removeItem('zb_route'); }catch(e){} }
 function zbRestoreRoute(){
+  function showHome(){ try{ document.documentElement.classList.remove('zb-restoring'); }catch(e){} }
   var r;
-  try{ var raw = sessionStorage.getItem('zb_route'); if(!raw) return; r = JSON.parse(raw); }
-  catch(e){ return; }
-  if(!r || !r.view || r.view==='home') return;
+  try{ var raw = sessionStorage.getItem('zb_route'); if(!raw){ showHome(); return; } r = JSON.parse(raw); }
+  catch(e){ showHome(); return; }
+  if(!r || !r.view || r.view==='home'){ showHome(); return; }
   if(r.cap){
     window._capState = window._capState || {};
     window._capState.city   = r.cap.city || '';
@@ -1190,7 +1193,8 @@ function zbRestoreRoute(){
     window._capState.kids   = r.cap.kids || 0;
     window._capState.childAges = r.cap.childAges || [];
   }
-  try{ serpOpen(); }catch(e){ return; }
+  try{ serpOpen(); }catch(e){ showHome(); return; }
+  showHome(); // главную уже скрыл serpOpen (inline), класс можно снять
   // вернуть фильтры
   if(r.filters){
     var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
