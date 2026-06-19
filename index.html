@@ -1215,6 +1215,15 @@ function zbRestoreRoute(){
   }
 }
 
+// Закрывать попапы дат/гостей в отеле при скролле, чтобы они не «ездили» по экрану
+(function(){
+  function zbClosePops(){
+    var c=document.getElementById('hp-cal-pop'); if(c) c.classList.remove('open');
+    var g=document.getElementById('hp-guests-pop'); if(g) g.classList.remove('open');
+  }
+  try{ window.addEventListener('scroll', zbClosePops, true); }catch(e){}
+})();
+
 function goBack(){
   document.getElementById('hotel-page').classList.remove('open');
   var nav=document.querySelector('nav');
@@ -1958,6 +1967,7 @@ function serpClose(){
   var sp=document.getElementById('serp-page');if(sp){sp.classList.remove('open');document.body.classList.remove('on-serp');}
   var mp=document.getElementById('main-page');if(mp)mp.style.display='block';
   var nav=document.querySelector('nav');if(nav)nav.style.display='';
+  if(typeof zbClearRoute==='function')zbClearRoute();
   serpMapOpen=false;
   document.body.classList.remove('map-open');
   var map=document.getElementById('serp-map');if(map)map.classList.remove('mob-open');
