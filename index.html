@@ -88,6 +88,7 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .sdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:.3s;border:none}
 .sdot.on{background:var(--lime);width:22px;border-radius:3px}
 .cal-popup{display:none;position:fixed;z-index:99999;background:#fff;border-radius:18px;box-shadow:0 16px 50px rgba(0,0,0,.22);border:1.5px solid var(--sand3);padding:18px}
+#hp-cal-pop,#hp-guests-pop{position:static;width:auto!important;left:auto!important;top:auto!important;margin:8px 0 4px}
 .cal-popup.open{display:block}
 .cat-head{cursor:pointer;display:inline-block;transition:.15s}
 .cat-head:hover .cat-all{color:var(--green);transform:translateX(3px)}
@@ -178,7 +179,7 @@ body.on-serp footer{display:none}
 .btn-select{background:var(--green);color:#fff;border:none;padding:9px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ost-rate-row.picked{border:2px solid var(--green)!important;background:var(--green-pale,#e8f4ed)!important}
 .hp-room-row.picked{border:2px solid var(--green)!important;background:var(--green-pale,#e8f4ed)!important}
-.bk-box{background:#fff;border:0.5px solid var(--sand3);border-radius:18px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.bk-box{background:#fff;border:0.5px solid var(--sand3);border-radius:18px;padding:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,.06);position:relative}
 .bk-title{font-family:'Unbounded',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:1rem;color:var(--green)}
 .bk-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .bk-field{background:var(--sand);border:0.5px solid var(--sand3);border-radius:11px;padding:10px 13px}
@@ -439,14 +440,13 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 .zb-restoring #main-page,.zb-restoring footer,.zb-restoring nav{display:none!important}
-.zb-restoring-hotel #serp-page{display:none!important}
 html.zb-restoring{background:#fff}
 html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #e7e2d8;border-top-color:#0F2D1D;border-radius:50%;animation:zbspin .8s linear infinite;z-index:99998}
 @keyframes zbspin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
+<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');setTimeout(function(){_de.classList.remove('zb-restoring');},8000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
   <div><button class="nav-btn" onclick="openAuth()">Войти</button></div>
@@ -927,14 +927,7 @@ function hpOpenCal(e){
   _hpCal.din=iv?new Date(iv):null;
   _hpCal.dout=ov?new Date(ov):null;
   _hpCal.nav=_hpCal.din?new Date(_hpCal.din.getFullYear(),_hpCal.din.getMonth(),1):new Date();
-  // позиционируем под датами
-  var anchor=document.querySelector('.bk-dates');
-  if(anchor){
-    var r=anchor.getBoundingClientRect();
-    pop.style.left=Math.max(8,r.left)+'px';
-    pop.style.top=(r.bottom+8)+'px';
-    pop.style.width=Math.min(320,window.innerWidth-16)+'px';
-  }
+  // попап раскрывается прямо в потоке под датами — скроллится как часть страницы
   hpBuildCal();
   pop.classList.add('open');
 }
@@ -1014,13 +1007,6 @@ function hpOpenGuests(e){
   var pop=document.getElementById('hp-guests-pop');
   if(!pop)return;
   if(pop.classList.contains('open')){pop.classList.remove('open');return;}
-  var anchor=pop.previousElementSibling;
-  if(anchor){
-    var r=anchor.getBoundingClientRect();
-    pop.style.left=Math.max(8,r.left)+'px';
-    pop.style.top=(r.bottom+6)+'px';
-    pop.style.width=Math.min(300,window.innerWidth-16)+'px';
-  }
   hpBuildGuests();
   pop.classList.add('open');
 }
@@ -1183,7 +1169,8 @@ function zbSaveRoute(view, hotelId){
         guest: !!(document.getElementById('flt-guest')||{}).checked,
         apart: !!(document.getElementById('flt-apart')||{}).checked,
         sort:  (document.getElementById('serp-sort')||{}).value || ''
-      }
+      },
+      map: (typeof serpMapOpen!=='undefined' && serpMapOpen) || false
     }));
   }catch(e){}
 }
@@ -1213,36 +1200,11 @@ function zbRestoreRoute(){
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
-  if(r.view==='hotel' && r.hotelId){
-    // НЕ раскрываем сразу: ждём, пока отель подгрузится и откроется — тогда покажем его (без мелькания выдачи)
-    var tries=0;
-    var iv=setInterval(function(){
-      tries++;
-      var h=(typeof HOTELS!=='undefined') && HOTELS.find(function(x){return x.id===r.hotelId;});
-      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} reveal(); }
-      else if(tries>25){ clearInterval(iv); reveal(); } // не нашли за ~7.5с — показываем результаты
-    },300);
-  } else {
-    reveal(); // маршрут результатов — показываем выдачу сразу
+  reveal(); // и для результатов, и для отеля/бронирования — показываем выдачу (без переоткрытия отеля)
+  if(r.map){ // была открыта карта — открываем её на том же месте
+    setTimeout(function(){ try{ if(typeof serpMapToggle==='function' && !serpMapOpen) serpMapToggle(); }catch(e){} }, 350);
   }
 }
-
-// При скролле — пересчитываем позицию попапов дат/гостей, чтобы они «липли» к кнопке (не пропадали и не уезжали)
-(function(){
-  function zbReposPops(){
-    var c=document.getElementById('hp-cal-pop');
-    if(c && c.classList.contains('open')){
-      var a=document.querySelector('.bk-dates');
-      if(a){ var r=a.getBoundingClientRect(); c.style.left=Math.max(8,r.left)+'px'; c.style.top=(r.bottom+8)+'px'; }
-    }
-    var g=document.getElementById('hp-guests-pop');
-    if(g && g.classList.contains('open')){
-      var ga=g.previousElementSibling;
-      if(ga){ var r2=ga.getBoundingClientRect(); g.style.left=Math.max(8,r2.left)+'px'; g.style.top=(r2.bottom+6)+'px'; }
-    }
-  }
-  try{ window.addEventListener('scroll', zbReposPops, true); }catch(e){}
-})();
 
 function goBack(){
   document.getElementById('hotel-page').classList.remove('open');
@@ -2003,6 +1965,7 @@ function serpMapToggle(){
     ?'<svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M4 6h12M4 10h12M4 14h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Список'
     :'<svg viewBox="0 0 20 20" fill="none" width="16" height="16"><rect x="1" y="3" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M7 3v14M13 3v14" stroke="currentColor" stroke-width="1.4"/></svg> Карта';
   if(serpMapOpen&&_serpMap)setTimeout(function(){_serpMap.invalidateSize();},250);
+  if(typeof zbSaveRoute==='function')zbSaveRoute('serp');
 }
 function updSum(){const sel=document.getElementById('hp-room');if(!sel)return;const p=parseInt(sel.options[sel.selectedIndex].dataset.price);const n=getNights();document.getElementById('bk-pn').textContent=p+' BYN';document.getElementById('bk-nights').textContent=n;document.getElementById('bk-tot').textContent=(p*n)+' BYN'}
 function selRoomPick(idx){
