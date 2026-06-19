@@ -437,10 +437,16 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<style>.zb-restoring #main-page,.zb-restoring footer,.zb-restoring nav{display:none!important}</style>
+<style>
+.zb-restoring #main-page,.zb-restoring footer,.zb-restoring nav{display:none!important}
+.zb-restoring-hotel #serp-page{display:none!important}
+html.zb-restoring{background:#fff}
+html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #e7e2d8;border-top-color:#0F2D1D;border-radius:50%;animation:zbspin .8s linear infinite;z-index:99998}
+@keyframes zbspin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){document.documentElement.classList.add('zb-restoring');setTimeout(function(){document.documentElement.classList.remove('zb-restoring');},6000);}}catch(e){}</script>
+<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
   <div><button class="nav-btn" onclick="openAuth()">Войти</button></div>
@@ -967,6 +973,9 @@ function hpBuildCal(){
   html+='</div>';
   html+='<div id="hp-cal-hint" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center">'+
     (_hpCal.din&&!_hpCal.dout?'Выберите дату выезда':(_hpCal.din&&_hpCal.dout?(getNights()+' '+nightsWord(getNights())):'Выберите дату заезда'))+'</div>';
+  if(_hpCal.din&&_hpCal.dout){
+    html+='<button onclick="hpConfirmDates(event)" style="width:100%;margin-top:10px;background:#0F2D1D;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Выбрать</button>';
+  }
   pop.innerHTML=html;
 }
 function hpPickDay(y,m,day,e){
@@ -982,13 +991,14 @@ function hpPickDay(y,m,day,e){
     document.getElementById('hp-out').value=fmtV(_hpCal.dout);
     document.getElementById('hp-in-lbl').textContent=hpFmtLbl(fmtV(_hpCal.din));
     document.getElementById('hp-out-lbl').textContent=hpFmtLbl(fmtV(_hpCal.dout));
-    setTimeout(function(){
-      document.getElementById('hp-cal-pop').classList.remove('open');
-      // пересчёт цены: и для наших отелей, и для Ostrovok
-      if(typeof updSum==='function')try{updSum();}catch(_){}
-      if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
-    },250);
   }
+}
+function hpConfirmDates(e){
+  if(e)e.stopPropagation();
+  var p=document.getElementById('hp-cal-pop'); if(p)p.classList.remove('open');
+  // пересчёт цены: и для наших отелей, и для Ostrovok
+  if(typeof updSum==='function')try{updSum();}catch(_){}
+  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
 }
 
 // ── Модуль гостей на странице отеля (взрослые + дети с возрастом) ──
@@ -1179,11 +1189,12 @@ function zbSaveRoute(view, hotelId){
 }
 function zbClearRoute(){ try{ sessionStorage.removeItem('zb_route'); }catch(e){} }
 function zbRestoreRoute(){
-  function showHome(){ try{ document.documentElement.classList.remove('zb-restoring'); }catch(e){} }
+  var de=document.documentElement;
+  function reveal(){ try{ de.classList.remove('zb-restoring'); de.classList.remove('zb-restoring-hotel'); }catch(e){} }
   var r;
-  try{ var raw = sessionStorage.getItem('zb_route'); if(!raw){ showHome(); return; } r = JSON.parse(raw); }
-  catch(e){ showHome(); return; }
-  if(!r || !r.view || r.view==='home'){ showHome(); return; }
+  try{ var raw = sessionStorage.getItem('zb_route'); if(!raw){ reveal(); return; } r = JSON.parse(raw); }
+  catch(e){ reveal(); return; }
+  if(!r || !r.view || r.view==='home'){ reveal(); return; }
   if(r.cap){
     window._capState = window._capState || {};
     window._capState.city   = r.cap.city || '';
@@ -1193,8 +1204,7 @@ function zbRestoreRoute(){
     window._capState.kids   = r.cap.kids || 0;
     window._capState.childAges = r.cap.childAges || [];
   }
-  try{ serpOpen(); }catch(e){ showHome(); return; }
-  showHome(); // главную уже скрыл serpOpen (inline), класс можно снять
+  try{ serpOpen(); }catch(e){ reveal(); return; }
   // вернуть фильтры
   if(r.filters){
     var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
@@ -1203,25 +1213,35 @@ function zbRestoreRoute(){
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
-  // если был открыт конкретный отель — открыть его, когда подгрузится список
   if(r.view==='hotel' && r.hotelId){
+    // НЕ раскрываем сразу: ждём, пока отель подгрузится и откроется — тогда покажем его (без мелькания выдачи)
     var tries=0;
     var iv=setInterval(function(){
       tries++;
       var h=(typeof HOTELS!=='undefined') && HOTELS.find(function(x){return x.id===r.hotelId;});
-      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} }
-      else if(tries>25){ clearInterval(iv); } // не нашли за ~7.5с — остаёмся на результатах
+      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} reveal(); }
+      else if(tries>25){ clearInterval(iv); reveal(); } // не нашли за ~7.5с — показываем результаты
     },300);
+  } else {
+    reveal(); // маршрут результатов — показываем выдачу сразу
   }
 }
 
-// Закрывать попапы дат/гостей в отеле при скролле, чтобы они не «ездили» по экрану
+// При скролле — пересчитываем позицию попапов дат/гостей, чтобы они «липли» к кнопке (не пропадали и не уезжали)
 (function(){
-  function zbClosePops(){
-    var c=document.getElementById('hp-cal-pop'); if(c) c.classList.remove('open');
-    var g=document.getElementById('hp-guests-pop'); if(g) g.classList.remove('open');
+  function zbReposPops(){
+    var c=document.getElementById('hp-cal-pop');
+    if(c && c.classList.contains('open')){
+      var a=document.querySelector('.bk-dates');
+      if(a){ var r=a.getBoundingClientRect(); c.style.left=Math.max(8,r.left)+'px'; c.style.top=(r.bottom+8)+'px'; }
+    }
+    var g=document.getElementById('hp-guests-pop');
+    if(g && g.classList.contains('open')){
+      var ga=g.previousElementSibling;
+      if(ga){ var r2=ga.getBoundingClientRect(); g.style.left=Math.max(8,r2.left)+'px'; g.style.top=(r2.bottom+6)+'px'; }
+    }
   }
-  try{ window.addEventListener('scroll', zbClosePops, true); }catch(e){}
+  try{ window.addEventListener('scroll', zbReposPops, true); }catch(e){}
 })();
 
 function goBack(){
