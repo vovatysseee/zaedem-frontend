@@ -88,13 +88,7 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .sdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:.3s;border:none}
 .sdot.on{background:var(--lime);width:22px;border-radius:3px}
 .cal-popup{display:none;position:fixed;z-index:99999;background:#fff;border-radius:18px;box-shadow:0 16px 50px rgba(0,0,0,.22);border:1.5px solid var(--sand3);padding:18px}
-#hp-cal-pop,#hp-guests-pop{position:absolute}
-#hp-sheet-bd{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99998}
-@keyframes hpSheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@media(max-width:600px){
-  #hp-cal-pop.open,#hp-guests-pop.open{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;max-width:100%!important;max-height:85vh;overflow:auto;border-radius:20px 20px 0 0!important;padding:18px 16px calc(20px + env(safe-area-inset-bottom))!important;z-index:100000!important;box-shadow:0 -8px 40px rgba(0,0,0,.25)!important;animation:hpSheetUp .25s ease}
-  #hp-sheet-bd.show{display:block}
-}
+#hp-cal-pop,#hp-guests-pop{position:static;width:auto!important;left:auto!important;top:auto!important;margin:8px 0 4px}
 .cal-popup.open{display:block}
 .cat-head{cursor:pointer;display:inline-block;transition:.15s}
 .cat-head:hover .cat-all{color:var(--green);transform:translateX(3px)}
@@ -446,13 +440,14 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 .zb-restoring #main-page,.zb-restoring footer,.zb-restoring nav{display:none!important}
+.zb-restoring-hotel #serp-page{display:none!important}
 html.zb-restoring{background:#fff}
 html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #e7e2d8;border-top-color:#0F2D1D;border-radius:50%;animation:zbspin .8s linear infinite;z-index:99998}
 @keyframes zbspin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');setTimeout(function(){_de.classList.remove('zb-restoring');},8000);}}catch(e){}</script>
+<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
   <div><button class="nav-btn" onclick="openAuth()">Войти</button></div>
@@ -923,33 +918,19 @@ function hpFmtLbl(v){
   var mn=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
   return d.getDate()+' '+mn[d.getMonth()];
 }
-function hpSheetBd(show){ var bd=document.getElementById('hp-sheet-bd'); if(bd)bd.classList.toggle('show',!!show); }
-function hpCloseSheets(){
-  var c=document.getElementById('hp-cal-pop'); if(c)c.classList.remove('open');
-  var g=document.getElementById('hp-guests-pop'); if(g)g.classList.remove('open');
-  hpSheetBd(false);
-}
 function hpOpenCal(e){
   if(e)e.stopPropagation();
   var pop=document.getElementById('hp-cal-pop');
   if(!pop)return;
-  if(pop.classList.contains('open')){pop.classList.remove('open');hpSheetBd(false);return;}
+  if(pop.classList.contains('open')){pop.classList.remove('open');return;}
   var _gp=document.getElementById('hp-guests-pop'); if(_gp)_gp.classList.remove('open');
   // инициализируем из текущих значений
   var iv=document.getElementById('hp-in')?.value, ov=document.getElementById('hp-out')?.value;
   _hpCal.din=iv?new Date(iv):null;
   _hpCal.dout=ov?new Date(ov):null;
   _hpCal.nav=_hpCal.din?new Date(_hpCal.din.getFullYear(),_hpCal.din.getMonth(),1):new Date();
-  // попап под датами (внутри .bk-box)
-  var anchor=document.querySelector('.bk-dates');
-  if(anchor){
-    pop.style.left=anchor.offsetLeft+'px';
-    pop.style.top=(anchor.offsetTop+anchor.offsetHeight+8)+'px';
-    pop.style.width=anchor.offsetWidth+'px';
-  }
   hpBuildCal();
   pop.classList.add('open');
-  hpSheetBd(true);
 }
 function hpNavCal(dir,e){
   if(e)e.stopPropagation();
@@ -1009,7 +990,6 @@ function hpPickDay(y,m,day,e){
 function hpConfirmDates(e){
   if(e)e.stopPropagation();
   var p=document.getElementById('hp-cal-pop'); if(p)p.classList.remove('open');
-  hpSheetBd(false);
   // пересчёт цены: и для наших отелей, и для Ostrovok
   if(typeof updSum==='function')try{updSum();}catch(_){}
   if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
@@ -1027,17 +1007,10 @@ function hpOpenGuests(e){
   if(e)e.stopPropagation();
   var pop=document.getElementById('hp-guests-pop');
   if(!pop)return;
-  if(pop.classList.contains('open')){pop.classList.remove('open');hpSheetBd(false);return;}
+  if(pop.classList.contains('open')){pop.classList.remove('open');return;}
   var _cp=document.getElementById('hp-cal-pop'); if(_cp)_cp.classList.remove('open');
-  var anchor=pop.previousElementSibling;
-  if(anchor){
-    pop.style.left=anchor.offsetLeft+'px';
-    pop.style.top=(anchor.offsetTop+anchor.offsetHeight+6)+'px';
-    pop.style.width=anchor.offsetWidth+'px';
-  }
   hpBuildGuests();
   pop.classList.add('open');
-  hpSheetBd(true);
 }
 function hpBuildGuests(){
   var pop=document.getElementById('hp-guests-pop');
@@ -1095,7 +1068,6 @@ function hpSetAge(i,v){
 function hpApplyGuests(e){
   if(e)e.stopPropagation();
   document.getElementById('hp-guests-pop').classList.remove('open');
-  hpSheetBd(false);
   var lbl=document.getElementById('hp-guests-lbl');
   if(lbl)lbl.textContent=hpGuestsLabel();
   // пересчёт тарифов под новое число гостей
@@ -1229,7 +1201,18 @@ function zbRestoreRoute(){
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
-  reveal(); // и для результатов, и для отеля/бронирования — показываем выдачу (без переоткрытия отеля)
+  if(r.view==='hotel' && r.hotelId){
+    // ждём, пока отель подгрузится, открываем его и только тогда показываем (без мелькания выдачи)
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      var h=(typeof HOTELS!=='undefined') && HOTELS.find(function(x){return x.id===r.hotelId;});
+      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} reveal(); }
+      else if(tries>25){ clearInterval(iv); reveal(); } // не нашли за ~7.5с — показываем результаты
+    },300);
+  } else {
+    reveal();
+  }
 }
 
 function goBack(){
@@ -3418,7 +3401,6 @@ function ostFail(e){
         </div>
 
 
-<div id="hp-sheet-bd" onclick="hpCloseSheets()"></div>
 
 </body>
 </html>
