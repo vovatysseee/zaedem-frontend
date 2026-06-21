@@ -1096,7 +1096,7 @@ function openHotel(id){
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
-      ${(function(){var p=(h.photos||[]).map(function(u){return (u||'');});return '<div class="gp" onclick="openGal(0)">'+(p[0]?'<img src="'+p[0]+'" alt="'+h.name_ru+'">':'')+'</div>'+'<div class="gp" onclick="openGal(1)">'+(p[1]?'<img src="'+p[1]+'" alt="">':'')+'</div>'+'<div class="gp" onclick="openGal(2)">'+(p[2]?'<img src="'+p[2]+'" alt="">':'')+'</div>';})()}
+      ${(function(){var p=(h.photos||[]).map(function(u){return srNormPhoto(u);});return '<div class="gp" onclick="openGal(0)">'+(p[0]?'<img src="'+p[0]+'" alt="'+h.name_ru+'">':'')+'</div>'+'<div class="gp" onclick="openGal(1)">'+(p[1]?'<img src="'+p[1]+'" alt="">':'')+'</div>'+'<div class="gp" onclick="openGal(2)">'+(p[2]?'<img src="'+p[2]+'" alt="">':'')+'</div>';})()}
     </div>
     <div class="hp-layout">
       <div>
@@ -1157,6 +1157,11 @@ function openHotel(id){
 function zbSaveRoute(view, hotelId){
   try{
     var cs = window._capState || {};
+    var hObj = null;
+    if(view==='hotel'){
+      hObj = (typeof curHotel!=='undefined' && curHotel && curHotel.id===hotelId) ? curHotel
+           : (((typeof HOTELS!=='undefined' && HOTELS)||[]).find(function(x){return x.id===hotelId;}) || null);
+    }
     sessionStorage.setItem('zb_route', JSON.stringify({
       view: view, hotelId: hotelId || null,
       cap: {
@@ -1173,7 +1178,8 @@ function zbSaveRoute(view, hotelId){
         sort:  (document.getElementById('serp-sort')||{}).value || ''
       },
       map: (typeof serpMapOpen!=='undefined' && serpMapOpen) || false,
-      cat: window._catMode || null
+      cat: window._catMode || null,
+      hotel: hObj
     }));
   }catch(e){}
 }
@@ -1194,13 +1200,24 @@ function zbRestoreRoute(){
     window._capState.kids   = r.cap.kids || 0;
     window._capState.childAges = r.cap.childAges || [];
   }
-  if(r.cat){ // был открыт каталог — открываем тот же каталог
+  // ОТЕЛЬ: открываем сразу сохранённый объект отеля (приоритет над каталогом/выдачей)
+  if(r.view==='hotel' && r.hotel){
+    try{
+      if(typeof HOTELS!=='undefined' && HOTELS && !HOTELS.find(function(x){return x.id===r.hotel.id;})) HOTELS.push(r.hotel);
+      window._fromSerp=false; // назад → на главную (выдачи под отелем нет)
+      openHotel(r.hotelId);
+    }catch(e){}
+    reveal();
+    return;
+  }
+  // КАТАЛОГ
+  if(r.cat){
     try{ catStart(r.cat); }catch(e){}
     reveal();
     return;
   }
+  // РЕЗУЛЬТАТЫ (выдача)
   try{ serpOpen(); }catch(e){ reveal(); return; }
-  // вернуть фильтры
   if(r.filters){
     var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
         fa=document.getElementById('flt-apart'), ss=document.getElementById('serp-sort');
@@ -1208,22 +1225,11 @@ function zbRestoreRoute(){
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
-  if(r.view==='hotel' && r.hotelId){
-    // ждём, пока отель подгрузится, открываем его и только тогда показываем (без мелькания выдачи)
-    var tries=0;
-    var iv=setInterval(function(){
-      tries++;
-      var h=(typeof HOTELS!=='undefined') && HOTELS.find(function(x){return x.id===r.hotelId;});
-      if(h){ clearInterval(iv); window._fromSerp=true; try{ openHotel(r.hotelId); }catch(e){} reveal(); }
-      else if(tries>25){ clearInterval(iv); reveal(); } // не нашли за ~7.5с — показываем результаты
-    },300);
-  } else {
-    if(r.map){ // была открыта карта — открываем сразу карту (без показа списка)
-      try{ if(typeof serpMapToggle==='function' && !serpMapOpen) serpMapToggle(); }catch(e){}
-      if(typeof _serpMap!=='undefined' && _serpMap){ setTimeout(function(){ try{_serpMap.invalidateSize();}catch(e){} }, 300); }
-    }
-    reveal();
+  if(r.map){ // была открыта карта — открываем сразу карту
+    try{ if(typeof serpMapToggle==='function' && !serpMapOpen) serpMapToggle(); }catch(e){}
+    if(typeof _serpMap!=='undefined' && _serpMap){ setTimeout(function(){ try{_serpMap.invalidateSize();}catch(e){} }, 300); }
   }
+  reveal();
 }
 
 function goBack(){
@@ -1355,8 +1361,7 @@ function serpRender(){
 
   var cardEls=[];pageList.forEach(function(h,idx){
     var photos=(h.photos||[]).map(function(u){
-      // грузим URL ровно как в БД (рабочие, 200 OK, путь /carsolize/ или /content/)
-      return (u||'');
+      return srNormPhoto(u);
     });
     var img=photos[0]||'';
     var typeLbl=serpCatLabel(h);
@@ -1468,7 +1473,8 @@ function serpClearFilters(){
 var srpPhotoIdx={};
 function srNormPhoto(u){
   if(!u)return '';
-  return (u||'');
+  // карточкам отдаём облегчённый размер x500 — грузится быстро (1024x768 тяжёлый)
+  return String(u).replace(/\/t\/\d+x\d+\//,'/t/x500/');
 }
 function srpSlide(id,dir){
   var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
