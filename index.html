@@ -1172,7 +1172,8 @@ function zbSaveRoute(view, hotelId){
         apart: !!(document.getElementById('flt-apart')||{}).checked,
         sort:  (document.getElementById('serp-sort')||{}).value || ''
       },
-      map: (typeof serpMapOpen!=='undefined' && serpMapOpen) || false
+      map: (typeof serpMapOpen!=='undefined' && serpMapOpen) || false,
+      cat: window._catMode || null
     }));
   }catch(e){}
 }
@@ -1192,6 +1193,11 @@ function zbRestoreRoute(){
     window._capState.adults = r.cap.adults || 2;
     window._capState.kids   = r.cap.kids || 0;
     window._capState.childAges = r.cap.childAges || [];
+  }
+  if(r.cat){ // был открыт каталог — открываем тот же каталог
+    try{ catStart(r.cat); }catch(e){}
+    reveal();
+    return;
   }
   try{ serpOpen(); }catch(e){ reveal(); return; }
   // вернуть фильтры
@@ -1319,7 +1325,8 @@ function serpRender(){
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
-  // Сортировка
+  // Сортировка (в каталоге со стандартным порядком — сохраняем порядок базы: фото→Минск→звёзды)
+  if(!(window._catMode && sortMode==='recommended')){
   list.sort(function(a,b){
     if(sortMode==='price_asc') return (a.price||0)-(b.price||0);
     if(sortMode==='price_desc')return (b.price||0)-(a.price||0);
@@ -1330,6 +1337,7 @@ function serpRender(){
     if(oa!==ob)return oa-ob;
     return (b.rating||0)-(a.rating||0);
   });
+  }
 
   var meta=document.getElementById('serp-meta');
   if(meta)meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
@@ -1374,6 +1382,12 @@ function serpRender(){
        +'<span class="sr-score">★ '+ratNum.toFixed(0)+'</span>'
        +'<span class="sr-rtxt">'+ratLbl+(h.reviews_count?' ('+h.reviews_count+' отзывов)':'')+'</span>'
        +'</div>':'';
+     var priceBlock=h.catalog
+       ? '<div class="sr-price"><div class="sr-price-main" style="font-size:15px">Цена по датам</div><div class="sr-price-sub">выберите даты</div></div>'
+       : '<div class="sr-price">'+oldPriceHtml
+           +'<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
+           +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>'
+         +'</div>';
      c.innerHTML='<div class="'+imgCls+'">'+imgHtml+freeBadge+favBtn+navHtml+dotsHtml+cntHtml+'</div>'
        +'<div class="sr-body">'
          +'<div class="sr-head">'
@@ -1385,10 +1399,7 @@ function serpRender(){
          +ratHtml
          +tagsHtml
          +'<div class="sr-foot">'
-           +'<div class="sr-price">'+oldPriceHtml
-             +'<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
-             +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>'
-           +'</div>'
+           +priceBlock
            +'<button class="sr-book">Смотреть</button>'
          +'</div>'
        +'</div>';
@@ -1433,6 +1444,12 @@ function serpRender(){
     more.textContent='Показать ещё '+Math.min(PAGE_SIZE,list.length-shown)+' из '+(list.length-shown);
     more.onclick=function(){window._serpShown+=PAGE_SIZE;serpRender();};
     if(cards.parentNode)cards.parentNode.insertBefore(more,cards.nextSibling);
+  } else if(window._catMode && window._catHasMore){
+    var moreC=document.createElement('button');
+    moreC.id='serp-more';moreC.className='sf-load-more';
+    moreC.textContent=window._catLoading?'Загрузка...':'Показать ещё';
+    moreC.onclick=function(){ catLoad(false); };
+    if(cards.parentNode)cards.parentNode.insertBefore(moreC,cards.nextSibling);
   }
 
   // Пины на карте (все, не только страница)
@@ -1852,6 +1869,7 @@ async function serpLoadOstrovok(){
   var checkout=serpFmtDate(st.dout);
   if(!checkin||!checkout)return;
 
+  window._catMode=null; // обычный поиск — выходим из режима каталога
   window._ostrovokLoading=true;
 
   // Показываем скелетон пока грузится Ostrovok
@@ -1907,19 +1925,64 @@ async function serpLoadOstrovok(){
 }
 
 // Клик по категории на главной → поиск со всей Беларусью + фильтр этой категории
-function openCategory(cat){
-  // ставим только нужную категорию
+// ─── Каталог: все объекты категории по РБ (без дат), из базы /api/catalog ───
+window._catMode=null; window._catOffset=0; window._catTotal=0; window._catHasMore=false; window._catLoading=false;
+
+function catStart(cat){
+  window._catMode=cat; window._catOffset=0; window._catHasMore=true; window._catLoading=false;
   var map={hotel:'flt-hotel',guest:'flt-guest',apart:'flt-apart'};
-  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){
-    var e=document.getElementById(id); if(e)e.checked=(id===map[cat]);
-  });
-  // без города = вся Беларусь
+  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=(id===map[cat]);});
   window._capState=window._capState||{};
-  if(!window._capState.city){
-    var sd=document.getElementById('s-dest'); if(sd)sd.value='';
-  }
+  window._capState.city='';
+  var sd=document.getElementById('s-dest'); if(sd)sd.value='';
+  HOTELS=[];
   window._serpReset=true;
-  serpOpen();
+  serpOpen();          // serpLoadOstrovok внутри сам выйдет — города нет
+  catLoad(true);
+}
+
+async function catLoad(reset){
+  if(window._catLoading) return;
+  if(reset){ window._catOffset=0; window._catHasMore=true; }
+  if(!window._catHasMore) return;
+  window._catLoading=true;
+  var meta=document.getElementById('serp-meta');
+  if(reset&&meta)meta.textContent='Загружаем каталог...';
+  try{
+    var url='https://api.zaedem.by/api/catalog?category='+encodeURIComponent(window._catMode)+'&offset='+window._catOffset+'&limit=50';
+    var r=await fetch(url); var data=await r.json();
+    if(data&&data.ok&&Array.isArray(data.hotels)){
+      if(reset) HOTELS=data.hotels.slice();
+      else HOTELS=HOTELS.concat(data.hotels);
+      window._catOffset += data.hotels.length;
+      window._catTotal=data.total;
+      window._catHasMore=!!data.hasMore;
+      window._serpShown=HOTELS.length;   // показываем всё загруженное
+      window._serpReset=false;
+      serpRender();
+    }
+  }catch(e){ console.error('catalog',e); if(reset&&meta)meta.textContent='Не удалось загрузить каталог'; }
+  window._catLoading=false;
+}
+
+function catShowEmpty(){
+  window._catMode=null; HOTELS=[];
+  window._serpReset=true; serpOpen();
+  var cards=document.getElementById('serp-cards');
+  var meta=document.getElementById('serp-meta'); if(meta)meta.textContent='';
+  if(cards){
+    cards.innerHTML='<div style="padding:48px 20px;text-align:center;color:#5a6b5e">'
+      +'<div style="font-size:42px;margin-bottom:14px">🏡</div>'
+      +'<div style="font-size:19px;font-weight:700;color:#0F2D1D;margin-bottom:8px">Усадьбы — скоро</div>'
+      +'<div style="font-size:15px;line-height:1.5;max-width:400px;margin:0 auto">Готовим эксклюзивные белорусские усадьбы по прямым контрактам — то, чего нет у других. Следите за обновлениями.</div>'
+      +'</div>';
+  }
+  var more=document.getElementById('serp-more'); if(more)more.remove();
+}
+
+function openCategory(cat){
+  if(cat==='guest'){ catShowEmpty(); return; }
+  catStart(cat);
 }
 function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
