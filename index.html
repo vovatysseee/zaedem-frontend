@@ -1576,7 +1576,18 @@ function serpToggleTag(tagId){
   var el=document.getElementById(tagId);
   if(el){el.classList.toggle('active');window._serpReset=true;serpRender();}
 }
-function serpFilterChange(){window._serpReset=true;serpRender();if(typeof zbSaveRoute==='function')zbSaveRoute('serp');}
+function serpFilterChange(){
+  if(window._catMode){
+    var checked=[];
+    ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e&&e.checked)checked.push(c);});
+    var newMode=checked.join(',');
+    if(newMode==='guest'){ catShowEmpty(); return; }              // только усадьбы → заглушка
+    if(newMode===''){ window._serpReset=true; serpRender(); return; } // ничего не выбрано
+    if(newMode!==window._catMode){ catStart(checked); return; }   // набор категорий изменился — перезагрузка
+    window._serpReset=true; serpRender(); return;                 // тот же набор — звёзды/сортировка
+  }
+  window._serpReset=true;serpRender();if(typeof zbSaveRoute==='function')zbSaveRoute('serp');
+}
 document.addEventListener('click',function(){
   document.querySelectorAll('.sf-dropdown.open').forEach(function(d){d.classList.remove('open');});
 });
@@ -1938,10 +1949,12 @@ async function serpLoadOstrovok(){
 // ─── Каталог: все объекты категории по РБ (без дат), из базы /api/catalog ───
 window._catMode=null; window._catOffset=0; window._catTotal=0; window._catHasMore=false; window._catLoading=false;
 
-function catStart(cat){
-  window._catMode=cat; window._catOffset=0; window._catHasMore=true; window._catLoading=false;
-  var map={hotel:'flt-hotel',guest:'flt-guest',apart:'flt-apart'};
-  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=(id===map[cat]);});
+function catStart(cats){
+  // cats: 'hotel' | 'hotel,apart' | массив
+  var arr = Array.isArray(cats)?cats.slice():String(cats).split(',').filter(Boolean);
+  if(!arr.length) arr=['hotel'];
+  window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
   window._capState.city='';
   var sd=document.getElementById('s-dest'); if(sd)sd.value='';
@@ -1953,6 +1966,7 @@ function catStart(cat){
 
 async function catLoad(reset){
   if(window._catLoading) return;
+  if(window._catMode==='guest'){ catShowEmpty(); return; }  // только усадьбы — данных нет
   if(reset){ window._catOffset=0; window._catHasMore=true; }
   if(!window._catHasMore) return;
   window._catLoading=true;
@@ -1976,7 +1990,9 @@ async function catLoad(reset){
 }
 
 function catShowEmpty(){
-  window._catMode=null; HOTELS=[];
+  window._catMode='guest';
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
+  HOTELS=[];
   window._serpReset=true; serpOpen();
   var cards=document.getElementById('serp-cards');
   var meta=document.getElementById('serp-meta'); if(meta)meta.textContent='';
