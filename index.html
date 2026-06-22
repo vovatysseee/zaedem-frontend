@@ -330,6 +330,9 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .sf-tag{position:relative;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--sand3);color:var(--ink);padding:7px 14px;border-radius:50px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0}
 .sf-tag:hover{border-color:var(--green);color:var(--green)}
 .sf-tag.active{background:var(--green);border-color:var(--green);color:#fff}
+.sf-tag-excl{border-color:#d4af37;color:#9a7d1e;background:linear-gradient(#fffdf5,#fff9e6)}
+body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
+.sf-tag-excl.active{background:linear-gradient(135deg,#e8c14a,#d4af37);border-color:#d4af37;color:#3a2e00}
 .sf-tag svg{width:10px;height:10px}
 .sf-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1.5px solid var(--sand3);padding:12px;min-width:220px;z-index:9999}
 .sf-dropdown.open{display:block}
@@ -361,7 +364,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .serp-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:1100px){.serp-cards-grid{grid-template-columns:1fr}}
 .sr-card.map-hover{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
-.sr-img{position:relative;width:100%;height:150px;overflow:hidden;background:var(--sand2)}
+.sr-img{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;background:var(--sand2)}
 .sr-img.loaded{background:var(--sand2)}
 .sr-img.noimg{background:var(--sand2);display:flex;align-items:center;justify-content:center}
 .sr-img.noimg::after{content:"\1F3E0";font-size:30px;opacity:.25;filter:grayscale(1)}
@@ -420,7 +423,7 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
   .serp-map-toggle{display:flex}
   .sr-card{grid-template-columns:1fr;transition:none!important}
   .sr-card:hover{transform:none!important;box-shadow:var(--sh)!important;border-color:var(--sand3)!important}
-  .sr-img{height:200px;min-height:0}
+  .sr-img{min-height:0}
   .serp-sticky-pill{max-width:none}
   .serp-filters{flex-wrap:wrap;overflow:visible;max-width:100%;padding-bottom:6px;gap:6px;position:relative;z-index:50}
   .serp-filters .sf-tag{flex-shrink:1}
@@ -495,7 +498,12 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
     </div>
   </div>
 <section class="hotels-section" id="hotels-section" style="background:var(--sand);padding:0">
-  <div style="padding:3rem 2rem 2rem">
+  <div style="padding:3rem 2rem 1.2rem">
+    <div style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#fff9e6,#fffdf5);border:1.5px solid #e8d48a;color:#9a7d1e;padding:7px 15px;border-radius:50px;font-weight:800;font-size:13px;margin-bottom:.7rem">✨ Эксклюзив</div>
+    <h2 style="font-size:1.6rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Жильё Беларуси — в одном месте</h2>
+    <p style="font-size:14px;color:var(--muted)">Отели, апартаменты и усадьбы, отобранные вручную</p>
+  </div>
+  <div style="padding:.6rem 2rem 2rem">
         <div class="cat-head" onclick="openCategory('hotel')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Отели и концепты <span class="cat-all">Все по Беларуси →</span></h2></div>
     <p style="font-size:14px;color:var(--muted);margin-bottom:1.2rem">Авторские пространства с характером</p>
     <div id="carousel-hotel" style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none"></div>
@@ -572,7 +580,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
             <label class="sf-chk"><input type="radio" name="stars-r" value="5" onchange="serpFilterChange()"> Только 5★</label>
           </div>
         </div>
-        <div class="sf-tag" id="sft-bfast" onclick="serpToggleTag('sft-bfast')">Завтрак включён</div>
+        <div class="sf-tag sf-tag-excl" id="sft-excl" onclick="serpToggleTag('sft-excl')">✨ Эксклюзив</div>
         <div class="sf-tag" id="sft-free"  onclick="serpToggleTag('sft-free')">Бесплатная отмена</div>
       </div>
 
@@ -882,14 +890,17 @@ function renderHotels(){
     if(!list.length){box.innerHTML='<p style="padding:1rem;color:var(--muted)">Скоро появятся</p>';return;}
     box.innerHTML=list.map(function(h){
       var img=h.photos&&h.photos[0]?h.photos[0]:'';
+      var thumb=img?srNormPhoto(img):'';
       var loc=h.address?h.address.split(',').pop().trim():'';
       return '<div style="flex:0 0 200px;cursor:pointer" onclick="openHotel(this.dataset.id)" data-id="'+h.id+'">'
-        +'<div style="width:200px;height:260px;border-radius:16px;overflow:hidden;background:var(--sand2)">'
-        +(img?'<img src="'+img+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
+        +'<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--sand2)">'
+        +(img?'<img src="'+thumb+'" data-full="'+img+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
+        +'<div style="position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.72))">'
+          +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+h.name_ru+'</div>'
+          +(loc?'<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">'+loc+'</div>':'')
         +'</div>'
-        +'<div style="font-size:14px;font-weight:700;color:var(--ink);margin-top:.7rem">'+h.name_ru+'</div>'
-        +'<div style="font-size:12px;color:var(--hint);margin-top:.2rem">'+loc+'</div>'
-        +'<div style="font-size:13px;color:var(--green);font-weight:600;margin-top:.4rem">от '+h.price+' BYN</div>'
+        +'</div>'
+        +'<div style="font-size:13px;color:var(--green);font-weight:600;margin-top:.5rem">от '+h.price+' BYN</div>'
         +'</div>';
     }).join('');
   });
@@ -1212,7 +1223,7 @@ function zbRestoreRoute(){
   }
   // КАТАЛОГ
   if(r.cat){
-    try{ catStart(r.cat); }catch(e){}
+    try{ if(r.cat==='excl'){ catShowExcl(); } else { catStart(r.cat); } }catch(e){}
     reveal();
     return;
   }
@@ -1303,7 +1314,7 @@ function serpRender(){
   var priceMax=0;
   var pr=document.querySelector('input[name="price-r"]:checked');
   if(pr)priceMax=parseInt(pr.value)||0;
-  var wantBfast=document.getElementById('sft-bfast')&&document.getElementById('sft-bfast').classList.contains('active');
+  var wantExcl=document.getElementById('sft-excl')&&document.getElementById('sft-excl').classList.contains('active');
   var wantFree=document.getElementById('sft-free')&&document.getElementById('sft-free').classList.contains('active');
   var starsMin=0;
   var sr=document.querySelector('input[name="stars-r"]:checked');
@@ -1321,13 +1332,13 @@ function serpRender(){
     if(cats.length&&!cats.includes(h.category))return false;
     if(priceMax>0&&h.price>priceMax)return false;
     if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
-    if(wantBfast&&!(h.amenities||[]).some(function(a){return a.n&&a.n.toLowerCase().indexOf('завтрак')!==-1}))return false;
+    if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
     if(wantFree&&!h.cancellation)return false;
     return true;
   });
 
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantBfast||wantFree;
+  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree;
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -1890,7 +1901,7 @@ async function serpLoadOstrovok(){
   var checkout=serpFmtDate(st.dout);
   if(!checkin||!checkout)return;
 
-  window._catMode=null; // обычный поиск — выходим из режима каталога
+  window._catMode=null; document.body.classList.remove('cat-mode'); // обычный поиск — выходим из режима каталога
   window._ostrovokLoading=true;
 
   // Показываем скелетон пока грузится Ostrovok
@@ -1954,6 +1965,7 @@ function catStart(cats){
   var arr = Array.isArray(cats)?cats.slice():String(cats).split(',').filter(Boolean);
   if(!arr.length) arr=['hotel'];
   window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
+  document.body.classList.add('cat-mode');
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
   window._capState.city='';
@@ -1991,6 +2003,7 @@ async function catLoad(reset){
 
 function catShowEmpty(){
   window._catMode='guest';
+  document.body.classList.add('cat-mode');
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
   HOTELS=[];
   window._serpReset=true; serpOpen();
@@ -2000,7 +2013,7 @@ function catShowEmpty(){
     cards.innerHTML='<div style="padding:48px 20px;text-align:center;color:#5a6b5e">'
       +'<div style="font-size:42px;margin-bottom:14px">🏡</div>'
       +'<div style="font-size:19px;font-weight:700;color:#0F2D1D;margin-bottom:8px">Усадьбы — скоро</div>'
-      +'<div style="font-size:15px;line-height:1.5;max-width:400px;margin:0 auto">Готовим эксклюзивные белорусские усадьбы по прямым контрактам — то, чего нет у других. Следите за обновлениями.</div>'
+      +'<div style="font-size:15px;line-height:1.5;max-width:400px;margin:0 auto">Скоро здесь появятся белорусские усадьбы — то, чего нет у других. Следите за обновлениями.</div>'
       +'</div>';
   }
   var more=document.getElementById('serp-more'); if(more)more.remove();
@@ -2008,7 +2021,26 @@ function catShowEmpty(){
 
 function openCategory(cat){
   if(cat==='guest'){ catShowEmpty(); return; }
+  if(cat==='excl'){ catShowExcl(); return; }
   catStart(cat);
+}
+function catShowExcl(){
+  window._catMode='excl'; window._catHasMore=false;
+  document.body.classList.add('cat-mode');
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=false;});
+  var ex=document.getElementById('sft-excl'); if(ex)ex.classList.add('active');
+  HOTELS=[];
+  window._serpReset=true; serpOpen();
+  var cards=document.getElementById('serp-cards');
+  var meta=document.getElementById('serp-meta'); if(meta)meta.textContent='';
+  if(cards){
+    cards.innerHTML='<div style="padding:48px 20px;text-align:center;color:#5a6b5e">'
+      +'<div style="font-size:42px;margin-bottom:14px">✨</div>'
+      +'<div style="font-size:19px;font-weight:700;color:#0F2D1D;margin-bottom:8px">Эксклюзив — скоро</div>'
+      +'<div style="font-size:15px;line-height:1.5;max-width:400px;margin:0 auto">Скоро здесь появится лучшее жильё Беларуси, отобранное вручную.</div>'
+      +'</div>';
+  }
+  var more=document.getElementById('serp-more'); if(more)more.remove();
 }
 function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
