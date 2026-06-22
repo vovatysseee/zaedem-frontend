@@ -1096,7 +1096,7 @@ function openHotel(id){
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
-      ${(function(){var p=(h.photos||[]).map(function(u){return srNormPhoto(u);});return '<div class="gp" onclick="openGal(0)">'+(p[0]?'<img src="'+p[0]+'" alt="'+h.name_ru+'">':'')+'</div>'+'<div class="gp" onclick="openGal(1)">'+(p[1]?'<img src="'+p[1]+'" alt="">':'')+'</div>'+'<div class="gp" onclick="openGal(2)">'+(p[2]?'<img src="'+p[2]+'" alt="">':'')+'</div>';})()}
+      ${(function(){var pf=(h.photos||[]);var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+p[i]+'" data-full="'+(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}return g(0)+g(1)+g(2);})()}
     </div>
     <div class="hp-layout">
       <div>
@@ -1360,10 +1360,10 @@ function serpRender(){
   var pageList=list.slice(0,shown);
 
   var cardEls=[];pageList.forEach(function(h,idx){
-    var photos=(h.photos||[]).map(function(u){
-      return srNormPhoto(u);
-    });
+    var photosFull=(h.photos||[]);
+    var photos=photosFull.map(function(u){ return srNormPhoto(u); });
     var img=photos[0]||'';
+    var imgFull=photosFull[0]||'';
     var typeLbl=serpCatLabel(h);
     var rn=parseFloat(h.rating||0);var ratLbl=rn>=5?'5 звёзд':rn>=4?'4 звезды':rn>=3?'3 звезды':rn>=2?'2 звезды':'';
     var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+a.i+' '+a.n+'</span>';}).join('');
@@ -1373,7 +1373,7 @@ function serpRender(){
      var c=document.createElement('div');
      c.className='sr-card';c.id='src-'+h.id;c.dataset.hid=h.id;
      var lazyAttr=idx<6?'':' loading="lazy"';
-     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" alt=""'+lazyAttr+' onload="this.parentNode.classList.add(\'loaded\')">':'';
+     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" data-full="'+imgFull+'" alt=""'+lazyAttr+' onerror="srImgFallback(this)" onload="this.parentNode.classList.add(\'loaded\')">':'';
      var imgCls=img?'sr-img':'sr-img noimg';
      var navHtml=photos.length>1?'<button class="sr-img-nav prev" data-id="'+h.id+'" data-dir="-1">&#8249;</button><button class="sr-img-nav next" data-id="'+h.id+'" data-dir="1">&#8250;</button>':'';
      var cntHtml=photos.length>1?'<div id="srcnt-'+h.id+'" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">1/'+photos.length+'</div>':'';
@@ -1476,6 +1476,10 @@ function srNormPhoto(u){
   // карточкам отдаём облегчённый размер x500 — грузится быстро (1024x768 тяжёлый)
   return String(u).replace(/\/t\/\d+x\d+\//,'/t/x500/');
 }
+// если облегчённое фото не загрузилось — подставляем полный размер (он точно рабочий)
+function srImgFallback(img){
+  try{ if(img && img.dataset && img.dataset.full && img.src!==img.dataset.full){ img.src=img.dataset.full; } }catch(e){}
+}
 function srpSlide(id,dir){
   var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
   var h=hotels.find(function(x){return x.id===id;});
@@ -1484,8 +1488,8 @@ function srpSlide(id,dir){
   var next=(srpPhotoIdx[id]+dir+h.photos.length)%h.photos.length;
   var img=document.getElementById('srimg-'+id);
   if(img){
-    var nextSrc=srNormPhoto(h.photos[next]);
-    img.src=nextSrc;
+    img.dataset.full=h.photos[next]||'';
+    img.src=srNormPhoto(h.photos[next]);
   }
   srpPhotoIdx[id]=next;
   var dots=document.getElementById('srdots-'+id);
