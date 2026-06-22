@@ -51,6 +51,11 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .logo em{color:rgba(255,255,255,.85);font-style:normal}
 .nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;padding:8px 18px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .nav-btn:hover{background:rgba(255,255,255,.18)}
+.nav-acct{display:flex;align-items:center;gap:8px;background:transparent;border:1.5px solid rgba(201,241,53,.55);border-radius:50px;padding:7px 16px 7px 12px;cursor:pointer;transition:.15s;color:#fff;font-family:inherit;font-size:13px;font-weight:700}
+.nav-acct:hover{border-color:var(--lime);background:rgba(201,241,53,.12)}
+.nav-acct svg{width:18px;height:18px}
+.excl-badge{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#fff9e6,#fffdf5);border:1.5px solid #e8d48a;color:#9a7d1e;padding:8px 16px;border-radius:50px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;box-shadow:0 1px 4px rgba(212,175,55,.15)}
+.excl-badge:hover{background:linear-gradient(135deg,#ffe9a8,#fff6d6);box-shadow:0 3px 10px rgba(212,175,55,.3);transform:translateY(-1px)}
 .hero{position:relative;min-height:65vh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#0F2D1D,#081C12,#16402A,#081C12,#0F2D1D);background-size:400% 400%;animation:heroGradient 28s ease infinite}
 
 
@@ -453,7 +458,10 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 <script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
-  <div><button class="nav-btn" onclick="openAuth()">Войти</button></div>
+  <div><button class="nav-acct" onclick="openAuth()" aria-label="Войти">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>
+    <span>Войти</span>
+  </button></div>
 </nav>
 <div id="main-page">
 <div class="hero">
@@ -499,7 +507,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
   </div>
 <section class="hotels-section" id="hotels-section" style="background:var(--sand);padding:0">
   <div style="padding:2.5rem 2rem .5rem">
-    <div style="display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#fff9e6,#fffdf5);border:1.5px solid #e8d48a;color:#9a7d1e;padding:7px 15px;border-radius:50px;font-weight:800;font-size:13px">✨ Эксклюзив</div>
+    <div class="excl-badge" onclick="document.getElementById('carousel-hotel').scrollIntoView({behavior:'smooth',block:'center'})">✨ Эксклюзив</div>
   </div>
   <div style="padding:1rem 2rem 2rem">
         <div class="cat-head" onclick="openCategory('hotel')"><h2 style="font-size:1.5rem;font-weight:900;color:var(--ink);margin-bottom:.3rem">Отели и концепты <span class="cat-all">Все по Беларуси →</span></h2></div>
