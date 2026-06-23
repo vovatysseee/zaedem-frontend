@@ -135,6 +135,8 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
 .hcard{background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--sand3);cursor:pointer;transition:.25s;box-shadow:var(--sh)}
 .hcard:hover{transform:translateY(-5px);box-shadow:var(--sh2);border-color:#d0cbc0}
+.home-cv>div:first-child{transition:transform .2s,box-shadow .2s}
+.home-cv:hover>div:first-child{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.16)}
 .hc-img{height:200px;background:var(--sand2);position:relative;overflow:hidden}
 .hc-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
 .hcard:hover .hc-img img{transform:scale(1.07)}
@@ -903,7 +905,7 @@ function renderHotels(){
       var img=h.photos&&h.photos[0]?h.photos[0]:'';
       var thumb=img?srNormPhoto(img):'';
       var loc=h.address?h.address.split(',').pop().trim():'';
-      return '<div style="flex:0 0 200px;cursor:pointer" onclick="openHotel(this.dataset.id)" data-id="'+h.id+'">'
+      return '<div class="home-cv" style="flex:0 0 200px;cursor:pointer" onclick="openHotel(this.dataset.id)" data-id="'+h.id+'">'
         +'<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--sand2)">'
         +(img?'<img src="'+thumb+'" data-full="'+img+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
         +'<div style="position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.72))">'
