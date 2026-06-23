@@ -260,8 +260,8 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .ft-logo:active{transform:translateY(1px)}
 .ft-desc{font-size:12px;line-height:1.8;color:rgba(255,255,255,.4)}
 .ft-badge{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.45);font-size:11px;font-weight:400;margin-top:16px;background:none;border:none;padding:0}
-.ft-col h4{font-size:11px;font-weight:700;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
-.ft-col a{display:block;font-size:12px;color:rgba(255,255,255,.65);margin-bottom:8px;cursor:pointer;transition:.15s}
+.ft-col h4{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px}
+.ft-col a{display:block;font-size:13px;color:rgba(255,255,255,.72);margin-bottom:9px;cursor:pointer;transition:.15s}
 .ft-col a:hover{color:var(--lime)}
 .ft-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:1.5rem;font-size:11px;color:rgba(255,255,255,.35);display:flex;flex-direction:column;gap:6px}
 .capsule-wrap{position:relative;max-width:860px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both}
@@ -2251,9 +2251,9 @@ function openAuth(tab){
     <button onclick="document.getElementById('auth-modal').classList.remove('open')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
     <div style="clear:both">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:16px">Войти</div>
-      <div style="display:flex;background:var(--sand2);border-radius:10px;padding:3px;margin-bottom:20px">
-        <button onclick="openAuth('tourist')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;${tab==='tourist'?'background:#fff;color:var(--green2);box-shadow:0 1px 4px rgba(0,0,0,.1)':'background:none;color:var(--muted)'}">👤 Турист</button>
-        <button onclick="openAuth('hotelowner')" style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;${tab==='hotelowner'?'background:#fff;color:var(--green2);box-shadow:0 1px 4px rgba(0,0,0,.1)':'background:none;color:var(--muted)'}">🏨 Отельер</button>
+      <div style="display:flex;background:var(--sand2);border-radius:12px;padding:4px;margin-bottom:20px;gap:3px">
+        <button onclick="openAuth('tourist')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='tourist'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-3px;margin-right:5px"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>Турист</button>
+        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Отельер</button>
       </div>
       ${tab==='tourist'?`
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Найдите бронь по номеру и email.</div>
