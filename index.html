@@ -2063,6 +2063,13 @@ function catShowExcl(){
   var more=document.getElementById('serp-more'); if(more)more.remove();
 }
 function serpOpen(){
+  // закрываем открытые плашки поиска (город/даты/гости), иначе зависают при сабмите
+  try{
+    if(typeof closeAll==='function') closeAll();
+    var _cd=document.getElementById('city-drop'); if(_cd)_cd.style.display='none';
+    ['cap-dd','cap-dd-cal'].forEach(function(id){var e=document.getElementById(id);if(e){e.style.display='none';e.style.top='-9999px';}});
+    document.querySelectorAll('.gpop').forEach(function(g){ g.classList.remove('open'); g.style.display='none'; });
+  }catch(_e){}
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
