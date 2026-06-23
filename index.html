@@ -1237,6 +1237,10 @@ function zbRestoreRoute(){
   // КАТАЛОГ
   if(r.cat){
     try{ if(r.cat==='excl'){ catShowExcl(); } else { catStart(r.cat); } }catch(e){}
+    if(r.map){ // в каталоге тоже была открыта карта — открываем карту
+      try{ if(typeof serpMapToggle==='function' && !serpMapOpen) serpMapToggle(); }catch(e){}
+      if(typeof _serpMap!=='undefined' && _serpMap){ setTimeout(function(){ try{_serpMap.invalidateSize();}catch(e){} }, 400); }
+    }
     reveal();
     return;
   }
