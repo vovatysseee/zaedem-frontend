@@ -1311,10 +1311,13 @@ function goBack(){
 var serpMapOpen = false;
 
 function serpCatLabel(h){
-  if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель') + ' • ' + (h.address||'').split(',').slice(-2,-1)[0]||'';
-  if(h.category==='guest') return 'Агроусадьба / шале • ' + ((h.address||'').split(',').pop().trim()||'');
-  if(h.category==='apart') return 'Дизайнерские апартаменты • ' + ((h.address||'').split(',').pop().trim()||'');
-  return h.address||'';
+  var parts=String(h.address||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+  var city = parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
+  var tail = city ? ' • '+city : '';
+  if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель')+tail;
+  if(h.category==='guest') return 'Агроусадьба / шале'+tail;
+  if(h.category==='apart') return 'Дизайнерские апартаменты'+tail;
+  return String(h.address||'');
 }
 
 // Цена за весь период: price_total если есть (Островок), иначе price × ночи
