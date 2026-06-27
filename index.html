@@ -220,8 +220,23 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .btn-pay{width:100%;background:var(--green);color:#fff;border:none;padding:14px;border-radius:12px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;margin-top:4px}
 .btn-pay:hover{background:var(--green2)}
 /* Согласия на стр. брони */
-.bk-roomphoto{margin-bottom:14px}
-.bk-roomphoto img{width:100%;height:160px;object-fit:cover;border-radius:12px;display:block}
+.bk-roomphoto{margin-bottom:14px;position:relative}
+.bk-rp-strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:12px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.bk-rp-strip::-webkit-scrollbar{display:none}
+.bk-rp-strip img{flex:0 0 100%;width:100%;height:180px;object-fit:cover;scroll-snap-align:center;display:block}
+.bk-rp-dots{display:flex;gap:6px;justify-content:center;margin-top:8px}
+.bk-rp-dots span{width:6px;height:6px;border-radius:50%;background:var(--sand3);transition:.2s}
+.bk-rp-dots span.on{background:var(--green);width:18px;border-radius:3px}
+/* галерея номера в шапке модалки */
+.modal-img.has-roomgal{display:block;padding:0}
+.modal-img .bk-rp-strip{height:100%;border-radius:0}
+.modal-img .bk-rp-strip img{height:100%;cursor:pointer;border-radius:0}
+.modal-img .bk-rp-dots{position:absolute;left:0;right:0;bottom:10px;margin:0;z-index:2}
+.bk-rp-open{position:absolute;right:12px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:20px;display:flex;align-items:center;gap:4px;cursor:pointer;z-index:2}
+.bk-roomamen{margin-bottom:14px}
+.bk-ra-title{font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;font-family:'Unbounded',sans-serif}
+.bk-ra-chips{display:flex;flex-wrap:wrap;gap:7px}
+.bk-ra-chip{background:var(--sand2);color:var(--ink2);font-size:12px;padding:6px 11px;border-radius:8px;line-height:1.2}
 .bk-consent{margin:16px 0 8px;display:flex;flex-direction:column;gap:10px}
 .bk-check{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:11.5px;line-height:1.45;color:var(--muted);user-select:none}
 .bk-check input{position:absolute;opacity:0;width:0;height:0}
@@ -2267,16 +2282,51 @@ function bkInjectConsent(){
   btn.insertAdjacentHTML('beforebegin', bkConsentHTML());
   bkConsentCheck();
 }
-// Вставляет фото выбранного номера в самый верх формы брони (#bm-body)
+// Свайп-галерея фото номера прямо в ШАПКЕ модалки (#bm-img): листается + открывается по тапу
 function bkInjectRoomPhoto(){
-  var body=document.getElementById('bm-body'); if(!body)return;
-  if(body.querySelector('.bk-roomphoto'))return; // уже есть
+  var head=document.getElementById('bm-img'); if(!head)return;
+  var imgs=(window._ostSel&&_ostSel.images)||[];
+  if(!imgs.length)return; // нет фото номера — оставляем фото отеля из ostModalShell
+  var closeBtn=head.querySelector('.modal-close');
+  head.innerHTML='';
+  head.classList.add('has-roomgal');
+  var strip=document.createElement('div'); strip.className='bk-rp-strip';
+  strip.innerHTML=imgs.map(function(u,k){return '<img src="'+u+'" data-k="'+k+'" onerror="this.style.display=\'none\'" alt="">';}).join('');
+  head.appendChild(strip);
+  if(imgs.length>1){
+    var dots=document.createElement('div'); dots.className='bk-rp-dots';
+    dots.innerHTML=imgs.map(function(_,k){return '<span'+(k===0?' class="on"':'')+'></span>';}).join('');
+    head.appendChild(dots);
+    var dotEls=dots.querySelectorAll('span');
+    strip.addEventListener('scroll',function(){var idx=Math.round(strip.scrollLeft/strip.clientWidth);dotEls.forEach(function(d,k){d.className=(k===idx?'on':'');});},{passive:true});
+  }
+  var badge=document.createElement('div'); badge.className='bk-rp-open';
+  badge.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg> '+imgs.length+' фото';
+  head.appendChild(badge);
+  strip.addEventListener('click',function(e){var im=e.target.closest('img');var k=im?parseInt(im.getAttribute('data-k'),10):0;openRoomGal(k||0);});
+  badge.addEventListener('click',function(){openRoomGal(0);});
+  if(closeBtn)head.appendChild(closeBtn);
+}
+// Открыть фото номера на весь экран (переиспользуем галерею сайта)
+function openRoomGal(idx){
   var imgs=(window._ostSel&&_ostSel.images)||[];
   if(!imgs.length)return;
+  gPhotos=imgs; gIdx=idx||0; showG();
+  document.getElementById('gal-ov').classList.add('open');
+}
+// Удобства выбранного номера — конкретные чипы (вместо воды)
+function bkInjectRoomAmen(){
+  var body=document.getElementById('bm-body'); if(!body)return;
+  if(body.querySelector('.bk-roomamen'))return;
+  var list=ostAmenList((window._ostSel&&_ostSel.roomAmenities)||[],10);
+  if(!list.length)return;
   var div=document.createElement('div');
-  div.className='bk-roomphoto';
-  div.innerHTML='<img src="'+imgs[0]+'" onerror="this.parentNode.style.display=\'none\'" alt="">';
-  body.insertAdjacentElement('afterbegin', div);
+  div.className='bk-roomamen';
+  div.innerHTML='<div class="bk-ra-title">В номере</div><div class="bk-ra-chips">'
+    +list.map(function(a){return '<span class="bk-ra-chip">'+a+'</span>';}).join('')+'</div>';
+  var anchor=body.querySelector('.bk-roomphoto');
+  if(anchor)anchor.insertAdjacentElement('afterend',div);
+  else body.insertAdjacentElement('afterbegin',div);
 }
 
 // Красивые значки оплаты (переиспользуемые)
@@ -3292,6 +3342,45 @@ function ostCancelText(c){
   return '⚠️ Невозвратный тариф — при отмене деньги не возвращаются';
 }
 
+// Перевод/чистка удобств номера (Островок иногда отдаёт английскими кодами)
+var OST_ROOM_AMEN_RU={
+ 'wi-fi':'Wi-Fi','wifi':'Wi-Fi','free-wifi':'Wi-Fi','internet':'Интернет','air-conditioning':'Кондиционер','airconditioning':'Кондиционер',
+ 'tv':'Телевизор','television':'Телевизор','cable-tv':'Кабельное ТВ','flat-screen-tv':'Телевизор',
+ 'balcony':'Балкон','terrace':'Терраса','private-bathroom':'Свой санузел','bathroom':'Ванная комната','shower':'Душ','bath':'Ванна',
+ 'minibar':'Мини-бар','refrigerator':'Холодильник','fridge':'Холодильник','safe':'Сейф','hairdryer':'Фен','kitchen':'Кухня',
+ 'kitchenette':'Мини-кухня','coffee':'Чай/кофе','coffee-tea':'Чай/кофе','tea-coffee':'Чай/кофе','iron':'Утюг','heating':'Отопление',
+ 'non-smoking':'Для некурящих','smoking':'Можно курить','sea-view':'Вид на море','city-view':'Вид на город','garden-view':'Вид на сад',
+ 'desk':'Рабочий стол','wardrobe':'Шкаф','slippers':'Тапочки','bathrobe':'Халат','towels':'Полотенца','soundproofing':'Шумоизоляция',
+ 'private-entrance':'Отдельный вход','washing-machine':'Стиральная машина','microwave':'Микроволновка','dishwasher':'Посудомойка',
+ 'sofa':'Диван','seating-area':'Зона отдыха','dining-area':'Обеденная зона','toiletries':'Туалетные принадлежности'
+};
+function ostAmenRU(a){
+  var s=String(a||'').trim(); if(!s)return '';
+  var key=s.toLowerCase();
+  if(OST_ROOM_AMEN_RU[key])return OST_ROOM_AMEN_RU[key];
+  if(/[а-я]/i.test(s))return s.charAt(0).toUpperCase()+s.slice(1); // уже по-русски — оставляем
+  s=s.replace(/[-_]+/g,' ').trim();
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function ostAmenList(arr,max){
+  var out=(arr||[]).map(ostAmenRU).filter(Boolean);
+  out=out.filter(function(v,i){return out.indexOf(v)===i;});
+  return max?out.slice(0,max):out;
+}
+// Короткое описание по умолчанию + «Показать полностью» (без воды на экране)
+function hpSetDesc(el,text){
+  text=String(text||'').trim(); if(!text){el.textContent='';return;}
+  var LIMIT=260;
+  if(text.length<=LIMIT){el.textContent=text;return;}
+  var cut=text.slice(0,LIMIT),sp=cut.lastIndexOf(' ');if(sp>150)cut=cut.slice(0,sp);
+  el.innerHTML='';
+  var short=document.createElement('span');short.textContent=cut.replace(/[\s.,;–-]+$/,'')+'… ';
+  var full=document.createElement('span');full.textContent=text;full.style.display='none';
+  var a=document.createElement('a');a.href='#';a.textContent='Показать полностью';
+  a.style.cssText='color:var(--green);text-decoration:underline;cursor:pointer;font-weight:600;white-space:nowrap';
+  a.onclick=function(e){e.preventDefault();short.style.display='none';a.style.display='none';full.style.display='inline';};
+  el.appendChild(short);el.appendChild(a);el.appendChild(full);
+}
 async function loadOstRates(h){
   var box=document.getElementById('ost-rates');
   if(!box)return;
@@ -3311,7 +3400,7 @@ async function loadOstRates(h){
       if(hpc&&data.hotel.description){
         var de=hpc.querySelector('.hp-desc');
         if(!de){de=document.createElement('p');de.className='hp-desc';var mt=hpc.querySelector('.hp-meta');if(mt)mt.insertAdjacentElement('afterend',de);}
-        if(de)de.textContent=data.hotel.description;
+        if(de)hpSetDesc(de,data.hotel.description);
       }
       if(hpc&&data.hotel.amenities&&data.hotel.amenities.length){
         var ag=hpc.querySelector('.hp-amenities');
@@ -3385,7 +3474,7 @@ async function ostSelectRate(i){
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'Тариф недоступен');
     if(!data.rate||!data.rate.book_hash)throw new Error('Тариф недоступен');
-    _ostSel={rate:data.rate,roomName:rt.room_name||data.rate.room_name||'Номер',images:rt.images||[]};
+    _ostSel={rate:data.rate,roomName:rt.room_name||data.rate.room_name||'Номер',images:rt.images||[],roomAmenities:rt.room_amenities||[]};
     ostRenderForm(data.rate.price_byn!==rt.price_byn?rt.price_byn:null);
   }catch(e){
     document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">😔</div><div style="font-weight:700;margin-bottom:8px">Тариф недоступен</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">'+e.message+'<br>Цены могли обновиться — мы перезагрузим список тарифов.</div><button onclick="closeBK();loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
@@ -3427,6 +3516,7 @@ function ostRenderForm(oldPrice){
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>';
   bkInjectConsent();
   bkInjectRoomPhoto();
+  bkInjectRoomAmen();
 }
 
 // Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
