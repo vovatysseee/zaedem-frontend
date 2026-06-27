@@ -237,6 +237,21 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .bk-ra-title{font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;font-family:'Unbounded',sans-serif}
 .bk-ra-chips{display:flex;flex-wrap:wrap;gap:7px}
 .bk-ra-chip{background:var(--sand2);color:var(--ink2);font-size:12px;padding:6px 11px;border-radius:8px;line-height:1.2}
+/* Богатые карточки выбора номера */
+.ostc{background:#fff;border:1px solid var(--sand3);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;margin-bottom:12px}
+.ostc:hover{border-color:var(--green)}
+.ostc-img{position:relative;height:165px;background:var(--sand2)}
+.ostc-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ostc-badge{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:20px;display:flex;align-items:center;gap:4px}
+.ostc-body{padding:13px 15px}
+.ostc-name{font-weight:700;font-size:14px;margin-bottom:8px}
+.ostc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.ostc-chip{background:var(--sand2);color:var(--ink2);font-size:11.5px;padding:5px 9px;border-radius:7px;line-height:1.2}
+.ostc-meta{font-size:12px;color:var(--muted);margin-bottom:11px}
+.ostc-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.ostc-price{font-weight:800;font-size:16px}
+.ostc-price small{display:block;font-size:10px;color:var(--hint);font-weight:400;margin-top:2px}
+.ost-rate-row.ostc.picked{border:2px solid var(--green)!important}
 .bk-consent{margin:16px 0 8px;display:flex;flex-direction:column;gap:10px}
 .bk-check{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:11.5px;line-height:1.45;color:var(--muted);user-select:none}
 .bk-check input{position:absolute;opacity:0;width:0;height:0}
@@ -2314,6 +2329,13 @@ function openRoomGal(idx){
   gPhotos=imgs; gIdx=idx||0; showG();
   document.getElementById('gal-ov').classList.add('open');
 }
+// Открыть фото конкретного номера из карточки выбора
+function openRateGal(i){
+  var imgs=(_ostRates[i]&&_ostRates[i].images)||[];
+  if(!imgs.length)return;
+  gPhotos=imgs; gIdx=0; showG();
+  document.getElementById('gal-ov').classList.add('open');
+}
 // Удобства выбранного номера — конкретные чипы (вместо воды)
 function bkInjectRoomAmen(){
   var body=document.getElementById('bm-body'); if(!body)return;
@@ -3414,15 +3436,18 @@ async function loadOstRates(h){
     }
     var n=getNights();
     box.innerHTML=_ostRates.map(function(rt,i){
-      var thumb=(rt.images&&rt.images.length)?'<img src="'+rt.images[0]+'" onerror="this.style.display=\'none\'" style="width:74px;height:58px;object-fit:cover;border-radius:9px;flex-shrink:0" alt="">':'';
-      return '<div class="room ost-rate-row" data-idx="'+i+'" onclick="ostPickRate('+i+')" style="cursor:pointer">'
-        +'<div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">'+thumb
-        +'<div style="min-width:0"><div class="rname">'+(rt.room_name||'Номер')+'</div>'
-        +'<div class="rmeta">🍽 '+ostMeal(rt.meal)+'</div>'
-        +'<div style="font-size:12px;color:var(--muted);margin-top:4px">'+ostCancelText(rt.cancellation)+'</div></div></div>'
-        +'<div style="text-align:right;flex-shrink:0">'
-        +'<div class="rprice">'+rt.price_byn+' BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">за '+n+' '+nightsWord(n)+'</div>'
-        +'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button>'
+      var imgs=rt.images||[];
+      var cover=imgs.length?'<div class="ostc-img" onclick="event.stopPropagation();openRateGal('+i+')"><img src="'+imgs[0]+'" onerror="this.parentNode.style.display=\'none\'" alt="">'+(imgs.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+imgs.length+' фото</div>':'')+'</div>':'';
+      var chips=ostAmenList(rt.room_amenities,5);
+      var chipsHtml=chips.length?'<div class="ostc-chips">'+chips.map(function(a){return '<span class="ostc-chip">'+a+'</span>';}).join('')+'</div>':'';
+      return '<div class="ostc ost-rate-row" data-idx="'+i+'" onclick="ostPickRate('+i+')">'
+        +cover
+        +'<div class="ostc-body">'
+        +'<div class="ostc-name">'+(rt.room_name||'Номер')+'</div>'
+        +chipsHtml
+        +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+ostCancelText(rt.cancellation)+'</div>'
+        +'<div class="ostc-foot"><div class="ostc-price">'+rt.price_byn+' BYN<small>за '+n+' '+nightsWord(n)+'</small></div>'
+        +'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button></div>'
         +'</div></div>';
     }).join('');
     if(!window._ostBookEnabled){
