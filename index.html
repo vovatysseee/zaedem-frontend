@@ -2428,7 +2428,7 @@ async function confirmBook(total){
   const _kids=(window._capState&&window._capState.kids)||0;
   const _totalGuests=gCnt+_kids;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card'})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):''})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -3689,7 +3689,12 @@ async function ostConfirm(){
       check_in:ci,
       check_out:co,
       guests_count:guests.length,
-      price_byn:rt.price_byn
+      price_byn:rt.price_byn,
+      hotel_address:h.address||'',
+      hotel_phone:h.phone||'',
+      check_in_time:(window._hpTimes&&_hpTimes.ci)||'',
+      check_out_time:(window._hpTimes&&_hpTimes.co)||'',
+      amenities:(_ostSel&&_ostSel.roomAmenities&&_ostSel.roomAmenities.length)?ostAmenList(_ostSel.roomAmenities,16).join(', '):''
     })});
     var nd=await nr.json();
     if(!nr.ok||!nd.ok)throw new Error(nd.error||'Не удалось запустить бронирование');
