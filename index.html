@@ -803,7 +803,7 @@ function sameDay(a,b){return a&&b&&a.getTime()===b.getTime()}
 function closeAll(e){
   if(e){const t=e.target;if(t.closest('.cal-popup')||t.closest('.gpop')||t.closest('#sf-in')||t.closest('#sf-out')||t.closest('#sf-guests')||t.closest('#sf-dest')||t.closest('#city-drop'))return;}
   ['pop-in','pop-out'].forEach(id=>document.getElementById(id).classList.remove('open'));
-  var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn'))_hpc.classList.remove('open');
+  var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn')){var _wasCalOpen=_hpc.classList.contains('open');_hpc.classList.remove('open');if(_wasCalOpen&&window._hpDatesDirty)hpApplyDates();}
   var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop')){var _wasOpen=_hpg.classList.contains('open');_hpg.classList.remove('open');if(_wasOpen&&window._hpGuestsDirty){window._hpGuestsDirty=false;var _lbl=document.getElementById('hp-guests-lbl');if(_lbl&&typeof hpGuestsLabel==='function')_lbl.textContent=hpGuestsLabel();if(typeof updSum==='function')try{updSum();}catch(_){}if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);}}
   var _pg=document.getElementById('pop-guests'); if(_pg)_pg.style.display='none';
   curPop=null;
@@ -1116,20 +1116,22 @@ function hpPickDay(y,m,day,e){
     document.getElementById('hp-out').value=fmtV(_hpCal.dout);
     document.getElementById('hp-in-lbl').textContent=hpFmtLbl(fmtV(_hpCal.din));
     document.getElementById('hp-out-lbl').textContent=hpFmtLbl(fmtV(_hpCal.dout));
-    // применяем сразу: синхрон с глобальными датами + мгновенный пересчёт + закрываем календарь
-    dIn=_hpCal.din; dOut=_hpCal.dout;
-    window._capState=window._capState||{}; window._capState.din=_hpCal.din; window._capState.dout=_hpCal.dout;
-    var p=document.getElementById('hp-cal-pop'); if(p)p.classList.remove('open');
-    if(typeof updSum==='function')try{updSum();}catch(_){}
-    if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+    window._hpDatesDirty=true; // применим при подтверждении (кнопка или тап мимо)
   }
+}
+// Применить выбранные даты: синхрон + пересчёт. Вызывается по кнопке и при закрытии «в край».
+function hpApplyDates(){
+  if(!_hpCal||!_hpCal.din||!_hpCal.dout)return;
+  dIn=_hpCal.din; dOut=_hpCal.dout;
+  window._capState=window._capState||{}; window._capState.din=_hpCal.din; window._capState.dout=_hpCal.dout;
+  window._hpDatesDirty=false;
+  if(typeof updSum==='function')try{updSum();}catch(_){}
+  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
 }
 function hpConfirmDates(e){
   if(e)e.stopPropagation();
   var p=document.getElementById('hp-cal-pop'); if(p)p.classList.remove('open');
-  // пересчёт цены: и для наших отелей, и для Ostrovok
-  if(typeof updSum==='function')try{updSum();}catch(_){}
-  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+  hpApplyDates();
 }
 
 // ── Модуль гостей на странице отеля (взрослые + дети с возрастом) ──
