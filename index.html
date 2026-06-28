@@ -2617,11 +2617,12 @@ function printBooking(bk){
   <div class="num">${num}</div>
   <div class="voucher-label">Ваучер бронирования</div>
   <div class="hotel-name">${bk.hotel_name||'—'}</div>
+  ${bk.hotel_address?`<div style="font-size:12px;color:#888;margin-top:3px">📍 ${bk.hotel_address}</div>`:''}
   <div class="room-name">${bk.room_name||''}</div>
   <span class="status-badge">${statusLabel}</span>
   <div class="grid">
-    <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)}</div></div>
-    <div class="cell"><div class="cell-label">Выезд</div><div class="cell-val">${fd(bk.check_out)}</div></div>
+    <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)}${bk.check_in_time?` · с ${bk.check_in_time}`:''}</div></div>
+    <div class="cell"><div class="cell-label">Выезд</div><div class="cell-val">${fd(bk.check_out)}${bk.check_out_time?` · до ${bk.check_out_time}`:''}</div></div>
     <div class="cell"><div class="cell-label">Ночей</div><div class="cell-val">${bk.nights||'—'}</div></div>
     <div class="cell"><div class="cell-label">Гостей</div><div class="cell-val">${bk.guests_count||1}</div></div>
   </div>
@@ -2629,6 +2630,8 @@ function printBooking(bk){
   <div class="row"><span class="label">Email</span><span class="val">${bk.guest_email||'—'}</span></div>
   ${bk.guest_phone?`<div class="row"><span class="label">Телефон</span><span class="val">${bk.guest_phone}</span></div>`:''}
   <div class="row"><span class="label">Способ оплаты</span><span class="val">${bk.payment_method||'—'}</span></div>
+  ${bk.hotel_phone?`<div class="row"><span class="label">Телефон отеля</span><span class="val">${bk.hotel_phone}</span></div>`:''}
+  ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${(Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · ')}</div></div>`:''}
   <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
   <div class="footer">Заедем.by · ИП Горошко Жанна Витальевна · booking@zaedem.by<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
   </body></html>`);
