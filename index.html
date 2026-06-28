@@ -804,7 +804,7 @@ function closeAll(e){
   if(e){const t=e.target;if(t.closest('.cal-popup')||t.closest('.gpop')||t.closest('#sf-in')||t.closest('#sf-out')||t.closest('#sf-guests')||t.closest('#sf-dest')||t.closest('#city-drop'))return;}
   ['pop-in','pop-out'].forEach(id=>document.getElementById(id).classList.remove('open'));
   var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn'))_hpc.classList.remove('open');
-  var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop'))_hpg.classList.remove('open');
+  var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop')){var _wasOpen=_hpg.classList.contains('open');_hpg.classList.remove('open');if(_wasOpen&&window._hpGuestsDirty){window._hpGuestsDirty=false;var _lbl=document.getElementById('hp-guests-lbl');if(_lbl&&typeof hpGuestsLabel==='function')_lbl.textContent=hpGuestsLabel();if(typeof updSum==='function')try{updSum();}catch(_){}if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);}}
   var _pg=document.getElementById('pop-guests'); if(_pg)_pg.style.display='none';
   curPop=null;
 }
@@ -1116,6 +1116,12 @@ function hpPickDay(y,m,day,e){
     document.getElementById('hp-out').value=fmtV(_hpCal.dout);
     document.getElementById('hp-in-lbl').textContent=hpFmtLbl(fmtV(_hpCal.din));
     document.getElementById('hp-out-lbl').textContent=hpFmtLbl(fmtV(_hpCal.dout));
+    // применяем сразу: синхрон с глобальными датами + мгновенный пересчёт + закрываем календарь
+    dIn=_hpCal.din; dOut=_hpCal.dout;
+    window._capState=window._capState||{}; window._capState.din=_hpCal.din; window._capState.dout=_hpCal.dout;
+    var p=document.getElementById('hp-cal-pop'); if(p)p.classList.remove('open');
+    if(typeof updSum==='function')try{updSum();}catch(_){}
+    if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
   }
 }
 function hpConfirmDates(e){
@@ -1190,6 +1196,7 @@ function hpChG(type,d,e){
     if(d>0)window._capState.childAges.push(7);
     else window._capState.childAges.pop();
   }
+  window._hpGuestsDirty=true;
   hpBuildGuests();
 }
 function hpSetAge(i,v){
@@ -1198,6 +1205,7 @@ function hpSetAge(i,v){
 }
 function hpApplyGuests(e){
   if(e)e.stopPropagation();
+  window._hpGuestsDirty=false;
   document.getElementById('hp-guests-pop').classList.remove('open');
   var lbl=document.getElementById('hp-guests-lbl');
   if(lbl)lbl.textContent=hpGuestsLabel();
@@ -1975,8 +1983,9 @@ function serpEditSearch(){
     var m=document.getElementById('serp-sd-modal');
     if(!m){document.removeEventListener('click',window._serpSDOutside);return;}
     if(!m.contains(e.target)){
-      serpSearchClose();
       document.removeEventListener('click',window._serpSDOutside);
+      if(_serpSD.city&&_serpSD.din&&_serpSD.dout)serpSearchSubmit();
+      else serpSearchClose();
     }
   };
   document.removeEventListener('click',window._serpSDOutside);
@@ -3135,7 +3144,17 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var serpDD=document.getElementById('serp-search-dd');
     var inAnchor=(cm&&cm.contains(e.target))||(pill&&pill.contains(e.target))||(serpDD&&serpDD.contains(e.target));
     if(dd&&dd.style.display==='block'&&!dd.contains(e.target)&&!inAnchor){dd.style.display='none';dd.style.top='-9999px';}
-    if(cal&&cal.style.display==='block'&&!cal.contains(e.target)&&!inAnchor){cal.style.display='none';cal.style.top='-9999px';}
+    if(cal&&cal.style.display==='block'&&!cal.contains(e.target)&&!inAnchor){
+      cal.style.display='none';cal.style.top='-9999px';
+      // применяем выбранные даты при закрытии «в край» — чтобы не терялись
+      if(ddcDin&&ddcDout){
+        dIn=ddcDin;dOut=ddcDout;
+        window._capState=window._capState||{};window._capState.din=ddcDin;window._capState.dout=ddcDout;
+        if(typeof updCapDisplay==='function')try{updCapDisplay();}catch(_){}
+        var _sp=document.getElementById('serp-page');
+        if(_sp&&_sp.classList.contains('open')&&typeof serpOpen==='function')serpOpen();
+      }
+    }
   });
 
   // ---- MOBILE SHEET ----
