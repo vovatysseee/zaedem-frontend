@@ -252,6 +252,8 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .ostc-price{font-weight:800;font-size:16px}
 .ostc-price small{display:block;font-size:10px;color:var(--hint);font-weight:400;margin-top:2px}
 .ost-rate-row.ostc.picked{border:2px solid var(--green)!important}
+.hp-times{font-size:13px;color:var(--muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px}
+.ostc-cap{font-size:12.5px;color:var(--ink2);font-weight:600;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px}
 /* Десктоп: карточки номеров шире и горизонтальные (фото слева) */
 @media(min-width:901px){
   .ostc{display:flex;align-items:stretch}
@@ -2045,7 +2047,7 @@ async function serpLoadOstrovok(){
       checkin:  checkin,
       checkout: checkout,
       adults:   st.adults||2,
-      children: [],
+      children: Array.isArray(st.childAges)?st.childAges:[],
     };
     var resp=await fetch(API+'/api/ostrovok/search',{
       method:'POST',
@@ -3419,7 +3421,7 @@ async function loadOstRates(h){
     var ci=document.getElementById('hp-in')?.value||getIn();
     var co=document.getElementById('hp-out')?.value||getOut();
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
-    var kids=(window._capState&&window._capState.kids)||[];
+    var kids=(window._capState&&window._capState.childAges)||[];
     var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:'by'})});
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
@@ -3436,6 +3438,13 @@ async function loadOstRates(h){
         var ag=hpc.querySelector('.hp-amenities');
         if(ag)ag.innerHTML=data.hotel.amenities.slice(0,12).map(function(a){return '<div class="amen"><span class="ai">✓</span>'+a+'</div>';}).join('');
       }
+      if(hpc&&(data.hotel.check_in||data.hotel.check_out)){
+        var ht=hpc.querySelector('.hp-times');
+        if(!ht){ht=document.createElement('div');ht.className='hp-times';var an=hpc.querySelector('.hp-amenities')||hpc.querySelector('.hp-desc');if(an)an.insertAdjacentElement('afterend',ht);else hpc.appendChild(ht);}
+        var ci2=data.hotel.check_in?('Заезд с '+data.hotel.check_in):'';
+        var co2=data.hotel.check_out?('Выезд до '+data.hotel.check_out):'';
+        ht.innerHTML='<span>🕐 '+[ci2,co2].filter(Boolean).join(' · ')+'</span>';
+      }
     }
     _ostRates=(data.rates||[]).filter(function(rt){return rt.book_hash&&rt.price_byn>0;});
     if(!_ostRates.length){
@@ -3448,10 +3457,15 @@ async function loadOstRates(h){
       var cover=imgs.length?'<div class="ostc-img" onclick="event.stopPropagation();openRateGal('+i+')"><img src="'+imgs[0]+'" onerror="this.parentNode.style.display=\'none\'" alt="">'+(imgs.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+imgs.length+' фото</div>':'')+'</div>':'';
       var chips=ostAmenList(rt.room_amenities,5);
       var chipsHtml=chips.length?'<div class="ostc-chips">'+chips.map(function(a){return '<span class="ostc-chip">'+a+'</span>';}).join('')+'</div>':'';
+      var capParts=[];
+      if(rt.capacity)capParts.push('👥 до '+rt.capacity+' '+(rt.capacity==1?'гостя':'гостей'));
+      if(rt.bedrooms)capParts.push('🛏 '+rt.bedrooms+(rt.bedrooms==1?' комната':' комн.'));
+      var capHtml=capParts.length?'<div class="ostc-cap">'+capParts.join(' · ')+'</div>':'';
       return '<div class="ostc ost-rate-row" data-idx="'+i+'" onclick="ostPickRate('+i+')">'
         +cover
         +'<div class="ostc-body">'
         +'<div class="ostc-name">'+(rt.room_name||'Номер')+'</div>'
+        +capHtml
         +chipsHtml
         +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+ostCancelText(rt.cancellation)+'</div>'
         +'<div class="ostc-foot"><div class="ostc-price">'+rt.price_byn+' BYN<small>за '+n+' '+nightsWord(n)+'</small></div>'
