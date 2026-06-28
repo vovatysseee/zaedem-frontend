@@ -254,6 +254,9 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .ost-rate-row.ostc.picked{border:2px solid var(--green)!important}
 .hp-times{font-size:13px;color:var(--muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px}
 .ostc-cap{font-size:12.5px;color:var(--ink2);font-weight:600;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px}
+.ost-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px;color:var(--muted);font-size:13px}
+.ost-spin{width:30px;height:30px;border:3px solid var(--sand3);border-top-color:var(--green);border-radius:50%;animation:ostspin .8s linear infinite}
+@keyframes ostspin{to{transform:rotate(360deg)}}
 /* Десктоп: карточки номеров шире и горизонтальные (фото слева) */
 @media(min-width:901px){
   .ostc{display:flex;align-items:stretch}
@@ -2421,7 +2424,7 @@ async function confirmBook(total){
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
     document.getElementById('bm-body').innerHTML=`<div class="success"><div class="s-ico">🎉</div><div class="conf">${conf}</div><h3 style="font-family:'Unbounded',sans-serif;font-size:1.1rem;margin-bottom:12px">Готово!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">${h.name_ru}</strong>!<br>✉️ Ваучер отправлен на ${em.value.trim()}</p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
   }catch(err){
-    document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Ошибка</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">${err.message}</div><button onclick="openBookModal()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Повторить</button></div>`;
+    document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Ошибка</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Что-то пошло не так. Попробуйте ещё раз или напишите нам.</div><button onclick="openBookModal()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Повторить</button></div>`;
   }
 }
 
@@ -3417,6 +3420,7 @@ async function loadOstRates(h){
   var box=document.getElementById('ost-rates');
   if(!box)return;
   _ostRates=[];_ostSel=null;
+  box.innerHTML='<div class="ost-loading"><div class="ost-spin"></div><div>Ищем свободные номера…</div></div>';
   try{
     var ci=document.getElementById('hp-in')?.value||getIn();
     var co=document.getElementById('hp-out')?.value||getOut();
@@ -3446,6 +3450,7 @@ async function loadOstRates(h){
         ht.innerHTML='<span>🕐 '+[ci2,co2].filter(Boolean).join(' · ')+'</span>';
       }
     }
+    window._hpTimes={ci:(data.hotel&&data.hotel.check_in)||'',co:(data.hotel&&data.hotel.check_out)||''};
     _ostRates=(data.rates||[]).filter(function(rt){return rt.book_hash&&rt.price_byn>0;});
     if(!_ostRates.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте изменить даты заезда и выезда.</div>';
@@ -3477,7 +3482,7 @@ async function loadOstRates(h){
     }
     ostPickRate(0); // по умолчанию выбран первый (самый дешёвый)
   }catch(e){
-    box.innerHTML='<div style="background:#fde9e9;border-radius:12px;padding:18px;font-size:13px;color:#b02a2a">Не удалось загрузить тарифы: '+e.message+'<br><span style="color:var(--muted)">Обновите страницу или попробуйте позже.</span></div>';
+    box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">Не получилось загрузить номера. Обновите страницу или попробуйте чуть позже.</div>';
   }
 }
 
@@ -3524,7 +3529,7 @@ async function ostSelectRate(i){
     _ostSel={rate:data.rate,roomName:rt.room_name||data.rate.room_name||'Номер',images:rt.images||[],roomAmenities:rt.room_amenities||[]};
     ostRenderForm(data.rate.price_byn!==rt.price_byn?rt.price_byn:null);
   }catch(e){
-    document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">😔</div><div style="font-weight:700;margin-bottom:8px">Тариф недоступен</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">'+e.message+'<br>Цены могли обновиться — мы перезагрузим список тарифов.</div><button onclick="closeBK();loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
+    document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">😔</div><div style="font-weight:700;margin-bottom:8px">Номер только что заняли</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Или цена обновилась. Покажем актуальные варианты.</div><button onclick="closeBK();loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные номера</button></div>';
   }
 }
 
@@ -3533,6 +3538,8 @@ function ostRenderForm(oldPrice){
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
   var kids=(window._capState&&window._capState.kids)||0;
   var childAges=(window._capState&&window._capState.childAges)||[];
+  var _t=window._hpTimes||{};
+  var timeRow=(_t.ci||_t.co)?'<div class="srow2"><span>Время</span><span>'+[_t.ci?'заезд с '+_t.ci:'',_t.co?'выезд до '+_t.co:''].filter(Boolean).join(' · ')+'</span></div>':'';
   var extra='';
   for(var g=1;g<adults;g++){
     extra+='<div class="fgrow"><div class="fg"><label>Имя гостя '+(g+1)+'</label><input id="f-fn'+g+'" placeholder="Anna"></div><div class="fg"><label>Фамилия гостя '+(g+1)+'</label><input id="f-ln'+g+'" placeholder="Ivanova"></div></div>';
@@ -3557,7 +3564,7 @@ function ostRenderForm(oldPrice){
     +extra
     +'<div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
-    <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div><div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
+    <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>';
