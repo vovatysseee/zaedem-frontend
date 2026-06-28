@@ -744,9 +744,9 @@ const CITIES=[
   {name:'Гомель',emoji:'🌲'},
   {name:'Могилёв',emoji:'🏛️'},
   {name:'Пинск',emoji:'🌿'},
-  {name:'Несвиж',emoji:'🏯'},
-  {name:'Нарочь',emoji:'🌊'},
-  {name:'Беловежская пуща',emoji:'🦌'},
+  
+  
+  
 ];
 
 function showCities(q){
@@ -1729,9 +1729,9 @@ var SERP_CITIES=[
   {name:'Солигорск',emoji:'⚒'},{name:'Новополоцк',emoji:'🏗'},{name:'Молодечно',emoji:'🎵'},
   {name:'Лида',emoji:'🏰'},{name:'Полоцк',emoji:'⛪'},{name:'Жлобин',emoji:'🏭'},
   {name:'Речица',emoji:'🌊'},{name:'Слуцк',emoji:'🌾'},
-  {name:'Слоним',emoji:'🏘'},{name:'Вилейка',emoji:'💧'},{name:'Жодино',emoji:'🏎'},
-  {name:'Нарочь',emoji:'🌊'},{name:'Несвиж',emoji:'🏯'},{name:'Мир',emoji:'🏰'},
-  {name:'Беловежская пуща',emoji:'🦌'},{name:'Браслав',emoji:'🌅'},{name:'Турово',emoji:'🕊'}
+  
+  
+  
 ];
 var MNS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 var DWS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1863,6 +1863,7 @@ function serpSearchSubmit(){
   window._capState.adults=_serpSD.adults;
   window._capState.kids=_serpSD.kids;
   window._capState.childAges=(_serpSD.childAges||[]).slice(0,_serpSD.kids);
+  if(_serpSD.din)dIn=_serpSD.din; if(_serpSD.dout)dOut=_serpSD.dout; if(_serpSD.adults)gCnt=_serpSD.adults; // синхрон дат с отелем
   var sd=document.getElementById('s-dest');if(sd)sd.value=_serpSD.city;
   serpSearchClose();
   serpOpen();
@@ -2849,9 +2850,9 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     {name:'Солигорск',emoji:'⚒'},{name:'Новополоцк',emoji:'🏗'},{name:'Молодечно',emoji:'🎵'},
     {name:'Лида',emoji:'🏰'},{name:'Полоцк',emoji:'⛪'},{name:'Жлобин',emoji:'🏭'},
     {name:'Речица',emoji:'🌊'},{name:'Слуцк',emoji:'🌾'},
-    {name:'Слоним',emoji:'🏘'},{name:'Вилейка',emoji:'💧'},{name:'Жодино',emoji:'🏎'},
-    {name:'Нарочь',emoji:'🌊'},{name:'Несвиж',emoji:'🏯'},{name:'Мир',emoji:'🏰'},
-    {name:'Беловежская пуща',emoji:'🦌'},{name:'Браслав',emoji:'🌅'},{name:'Турово',emoji:'🕊'},
+    
+    
+    
   ];
 
   var csNav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
