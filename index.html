@@ -3464,8 +3464,11 @@ function cleanRoomName(name){
   if(!s)return 'Номер';
   var parts=s.split(',').map(function(p){return p.trim();}).filter(Boolean);
   var seen={},out=[];
-  parts.forEach(function(p){var k=p.toLowerCase();if(!seen[k]){seen[k]=1;out.push(p);}});
-  return out.join(', ').replace(/\s{2,}/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').trim();
+  parts.forEach(function(p){var k=p.replace(/[()]/g,'').replace(/\s+/g,' ').trim().toLowerCase();if(!seen[k]){seen[k]=1;out.push(p);}});
+  var res=out.join(', ').replace(/\s{2,}/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').trim();
+  var op=(res.match(/\(/g)||[]).length,cl=(res.match(/\)/g)||[]).length;
+  while(op>cl){res+=')';cl++;}
+  return res;
 }
 // Короткое описание по умолчанию + «Показать полностью» (без воды на экране)
 function hpSetDesc(el,text){
