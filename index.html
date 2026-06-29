@@ -3483,22 +3483,22 @@ function ostAmenList(arr,max){
   out=out.filter(function(v,i){return out.indexOf(v)===i;});
   return max?out.slice(0,max):out;
 }
-// Островок дублирует фразы в названии номера («…питание не включены» по many раз) — чистим
+// Островок пихает в название номера мусор про детскую кровать/питание не включены — вырезаем
 function cleanRoomName(name){
   var s=String(name||'').trim();
   if(!s)return 'Номер';
-  var parts=s.split(',').map(function(p){return p.trim();}).filter(Boolean);
-  var seen={},out=[];
-  parts.forEach(function(p){
-    var core=p.indexOf('(')>=0?p.slice(p.lastIndexOf('(')+1):p;
-    var k=core.replace(/[()]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(!k){out.push(p);return;}
-    if(!seen[k]){seen[k]=1;out.push(p);}
-  });
-  var res=out.join(', ').replace(/\s{2,}/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').trim();
-  var op=(res.match(/\(/g)||[]).length,cl=(res.match(/\)/g)||[]).length;
-  while(op>cl){res+=')';cl++;}
-  return res;
+  var low=s.toLowerCase();
+  var markers=['детская крова','питание для детей','не включ','не предоставл'];
+  var cut=-1;
+  markers.forEach(function(mk){var i=low.indexOf(mk);if(i>=0&&(cut<0||i<cut))cut=i;});
+  if(cut>=0){
+    var paren=s.lastIndexOf('(',cut);
+    var at=(paren>=0&&s.slice(paren,cut).indexOf(')')<0)?paren:cut;
+    s=s.slice(0,at).replace(/[\s,(]+$/,'').trim();
+  }
+  var op=(s.match(/\(/g)||[]).length,cl=(s.match(/\)/g)||[]).length;
+  while(op>cl){s+=')';cl++;}
+  return s.trim()||'Номер';
 }
 // Короткое описание по умолчанию + «Показать полностью» (без воды на экране)
 function hpSetDesc(el,text){
@@ -3524,6 +3524,7 @@ async function loadOstRates(h){
     var co=document.getElementById('hp-out')?.value||getOut();
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
     var kids=(window._capState&&window._capState.childAges)||[];
+    window._bookChildAges=Array.isArray(kids)?kids.slice():[];  // возрасты, под которые посчитаны цены — их и покажем в брони
     var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:'by'})});
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
@@ -3634,22 +3635,22 @@ async function ostSelectRate(i){
 function ostRenderForm(oldPrice){
   var h=curHotel,rt=_ostSel.rate,n=getNights();
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
-  var kids=(window._capState&&window._capState.kids)||0;
-  var childAges=(window._capState&&window._capState.childAges)||[];
+  var bAges=(window._bookChildAges&&window._bookChildAges.length)?window._bookChildAges:((window._capState&&window._capState.childAges)||[]);
+  var kids=bAges.length||((window._capState&&window._capState.kids)||0);
+  var childAges=bAges;
   var _t=window._hpTimes||{};
   var timeRow=(_t.ci||_t.co)?'<div class="srow2"><span>Время</span><span>'+[_t.ci?'заезд с '+_t.ci:'',_t.co?'выезд до '+_t.co:''].filter(Boolean).join(' · ')+'</span></div>':'';
   var extra='';
   for(var g=1;g<adults;g++){
     extra+='<div class="fgrow"><div class="fg"><label>Имя гостя '+(g+1)+'</label><input id="f-fn'+g+'" placeholder="Anna"></div><div class="fg"><label>Фамилия гостя '+(g+1)+'</label><input id="f-ln'+g+'" placeholder="Ivanova"></div></div>';
   }
-  // Поля для детей (имя, фамилия, возраст)
+  // Поля для детей (имя, фамилия). Возраст — только для просмотра (задан при поиске, цена под него уже посчитана)
   if(kids>0){
     extra+='<div style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-weight:600">Дети</div>';
     for(var c=0;c<kids;c++){
       var cage=(childAges[c]!=null?childAges[c]:7);
-      var ageOpts='';
-      for(var a=0;a<=17;a++)ageOpts+='<option value="'+a+'"'+(a===cage?' selected':'')+'>'+a+' '+(a===1?'год':a>=2&&a<=4?'года':'лет')+'</option>';
-      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:110px"><label>Возраст</label><select id="f-cage'+c+'" style="width:100%;border:1.5px solid var(--sand3);border-radius:10px;padding:11px;font-family:inherit;font-size:14px">'+ageOpts+'</select></div></div>';
+      var ageWord=(cage===1?'год':cage>=2&&cage<=4?'года':'лет');
+      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:140px"><label>Возраст</label><div style="padding:11px 0 0;font-size:14px;font-weight:600;color:var(--ink)">'+cage+' '+ageWord+' <span style="font-weight:400;color:var(--muted);font-size:11px;white-space:nowrap">· из поиска</span></div></div></div>';
     }
   }
   document.getElementById('bm-body').innerHTML='\
@@ -3695,8 +3696,9 @@ async function ostConfirm(){
   var ln=(document.getElementById('f-ln')?.value||'').trim();
   if(!fn||!ln){(document.getElementById('f-fn')||{focus:function(){}}).focus();return;}
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
-  var kids=(window._capState&&window._capState.kids)||0;
-  var childAges=(window._capState&&window._capState.childAges)||[];
+  var bAges=(window._bookChildAges&&window._bookChildAges.length)?window._bookChildAges:((window._capState&&window._capState.childAges)||[]);
+  var kids=bAges.length||((window._capState&&window._capState.kids)||0);
+  var childAges=bAges;
   var guests=[{first_name:fn,last_name:ln}];
   for(var g=1;g<adults;g++){
     var gf=(document.getElementById('f-fn'+g)?.value||'').trim()||('Guest'+(g+1));
@@ -3707,8 +3709,7 @@ async function ostConfirm(){
   for(var c=0;c<kids;c++){
     var cfn=(document.getElementById('f-cfn'+c)?.value||'').trim()||('Child'+(c+1));
     var cln=(document.getElementById('f-cln'+c)?.value||'').trim()||ln;
-    var cageEl=document.getElementById('f-cage'+c);
-    var cage=cageEl?parseInt(cageEl.value):(childAges[c]!=null?childAges[c]:7);
+    var cage=(childAges[c]!=null?childAges[c]:7);
     guests.push({
       first_name:cfn,
       last_name:cln,
