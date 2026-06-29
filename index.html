@@ -2295,8 +2295,8 @@ function openBookModal(){
       ${payIconsHTML()}
     </div>
     <div class="bk-consent">
-      <label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></span></label>
-      <label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html" target="_blank" rel="noopener">публичной оферты</a></span></label>
+      <label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html">обработку персональных данных</a></span></label>
+      <label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html">публичной оферты</a></span></label>
     </div>
     <button class="btn-pay btn-pay-soon" id="bk-pay-btn" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>`;
@@ -2316,8 +2316,8 @@ function bkConsentCheck(){
 // Разметка двух согласий (переиспользуется в обеих формах брони)
 function bkConsentHTML(){
   return '<div class="bk-consent">'
-   +'<label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html" target="_blank" rel="noopener">обработку персональных данных</a></span></label>'
-   +'<label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html" target="_blank" rel="noopener">публичной оферты</a></span></label>'
+   +'<label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html">обработку персональных данных</a></span></label>'
+   +'<label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html">публичной оферты</a></span></label>'
    +'</div>';
 }
 // Вставляет согласия прямо над кнопкой оплаты в текущей форме брони (#bm-body)
