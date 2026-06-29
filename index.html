@@ -19,6 +19,8 @@
 
 <!-- Favicon (временный, из буквы — заменим на логотип позже) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2D1D'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='38' font-weight='900' fill='%23c9f135' text-anchor='middle'%3E3%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800;900&family=Golos+Text:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#0c0c0c;--ink2:#1e1e1e;--muted:#6b6b6b;--hint:#aaa;--sand:#faf8f4;--sand2:#f2efe8;--sand3:#e5e0d5;--green:#1a5c38;--green2:#246b44;--lime:#c9f135;--lime2:#d9f554;--green4:#0d3320;--white:#fff;--sh:0 2px 16px rgba(0,0,0,.06);--sh2:0 12px 40px rgba(0,0,0,.12)}
@@ -534,9 +536,9 @@ body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
 }
 </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 .zb-restoring #main-page,.zb-restoring footer,.zb-restoring nav{display:none!important}
 .zb-restoring-hotel #serp-page{display:none!important}
@@ -735,7 +737,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
     <div class="ft-inner">
       <div><div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования отелей. Принимаем белорусские и российские карты.</p><div class="ft-pay-block" style="margin-top:12px"><span id="ft-pay-icons"></span></div></div>
       <div class="ft-col"><h4>Отелям</h4><a onclick="openHotelApp()">Добавить свой отель</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div>
-      <div class="ft-col"><h4>Компания</h4><a>О Заедем.by</a><a>Контакты</a><a>Политика конфиденциальности</a><a>Публичная оферта</a></div>
+      <div class="ft-col"><h4>Компания</h4><a>О Заедем.by</a><a>Контакты</a><a href="privacy.html">Политика конфиденциальности</a><a href="oferta.html">Публичная оферта</a></div>
     </div>
     <div class="ft-bottom">
       <span>© 2026 Заедем.by · УНП [—]</span>
