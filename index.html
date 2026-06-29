@@ -781,6 +781,7 @@ function showCities(q){
 
 function pickCity(name){
   document.getElementById('s-dest').value=name;
+  window._capState=window._capState||{}; window._capState.city=name;
   document.getElementById('city-drop').style.display='none';
   renderHotels();
   scrollToHotels();
@@ -1756,6 +1757,8 @@ var SERP_CITIES=[
   {name:'Солигорск',emoji:'⚒'},{name:'Новополоцк',emoji:'🏗'},{name:'Молодечно',emoji:'🎵'},
   {name:'Лида',emoji:'🏰'},{name:'Полоцк',emoji:'⛪'},{name:'Жлобин',emoji:'🏭'},
   {name:'Речица',emoji:'🌊'},{name:'Слуцк',emoji:'🌾'},
+  {name:'Несвиж',emoji:'🏰'},{name:'Мир',emoji:'🏰'},{name:'Нарочь',emoji:'🌊'},
+  {name:'Браслав',emoji:'🌊'},{name:'Беловежская пуща',emoji:'🦌'},
   
   
   
@@ -2058,6 +2061,9 @@ async function serpLoadOstrovok(){
     if(cards)cards.innerHTML=[1,2,3,4].map(function(){return '<div class="sk-card"><div class="sk-img"></div><div class="sk-body"><div class="sk-line w80"></div><div class="sk-line w60"></div><div class="sk-line w40"></div><div class="sk-price"></div></div></div>';}).join('');
   }
 
+  // Сразу убираем результаты ПРОШЛОГО города — иначе при пустом/упавшем поиске они залипают
+  HOTELS = HOTELS.filter(function(h){return h.source!=='ostrovok';});
+
   try{
     var body={
       city:     city,
@@ -2075,8 +2081,7 @@ async function serpLoadOstrovok(){
     var data=await resp.json();
 
     if(data.hotels&&data.hotels.length){
-      var local=HOTELS.filter(function(h){return h.source!=='ostrovok';});
-      HOTELS=[...data.hotels,...local];
+      HOTELS=[...data.hotels,...HOTELS];
     }
   }catch(e){
     console.warn('Ostrovok search error:',e.message);
@@ -2901,6 +2906,8 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     {name:'Солигорск',emoji:'⚒'},{name:'Новополоцк',emoji:'🏗'},{name:'Молодечно',emoji:'🎵'},
     {name:'Лида',emoji:'🏰'},{name:'Полоцк',emoji:'⛪'},{name:'Жлобин',emoji:'🏭'},
     {name:'Речица',emoji:'🌊'},{name:'Слуцк',emoji:'🌾'},
+    {name:'Несвиж',emoji:'🏰'},{name:'Мир',emoji:'🏰'},{name:'Нарочь',emoji:'🌊'},
+    {name:'Браслав',emoji:'🌊'},{name:'Беловежская пуща',emoji:'🦌'},
     
     
     
@@ -3831,6 +3838,9 @@ function ostFail(e){
                 <button onclick="csPickCity('Гомель')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🌲 Гомель</button>
                 <button onclick="csPickCity('Пинск')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🌿 Пинск</button>
                 <button onclick="csPickCity('Нарочь')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🌊 Нарочь</button>
+                <button onclick="csPickCity('Браслав')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🌊 Браслав</button>
+                <button onclick="csPickCity('Несвиж')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏰 Несвиж</button>
+                <button onclick="csPickCity('Мир')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏰 Мир</button>
                 <button onclick="csPickCity('Беловежская пуща')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🦌 Беловежская пуща</button>
               </div>
             </div>
