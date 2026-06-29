@@ -3471,7 +3471,12 @@ function cleanRoomName(name){
   if(!s)return 'Номер';
   var parts=s.split(',').map(function(p){return p.trim();}).filter(Boolean);
   var seen={},out=[];
-  parts.forEach(function(p){var k=p.replace(/[()]/g,'').replace(/\s+/g,' ').trim().toLowerCase();if(!seen[k]){seen[k]=1;out.push(p);}});
+  parts.forEach(function(p){
+    var core=p.indexOf('(')>=0?p.slice(p.lastIndexOf('(')+1):p;
+    var k=core.replace(/[()]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(!k){out.push(p);return;}
+    if(!seen[k]){seen[k]=1;out.push(p);}
+  });
   var res=out.join(', ').replace(/\s{2,}/g,' ').replace(/\(\s+/g,'(').replace(/\s+\)/g,')').trim();
   var op=(res.match(/\(/g)||[]).length,cl=(res.match(/\)/g)||[]).length;
   while(op>cl){res+=')';cl++;}
