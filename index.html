@@ -242,7 +242,7 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 /* Богатые карточки выбора номера */
 .ostc{background:#fff;border:1px solid var(--sand3);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;margin-bottom:12px}
 .ostc:hover{border-color:var(--green)}
-.ostc-img{position:relative;height:165px;background:var(--sand2)}
+.ostc-img{position:relative;height:195px;background:var(--sand2)}
 .ostc-img img{width:100%;height:100%;object-fit:cover;display:block}
 .ostc-badge{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:20px;display:flex;align-items:center;gap:4px}
 .ostc-body{padding:13px 15px}
@@ -3651,7 +3651,7 @@ function ostRenderForm(oldPrice){
     for(var c=0;c<kids;c++){
       var cage=(childAges[c]!=null?childAges[c]:7);
       var ageWord=(cage===1?'год':cage>=2&&cage<=4?'года':'лет');
-      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:140px"><label>Возраст</label><div style="padding:11px 0 0;font-size:14px;font-weight:600;color:var(--ink)">'+cage+' '+ageWord+' <span style="font-weight:400;color:var(--muted);font-size:11px;white-space:nowrap">· из поиска</span></div></div></div>';
+      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:110px"><label>Возраст</label><div style="background:var(--sand2);border-radius:10px;padding:11px 12px;font-size:14px;font-weight:700;color:var(--ink);text-align:center;cursor:default" title="Возраст указан при поиске">'+cage+' '+ageWord+'</div></div></div>';
     }
   }
   document.getElementById('bm-body').innerHTML='\
