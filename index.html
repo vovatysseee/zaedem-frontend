@@ -1103,7 +1103,7 @@ function hpBuildCal(){
   html+='<div id="hp-cal-hint" style="font-size:12px;color:var(--muted);margin-top:10px;text-align:center">'+
     (_hpCal.din&&!_hpCal.dout?'Выберите дату выезда':(_hpCal.din&&_hpCal.dout?(getNights()+' '+nightsWord(getNights())):'Выберите дату заезда'))+'</div>';
   if(_hpCal.din&&_hpCal.dout){
-    html+='<button onclick="hpConfirmDates(event)" style="width:100%;margin-top:10px;background:var(--green);color:#fff;border:none;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Выбрать</button>';
+    html+='<button onclick="hpConfirmDates(event)" style="width:100%;margin-top:10px;background:var(--green4);color:#fff;border:none;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Выбрать</button>';
   }
   pop.innerHTML=html;
 }
