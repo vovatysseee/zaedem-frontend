@@ -2300,7 +2300,7 @@ function openBookModal(){
       <label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html" class="legal-link">публичной оферты</a></span></label>
     </div>
     <button class="btn-pay btn-pay-soon" id="bk-pay-btn" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
-    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>`;
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>`;
   document.getElementById('bk-modal').classList.add('open');
 }
 
@@ -2402,12 +2402,26 @@ function payIconsHTML(dark){
 // Точка входа оплаты. Сейчас — заглушка (оплата выключена).
 // Когда придут ключи bePaid → здесь запустится виджет bePaid:
 //   собрать данные гостя → создать токен платежа → открыть виджет →
+// ── Валидация полей брони + мягкое уведомление ──
+function bkToast(msg){
+  var t=document.getElementById('bk-toast');
+  if(!t){t=document.createElement('div');t.id='bk-toast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2a2a2a;color:#fff;padding:12px 18px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90%;text-align:center;opacity:0;transition:opacity .2s';document.body.appendChild(t);}
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(window._bkToastT); window._bkToastT=setTimeout(function(){t.style.opacity='0';},3000);
+}
+function bkValidate(){
+  var fn=(document.getElementById('f-fn')?.value||'').trim();
+  var em=(document.getElementById('f-em')?.value||'').trim();
+  var ph=(document.getElementById('f-ph')?.value||'').trim();
+  if(fn.length<2){document.getElementById('f-fn')?.focus();return 'Укажите имя';}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){document.getElementById('f-em')?.focus();return 'Проверьте email — похоже, опечатка';}
+  if((ph.match(/\d/g)||[]).length<9){document.getElementById('f-ph')?.focus();return 'Укажите телефон для связи';}
+  return null;
+}
 //   при успехе вызвать confirmBook(total) → бронь уходит на сервер.
 async function startPayment(total){
   // Валидация данных гостя
-  const fn=document.getElementById('f-fn'), em=document.getElementById('f-em');
-  if(!fn?.value){fn?.focus();return;}
-  if(!em?.value){em?.focus();return;}
+  var _e=bkValidate(); if(_e){bkToast(_e);return;}
 
   if(!window._BEPAID_PUBLIC_KEY){
     // bePaid ещё не подключён — показываем сообщение, бронь НЕ создаём
@@ -2442,7 +2456,7 @@ async function confirmBook(total){
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
-    document.getElementById('bm-body').innerHTML=`<div class="success"><div class="s-ico">🎉</div><div class="conf">${conf}</div><h3 style="font-family:'Unbounded',sans-serif;font-size:1.1rem;margin-bottom:12px">Готово!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">${h.name_ru}</strong>!<br>✉️ Ваучер отправлен на ${em.value.trim()}</p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
+    document.getElementById('bm-body').innerHTML=`<div class="success"><div class="s-ico">🎉</div><div class="conf">${conf}</div><h3 style="font-family:'Unbounded',sans-serif;font-size:1.1rem;margin-bottom:12px">Готово!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">${h.name_ru}</strong>!<br>✉️ Ваучер отправлен на ${em.value.trim()}<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
   }catch(err){
     document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Ошибка</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Что-то пошло не так. Попробуйте ещё раз или напишите нам.</div><button onclick="openBookModal()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Повторить</button></div>`;
   }
@@ -3673,7 +3687,7 @@ function ostRenderForm(oldPrice){
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
-    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div>';
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>';
   bkInjectConsent();
   bkInjectRoomPhoto();
   bkInjectRoomAmen();
@@ -3682,8 +3696,7 @@ function ostRenderForm(oldPrice){
 // Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
 function ostStartPayment(){
   var em=document.getElementById('f-em'), fn=document.getElementById('f-fn');
-  if(!fn||!fn.value.trim()){if(fn)fn.focus();return;}
-  if(!em||!em.value.trim()){if(em)em.focus();return;}
+  var _e=bkValidate(); if(_e){bkToast(_e);return;}
   if(!window._BEPAID_PUBLIC_KEY){
     document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:36px 20px">'
       +'<div style="font-size:2.2rem;margin-bottom:14px">⏳</div>'
@@ -3771,7 +3784,7 @@ async function ostConfirm(){
       var sr=await fetch(API+'/api/ostrovok/order/status/'+encodeURIComponent(pid));
       var sd=await sr.json();
       if(sd.status==='confirmed'){
-        document.getElementById('bm-body').innerHTML='<div class="success"><div class="s-ico">🎉</div><div class="conf">'+pid+'</div><h3 style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;margin-bottom:12px">Бронь подтверждена!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">'+h.name_ru+'</strong>!<br>✉️ Ваучер отправлен на '+em.value.trim()+'</p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>';
+        document.getElementById('bm-body').innerHTML='<div class="success"><div class="s-ico">🎉</div><div class="conf">'+pid+'</div><h3 style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;margin-bottom:12px">Бронь подтверждена!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">'+h.name_ru+'</strong>!<br>✉️ Ваучер отправлен на '+em.value.trim()+'<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>';
         return;
       }
       if(sd.status==='failed'){
