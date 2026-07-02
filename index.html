@@ -3452,11 +3452,17 @@ function ostMeal(m){
 
 function ostCancelText(c){
   if(c&&c.free_cancellation_before){
-    var d=new Date(c.free_cancellation_before);
+    var d=new Date(new Date(c.free_cancellation_before).getTime()+3*3600*1000); // UTC → Минск (UTC+3)
     var s=String(d.getUTCDate()).padStart(2,'0')+'.'+String(d.getUTCMonth()+1).padStart(2,'0')+'.'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
-    return '✅ Бесплатная отмена до '+s+' (UTC+0)';
+    return '✅ Бесплатная отмена до '+s+' (по Минску)';
   }
   return '⚠️ Невозвратный тариф — при отмене деньги не возвращаются';
+}
+// Цветная плашка условий отмены (зелёная — бесплатно, янтарная — невозвратный)
+function ostCancelBox(c){
+  var free=c&&c.free_cancellation_before;
+  var bg=free?'#eaf7ee':'#fff4e6', col=free?'#1a7a3a':'#9a6b00', bd=free?'#bfe6cb':'#f0d9a8';
+  return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:10px;padding:10px 12px;font-size:12.5px;color:'+col+';font-weight:600;margin-bottom:14px">'+ostCancelText(c)+'</div>';
 }
 
 // Перевод/чистка удобств номера (Островок иногда отдаёт английскими кодами)
@@ -3657,7 +3663,7 @@ function ostRenderForm(oldPrice){
   document.getElementById('bm-body').innerHTML='\
     <div style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">'+h.name_ru+'</div>\
     <div style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 '+(h.address||'')+' · '+_ostSel.roomName+'</div>\
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">'+ostCancelText(rt.cancellation)+'</div>'
+    '+ostCancelBox(rt.cancellation)
     +(oldPrice?'<div style="background:#fff6e0;border-radius:10px;padding:10px 12px;font-size:13px;color:#9a6b00;margin-bottom:12px">⚠️ Цена обновилась: было '+oldPrice+' BYN, актуальная — <b>'+rt.price_byn+' BYN</b></div>':'')
     +'<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Имена гостей — латиницей, как в паспорте</div>\
     <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Ivanov"></div></div>'
