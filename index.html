@@ -746,7 +746,19 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
     </div>
   </div>
 </footer><script>
-const API='https://api.zaedem.by';
+/* ── КОНФИГ РЫНКА ──────────────────────────────────────────────
+   По умолчанию Беларусь (.by) — поведение сайта НЕ меняется.
+   Для .ру-версии в отдельном деплое поменять: COUNTRY:'ru', API на
+   свой РФ-бэкенд, RESIDENCY:'ru', CURRENCY:'RUB', BRAND. Отдельно —
+   города/цвета/тексты. Для текущего .by менять ничего не нужно. */
+const CFG = {
+  COUNTRY:  'by',
+  API:      'https://api.zaedem.by',
+  RESIDENCY:'by',
+  CURRENCY: 'BYN',
+  BRAND:    'Заедем.by',
+};
+const API = CFG.API;
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const GL=['','1 гость','2 гостя','3 гостя','4 гостя','5 гостей','6 гостей','7 гостей','8 гостей'];
@@ -3546,7 +3558,7 @@ async function loadOstRates(h){
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
     var kids=(window._capState&&window._capState.childAges)||[];
     window._bookChildAges=Array.isArray(kids)?kids.slice():[];  // возрасты, под которые посчитаны цены — их и покажем в брони
-    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:'by'})});
+    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY})});
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
     window._ostBookEnabled=!!data.booking_enabled;
