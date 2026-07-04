@@ -571,8 +571,8 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
     <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative">
       <!-- Переключатель режима поиска -->
       <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;animation:fadeUp .7s .15s both">
-        <button id="tab-normal" onclick="switchSearch('normal')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)">🔍 Обычный</button>
-        <button id="tab-ai" onclick="switchSearch('ai')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;background:rgba(255,255,255,.25);color:#fff">✨ С помощью ИИ</button>
+        <button id="tab-normal" onclick="switchSearch('normal')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Поиск</button>
+        <button id="tab-ai" onclick="switchSearch('ai')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.25);color:#fff"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4z"/><path d="M18.5 14.5l.6 1.9 1.9.6-1.9.6-.6 1.9-.6-1.9-1.9-.6 1.9-.6z"/></svg>С помощью ИИ</button>
       </div>
       <!-- AI-подбор жилья (умный разбор фразы) -->
       <div id="ai-wrap" style="display:none;margin-bottom:12px">
@@ -1071,8 +1071,8 @@ var AI_AMEN={'парков':'парковка','стоянк':'парковка'
 function switchSearch(mode){
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
   var tN=document.getElementById('tab-normal'), tA=document.getElementById('tab-ai');
-  var on='background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)';
-  var off='background:rgba(255,255,255,.25);color:#fff;box-shadow:none';
+  var on='display:inline-flex;align-items:center;gap:7px;background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)';
+  var off='display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.25);color:#fff;box-shadow:none';
   if(mode==='ai'){
     if(aiWrap)aiWrap.style.display='block'; if(cap)cap.style.display='none';
     if(tA)tA.style.cssText='border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;'+on;
@@ -1301,6 +1301,21 @@ function hpApplyGuests(e){
   if(typeof updSum==='function')try{updSum();}catch(_){}
 }
 
+// «Что рядом» — тянет POI с карты по координатам объекта (мягко: нет данных → блок скрыт)
+async function loadNearby(lat,lon){
+  var box=document.getElementById('hp-nearby'); if(!box)return;
+  box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">🚶 Смотрим, что рядом…</div>';
+  try{
+    var r=await fetch(API+'/api/nearby?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon));
+    var d=await r.json();
+    var list=(d&&d.nearby)||[];
+    if(!list.length){ box.style.display='none'; return; }
+    box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+      +list.map(function(x){return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink);background:var(--sand2);border-radius:10px;padding:7px 11px">'+x.icon+' '+x.label+' <span style="color:var(--muted);font-weight:500">'+x.dist+'</span></span>';}).join('')
+      +'</div>';
+  }catch(e){ box.style.display='none'; }
+}
 function openHotel(id){
   curHotel=HOTELS.find(h=>h.id===id);
   if(!curHotel)return;
@@ -1329,6 +1344,7 @@ function openHotel(id){
         <h1 class="hp-title">${h.name_ru}</h1>
         <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${h.address||''}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
+        ${(h.latitude&&h.longitude)?`<div id="hp-nearby" style="margin:0 0 1.25rem"></div>`:''}
         ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen"><span class="ai">${a.i||'✓'}</span>${a.n||a}</div>`).join('')}</div>`:''}
         ${isOst?`
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера и тарифы</h3>
@@ -1372,15 +1388,12 @@ function openHotel(id){
             <div class="bk-total"><span>Итого</span><span id="bk-tot">${pricePerNight*n} BYN</span></div>
           </div>
           <button class="btn-pay" onclick="hpModuleBook()">Выбрать</button>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;justify-content:center">
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">⚡ Мгновенное подтверждение</span>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">🛡 Гарантия заселения</span>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">🔒 Безопасная оплата</span>
-          </div>
+          <div class="secure" style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)">🔒 Безопасная оплата</div>
         </div>
       </div>
     </div>`;
   if(isOst)loadOstRates(h);
+  if(h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude);
 }
 
 // ── Запоминание текущего экрана, чтобы при обновлении страницы не кидало на главную ──
