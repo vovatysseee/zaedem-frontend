@@ -576,8 +576,19 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
       </div>
       <!-- AI-подбор жилья (умный разбор фразы) -->
       <div id="ai-wrap" style="display:none;margin-bottom:12px">
+        <style>
+          #ai-mic{position:absolute;right:52px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:transparent;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;color:#8a8a8a;transition:color .15s}
+          #ai-mic:hover{color:#0F2D1D}
+          #ai-mic.rec{color:#e23b3b}
+          #ai-mic.rec::before{content:"";position:absolute;inset:2px;border-radius:50%;border:2px solid rgba(226,59,59,.5);animation:aiPulse 1.1s ease-out infinite}
+          @keyframes aiPulse{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+          @media(prefers-reduced-motion:reduce){#ai-mic.rec::before{animation:none}}
+        </style>
         <div style="position:relative">
-          <input id="ai-q" type="text" autocomplete="off" placeholder="✨ Опиши, что ищешь…" onkeydown="if(event.key==='Enter'){event.preventDefault();aiSearch();}" style="width:100%;box-sizing:border-box;padding:16px 56px 16px 20px;border:none;border-radius:50px;font-size:14.5px;font-family:inherit;box-shadow:0 2px 24px rgba(0,0,0,.22);outline:none;color:#111">
+          <input id="ai-q" type="text" autocomplete="off" placeholder="✨ Опиши или скажи, что ищешь…" onkeydown="aiCancelAuto();if(event.key==='Enter'){event.preventDefault();aiSearch();}" style="width:100%;box-sizing:border-box;padding:16px 98px 16px 20px;border:none;border-radius:50px;font-size:14.5px;font-family:inherit;box-shadow:0 2px 24px rgba(0,0,0,.22);outline:none;color:#111">
+          <button id="ai-mic" onclick="aiVoice()" aria-label="Голосовой поиск" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0"/><path d="M12 17v4"/></svg>
+          </button>
           <button onclick="aiSearch()" aria-label="Найти по описанию" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
             <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.2" stroke-linejoin="round" width="18" height="18"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
           </button>
@@ -1067,6 +1078,29 @@ function doSearch(){renderHotels();scrollToHotels()}
 // ── AI-подбор жилья: умный разбор фразы (без ключа; апгрейдится до Claude API) ──
 var AI_CITIES=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Мир','Нарочь','Браслав','Беловежская пуща','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк'];
 var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','интернет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','кухн':'кухня','кондиционер':'кондиционер','балкон':'балкон','террас':'терраса','баня':'баня','сауна':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи','центр':'в центре'};
+// Голосовой ввод для AI-поиска (Web Speech API — без ключей; показываем 🎤 только если поддерживается)
+function aiCancelAuto(){ if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;} }
+function aiVoice(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR)return;
+  var mic=document.getElementById('ai-mic'), inp=document.getElementById('ai-q');
+  if(window._aiRec){ try{window._aiRec.stop();}catch(e){} return; }
+  var rec; try{ rec=new SR(); }catch(e){ return; }
+  window._aiRec=rec; rec.lang='ru-RU'; rec.interimResults=true; rec.maxAlternatives=1; rec.continuous=false;
+  aiCancelAuto(); if(mic)mic.classList.add('rec'); if(inp)inp.value='';
+  rec.onresult=function(e){ var t=''; for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript; if(inp)inp.value=t; };
+  rec.onerror=function(){ window._aiRec=null; if(mic)mic.classList.remove('rec'); };
+  rec.onend=function(){
+    window._aiRec=null; if(mic)mic.classList.remove('rec');
+    if(inp&&inp.value.trim()){ if(inp)inp.focus(); aiCancelAuto();
+      window._aiVoiceT=setTimeout(function(){ aiSearch(); },1600); } // вариант Б: покажем, автозапуск если не трогаешь
+  };
+  try{ rec.start(); }catch(e){ window._aiRec=null; if(mic)mic.classList.remove('rec'); }
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var mic=document.getElementById('ai-mic'); if(mic&&SR)mic.style.display='flex';
+});
+
 // Переключатель режима поиска: обычный ↔ ИИ
 function switchSearch(mode){
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
@@ -1097,6 +1131,7 @@ function aiParse(t){
   return r;
 }
 function aiSearch(){
+  if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
   var p=aiParse(q), el=document.getElementById('ai-understood');
   window._capState=window._capState||{};
