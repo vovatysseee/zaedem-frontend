@@ -1077,7 +1077,10 @@ function doSearch(){renderHotels();scrollToHotels()}
 
 // ── AI-подбор жилья: умный разбор фразы (без ключа; апгрейдится до Claude API) ──
 var AI_CITIES=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Мир','Нарочь','Браслав','Беловежская пуща','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк'];
-var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','интернет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','кухн':'кухня','кондиционер':'кондиционер','балкон':'балкон','террас':'терраса','баня':'баня','сауна':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи','центр':'в центре'};
+var AI_CITY_SYN={'мнск':'Минск','минске':'Минск','бресте':'Брест','витебске':'Витебск','гомеле':'Гомель','могилеве':'Могилёв','пинске':'Пинск','нарочи':'Нарочь','браславе':'Браслав','несвиже':'Несвиж'};
+// ключи по КОРНЮ — ловим окончания (баня/баней/бане, кондей/кондеем)
+var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','вайфай':'Wi-Fi','интернет':'Wi-Fi','инет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','сталк':'стиральная машина','кухн':'кухня','кондиц':'кондиционер','кондей':'кондиционер','конде':'кондиционер','балкон':'балкон','террас':'терраса','бан':'баня','саун':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи'};
+var AI_NUMWORD={'одного':1,'двое':2,'двоих':2,'вдвоем':2,'пара':2,'пары':2,'трое':3,'троих':3,'втроем':3,'четверо':4,'четверых':4,'вчетвером':4,'пятеро':5,'пятерых':5,'шестеро':6,'шестерых':6};
 // Голосовой ввод для AI-поиска (Web Speech API — без ключей; показываем 🎤 только если поддерживается)
 function aiCancelAuto(){ if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;} }
 function aiVoice(){
@@ -1120,18 +1123,36 @@ function switchSearch(mode){
 }
 
 function aiParse(t){
-  var s=' '+String(t).toLowerCase().replace(/ё/g,'е')+' ', r={amenities:[]};
+  var s=' '+String(t).toLowerCase().replace(/ё/g,'е')+' ', r={amenities:[],avoid:[]};
+  // ГОРОД: имя, затем синонимы/склонения
   for(var i=0;i<AI_CITIES.length;i++){ if(s.indexOf(AI_CITIES[i].toLowerCase().replace(/ё/g,'е'))>=0){ r.city=AI_CITIES[i]; break; } }
-  var mg=s.match(/на\s+(\d+)|(\d+)\s*(человек|гост|взросл|чел)/); if(mg)r.adults=parseInt(mg[1]||mg[2]);
-  var mk=s.match(/(\d+)\s*(ребен|реб|дет)/); if(mk)r.kids=parseInt(mk[1]); else if(/с ребенком|с детьми/.test(s))r.kids=1;
-  var mp=s.match(/до\s+(\d[\d\s]*)/); if(mp)r.priceMax=parseInt(mp[1].replace(/\s/g,''));
-  var mn=s.match(/на\s+(\d+)\s*(ноч|сут|день|дня|дней)/); if(mn)r.nights=parseInt(mn[1]);
+  if(!r.city){ for(var ck in AI_CITY_SYN){ if(s.indexOf(ck)>=0){ r.city=AI_CITY_SYN[ck]; break; } } }
+  // НОЧИ (раньше гостей, чтобы «на 3 ночи» не ушло в гостей)
+  var mn=s.match(/на\s+(\d+)\s*(ноч|сут|дня|дней|день)/); if(mn)r.nights=parseInt(mn[1]);
   if(/выходн/.test(s))r.weekend=true;
-  // тип объекта → категория фильтра
-  if(/апартамент|квартир|студи/.test(s))r.category='apart';
-  else if(/усадьб|агроусадьб|коттедж|шале|дом[ае\s]|дача|дачу/.test(s))r.category='guest';
+  // ЦЕНА: до/не дороже/бюджет/в пределах/максимум/примерно/~
+  var mp=s.match(/(?:до|не дороже|дешевле|бюджет\S*|в пределах|максимум|макс\b|примерно|около|где-то|~)\s*(\d[\d\s]*)/);
+  if(mp)r.priceMax=parseInt(mp[1].replace(/\s/g,''));
+  // ГОСТИ: вырезаем фразу про ночи, затем цифра или слово
+  var sg=s.replace(/на\s+\d+\s*(ноч|сут|дня|дней|день)\S*/g,' ');
+  var mg=sg.match(/(?:на|для|нас)\s+(\d+)|(\d+)\s*(?:человек|гост|взросл|чел\b|персон)/);
+  if(mg)r.adults=parseInt(mg[1]||mg[2]);
+  if(!r.adults){ for(var nw in AI_NUMWORD){ if(sg.indexOf(nw)>=0){ r.adults=AI_NUMWORD[nw]; break; } } }
+  if(!r.adults&&/семь[еяй]|семейн/.test(s))r.adults=3;
+  if(!r.adults&&/компани/.test(s))r.adults=4;
+  // ДЕТИ
+  var mk=s.match(/(\d+)\s*(ребен|реб\b|дет)/); if(mk)r.kids=parseInt(mk[1]); else if(/с ребенком|с детьми/.test(s))r.kids=1;
+  // ТИП
+  if(/апартамент|квартир|студи|однушк|двушк|трешк/.test(s))r.category='apart';
+  else if(/усадьб|агроусадьб|коттедж|шале|дача|дачу|загородн|\sдом(ик)?[\s,]/.test(s))r.category='guest';
   else if(/отел|гостиниц/.test(s))r.category='hotel';
-  for(var key in AI_AMEN){ if(s.indexOf(key)>=0 && r.amenities.indexOf(AI_AMEN[key])<0)r.amenities.push(AI_AMEN[key]); }
+  // УДОБСТВА + ОТРИЦАНИЯ («без парковки», «не нужен интернет»)
+  for(var key in AI_AMEN){
+    var idx=s.indexOf(key); if(idx<0)continue;
+    var before=s.slice(Math.max(0,idx-14),idx);
+    if(/без |не нужн|не надо|нет /.test(before)){ if(r.avoid.indexOf(AI_AMEN[key])<0)r.avoid.push(AI_AMEN[key]); }
+    else if(r.amenities.indexOf(AI_AMEN[key])<0)r.amenities.push(AI_AMEN[key]);
+  }
   return r;
 }
 function aiSearch(){
@@ -1151,7 +1172,8 @@ function aiSearch(){
   window._aiPriceMax=p.priceMax||0;
   window._aiAmenities=p.amenities||[];
   window._aiCategory=p.category||null;
-  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('🌙 '+nights+' ноч.'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);});
+  window._aiAvoid=p.avoid||[];
+  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('🌙 '+nights+' ноч.'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block'; }
   if(!p.city)return;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
@@ -1626,6 +1648,14 @@ function serpRender(){
       return _am.every(function(a){return names.indexOf(a)>=0;});
     });
     if(_matched.length)list=_matched;
+  }
+  // AI: исключить объекты с нежелательным удобством («без парковки»)
+  if(window._aiAvoid&&window._aiAvoid.length){
+    var _av=window._aiAvoid.map(function(a){return String(a).toLowerCase();});
+    list=list.filter(function(h){
+      var names=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ');
+      return !_av.some(function(a){return names.indexOf(a)>=0;});
+    });
   }
 
   // Активны ли какие-то фильтры (для кнопки сброса)
@@ -3304,7 +3334,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
 
   // capOpen — точка входа с капсулы
   window.capOpen=function(){
-    window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; // ручной поиск — сбрасываем AI-фильтры
+    window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; window._aiAvoid=null; // ручной поиск — сбрасываем AI-фильтры
     if(window.innerWidth<=768){
       capSheetOpen();
     } else {
