@@ -1127,6 +1127,10 @@ function aiParse(t){
   var mp=s.match(/до\s+(\d[\d\s]*)/); if(mp)r.priceMax=parseInt(mp[1].replace(/\s/g,''));
   var mn=s.match(/на\s+(\d+)\s*(ноч|сут|день|дня|дней)/); if(mn)r.nights=parseInt(mn[1]);
   if(/выходн/.test(s))r.weekend=true;
+  // тип объекта → категория фильтра
+  if(/апартамент|квартир|студи/.test(s))r.category='apart';
+  else if(/усадьб|агроусадьб|коттедж|шале|дом[ае\s]|дача|дачу/.test(s))r.category='guest';
+  else if(/отел|гостиниц/.test(s))r.category='hotel';
   for(var key in AI_AMEN){ if(s.indexOf(key)>=0 && r.amenities.indexOf(AI_AMEN[key])<0)r.amenities.push(AI_AMEN[key]); }
   return r;
 }
@@ -1146,7 +1150,8 @@ function aiSearch(){
   try{ dIn=din; dOut=dout; }catch(e){}
   window._aiPriceMax=p.priceMax||0;
   window._aiAmenities=p.amenities||[];
-  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('🌙 '+nights+' ноч.'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);});
+  window._aiCategory=p.category||null;
+  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('🌙 '+nights+' ноч.'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block'; }
   if(!p.city)return;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
@@ -1584,6 +1589,7 @@ function serpRender(){
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
   if(document.getElementById('flt-guest')&&document.getElementById('flt-guest').checked)cats.push('guest');
   if(document.getElementById('flt-apart')&&document.getElementById('flt-apart').checked)cats.push('apart');
+  if(window._aiCategory)cats=[window._aiCategory]; // AI: тип из фразы (апартаменты/усадьба/отель)
   var priceMax=0;
   var pr=document.querySelector('input[name="price-r"]:checked');
   if(pr)priceMax=parseInt(pr.value)||0;
@@ -3298,7 +3304,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
 
   // capOpen — точка входа с капсулы
   window.capOpen=function(){
-    window._aiAmenities=null; window._aiPriceMax=0; // ручной поиск — сбрасываем AI-фильтры
+    window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; // ручной поиск — сбрасываем AI-фильтры
     if(window.innerWidth<=768){
       capSheetOpen();
     } else {
