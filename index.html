@@ -569,8 +569,13 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
   <div class="hero-content">
     <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap;margin-bottom:2.2rem">Забронируй своё жильё в Беларуси</h1>
     <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative">
+      <!-- Переключатель режима поиска -->
+      <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;animation:fadeUp .7s .15s both">
+        <button id="tab-normal" onclick="switchSearch('normal')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)">🔍 Обычный</button>
+        <button id="tab-ai" onclick="switchSearch('ai')" style="border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;background:rgba(255,255,255,.25);color:#fff">✨ С помощью ИИ</button>
+      </div>
       <!-- AI-подбор жилья (умный разбор фразы) -->
-      <div style="margin-bottom:12px;animation:fadeUp .7s .2s both">
+      <div id="ai-wrap" style="display:none;margin-bottom:12px">
         <div style="position:relative">
           <input id="ai-q" type="text" autocomplete="off" placeholder="✨ Опиши, что ищешь…" onkeydown="if(event.key==='Enter'){event.preventDefault();aiSearch();}" style="width:100%;box-sizing:border-box;padding:16px 56px 16px 20px;border:none;border-radius:50px;font-size:14.5px;font-family:inherit;box-shadow:0 2px 24px rgba(0,0,0,.22);outline:none;color:#111">
           <button onclick="aiSearch()" aria-label="Найти по описанию" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
@@ -578,6 +583,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           </button>
         </div>
         <div id="ai-understood" style="display:none;margin-top:8px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border-radius:12px;padding:8px 13px;backdrop-filter:blur(8px);text-align:left"></div>
+        <div style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
       </div>
       <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
@@ -1061,6 +1067,24 @@ function doSearch(){renderHotels();scrollToHotels()}
 // ── AI-подбор жилья: умный разбор фразы (без ключа; апгрейдится до Claude API) ──
 var AI_CITIES=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Мир','Нарочь','Браслав','Беловежская пуща','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк'];
 var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','интернет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','кухн':'кухня','кондиционер':'кондиционер','балкон':'балкон','террас':'терраса','баня':'баня','сауна':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи','центр':'в центре'};
+// Переключатель режима поиска: обычный ↔ ИИ
+function switchSearch(mode){
+  var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
+  var tN=document.getElementById('tab-normal'), tA=document.getElementById('tab-ai');
+  var on='background:#fff;color:#0F2D1D;box-shadow:0 2px 14px rgba(0,0,0,.18)';
+  var off='background:rgba(255,255,255,.25);color:#fff;box-shadow:none';
+  if(mode==='ai'){
+    if(aiWrap)aiWrap.style.display='block'; if(cap)cap.style.display='none';
+    if(tA)tA.style.cssText='border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;'+on;
+    if(tN)tN.style.cssText='border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;'+off;
+    var q=document.getElementById('ai-q'); if(q)setTimeout(function(){q.focus();},50);
+  }else{
+    if(aiWrap)aiWrap.style.display='none'; if(cap)cap.style.display='flex';
+    if(tN)tN.style.cssText='border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;'+on;
+    if(tA)tA.style.cssText='border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:50px;'+off;
+  }
+}
+
 function aiParse(t){
   var s=' '+String(t).toLowerCase().replace(/ё/g,'е')+' ', r={amenities:[]};
   for(var i=0;i<AI_CITIES.length;i++){ if(s.indexOf(AI_CITIES[i].toLowerCase().replace(/ё/g,'е'))>=0){ r.city=AI_CITIES[i]; break; } }
@@ -1348,9 +1372,10 @@ function openHotel(id){
             <div class="bk-total"><span>Итого</span><span id="bk-tot">${pricePerNight*n} BYN</span></div>
           </div>
           <button class="btn-pay" onclick="hpModuleBook()">Выбрать</button>
-          <div class="secure">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
-            Безопасная оплата · Мгновенное подтверждение
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;justify-content:center">
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">⚡ Мгновенное подтверждение</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">🛡 Гарантия заселения</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);background:var(--sand2);border-radius:8px;padding:5px 9px">🔒 Безопасная оплата</span>
           </div>
         </div>
       </div>
