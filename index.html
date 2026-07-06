@@ -1138,7 +1138,7 @@ function aiDates(s, nightsHint){
     if(dout<=din)dout=mk(din.getFullYear()+1,mon,d2);
     return {din:din,dout:dout};
   }
-  var m2=s.match(/(\d{1,2})\s*([а-я]+)/);
+  var m2=s.match(/(\d{1,2})\s*(?:числа|того|го)?\s*([а-я]+)/);
   if(m2){ for(var k2 in AI_MONTHS){ if(m2[2].indexOf(k2)===0){ var mo=AI_MONTHS[k2],dn=yearFor(mo,+m2[1]),n=nightsHint||1; return {din:dn,dout:new Date(dn.getTime()+n*86400000)}; } } }
   if(/послезавтра/.test(s)){ var d=new Date(now.getTime()+2*864e5); return {din:d,dout:new Date(d.getTime()+(nightsHint||1)*864e5)}; }
   if(/завтра/.test(s)){ var d=new Date(now.getTime()+864e5); return {din:d,dout:new Date(d.getTime()+(nightsHint||1)*864e5)}; }
