@@ -1180,23 +1180,44 @@ function aiParse(t){
   }
   return r;
 }
-function aiSearch(){
+async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
   var p=aiParse(q), el=document.getElementById('ai-understood');
+  if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
+  // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
+  try{
+    var _r=await fetch(API+'/api/ai/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q})});
+    var _d=await _r.json();
+    if(_d&&_d.parsed){ var a=_d.parsed;
+      if(a.city)p.city=a.city;
+      if(a.category)p.category=a.category;
+      if(a.adults)p.adults=a.adults;
+      if(a.kids!=null)p.kids=a.kids;
+      if(a.priceMax)p.priceMax=a.priceMax;
+      if(Array.isArray(a.amenities)&&a.amenities.length)p.amenities=a.amenities;
+      if(Array.isArray(a.avoid)&&a.avoid.length)p.avoid=a.avoid;
+      if(a.din)p._din=new Date(a.din+'T00:00:00');
+      if(a.dout)p._dout=new Date(a.dout+'T00:00:00');
+    }
+  }catch(e){}
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
   window._capState.adults=p.adults||window._capState.adults||2;
   window._capState.kids=p.kids||0;
   window._capState.childAges=[]; for(var i=0;i<(p.kids||0);i++)window._capState.childAges.push(7);
-  // Даты: сначала пробуем конкретные из фразы, иначе — дефолт (выходные/N ночей от завтра)
+  // Даты: если ИИ вернул конкретные — берём их; иначе разбираем из фразы; иначе дефолт
   var _q=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
-  var dd=aiDates(_q, p.nights), din, dout;
-  if(dd){ din=dd.din; dout=dd.dout; }
+  var din, dout;
+  if(p._din&&p._dout&&!isNaN(p._din)&&!isNaN(p._dout)){ din=p._din; dout=p._dout; }
   else {
-    var base=new Date(Date.now()+86400000); base.setHours(0,0,0,0);
-    if(p.weekend){ var toFri=(5-base.getDay()+7)%7; if(toFri===0&&base.getDay()!==5)toFri=7; base=new Date(base.getTime()+toFri*86400000); }
-    var nights=p.nights||2; din=new Date(base); dout=new Date(base.getTime()+nights*86400000);
+    var dd=aiDates(_q, p.nights);
+    if(dd){ din=dd.din; dout=dd.dout; }
+    else {
+      var base=new Date(Date.now()+86400000); base.setHours(0,0,0,0);
+      if(p.weekend){ var toFri=(5-base.getDay()+7)%7; if(toFri===0&&base.getDay()!==5)toFri=7; base=new Date(base.getTime()+toFri*86400000); }
+      var nights=p.nights||2; din=new Date(base); dout=new Date(base.getTime()+nights*86400000);
+    }
   }
   var nn=Math.max(1,Math.round((dout-din)/86400000));
   window._capState.din=din; window._capState.dout=dout;
@@ -1209,6 +1230,7 @@ function aiSearch(){
   if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block'; }
   if(!p.city)return;
+  window._catMode=null;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 function scrollToHotels(){document.getElementById('hotels-section').scrollIntoView({behavior:'smooth'})}
@@ -2097,6 +2119,7 @@ function serpSetAge(i,v){
 }
 
 function serpSearchSubmit(){
+  window._catMode=null;
   window._capState=window._capState||{};
   window._capState.city=_serpSD.city;
   window._capState.din=_serpSD.din;
@@ -2394,6 +2417,17 @@ function catShowExcl(){
   var more=document.getElementById('serp-more'); if(more)more.remove();
 }
 function serpOpen(){
+  // Пустой поиск по городу (кнопка-лупа без города) → не уходим в пустую выдачу, подсказываем город.
+  // Категории (Отели/Апартаменты/Усадьбы) и карусели работают без города — их не трогаем (_catMode).
+  if(!window._catMode){
+    var _city=(window._capState&&window._capState.city)||((document.getElementById('s-dest')||{}).value||'');
+    if(!_city||!String(_city).trim()){
+      try{ if(typeof capOpen==='function')capOpen(); }catch(_){}
+      var _sd=document.getElementById('s-dest'); if(_sd){try{_sd.focus();}catch(_){}}
+      if(typeof bkToast==='function')bkToast('Укажите город');
+      return;
+    }
+  }
   // закрываем открытые плашки поиска (город/даты/гости), иначе зависают при сабмите
   try{
     if(typeof closeAll==='function') closeAll();
@@ -3057,7 +3091,7 @@ function chGuests(t,d){
   if(sw)sw.addEventListener('click',function(e){e.stopPropagation();openDd('cities');});
   if(sn)sn.addEventListener('click',function(e){e.stopPropagation();openDd('calendar');});
   if(so)so.addEventListener('click',function(e){e.stopPropagation();openDd('guests');});
-  if(sb)sb.addEventListener('click',function(e){e.stopPropagation();closeDd();serpOpen();});
+  if(sb)sb.addEventListener('click',function(e){e.stopPropagation();closeDd();window._catMode=null;serpOpen();});
 
   document.querySelectorAll('.dd-city').forEach(function(el){
     el.addEventListener('click',function(){
