@@ -568,7 +568,8 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
   </div>
   <div class="hero-content">
     <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap;margin-bottom:2.2rem">Забронируй своё жильё в Беларуси</h1>
-    <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative">
+    <style>@media(min-width:768px){#hero-search{min-height:150px}}</style>
+    <div id="hero-search" style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative">
       <!-- Переключатель режима поиска -->
       <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;animation:fadeUp .7s .15s both">
         <button id="tab-normal" onclick="switchSearch('normal')" style="border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 17px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;background:var(--lime);color:var(--green4)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Поиск</button>
@@ -596,12 +597,12 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
         <div id="ai-understood" style="display:none;margin-top:8px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border-radius:12px;padding:8px 13px;backdrop-filter:blur(8px);text-align:left"></div>
         <div style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
       </div>
-      <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
+      <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:8px 8px 8px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
-          <div id="cap-top" style="font-size:15px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Куда едете?</div>
-          <div id="cap-bot" style="font-size:12px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Выберите даты · Количество гостей</div>
+          <div id="cap-top" style="font-size:14.5px;font-weight:600;color:#9a9a9a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Куда едете?</div>
+          <div id="cap-bot" style="display:none;font-size:12px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Выберите даты · Количество гостей</div>
         </div>
-        <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:46px;height:46px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:40px;height:40px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
       </div>
@@ -1104,6 +1105,22 @@ document.addEventListener('DOMContentLoaded',function(){
   var mic=document.getElementById('ai-mic'); if(mic&&SR)mic.style.display='flex';
 });
 
+// Анимация «печати» городов после подсказки «Куда едете?»
+(function(){
+  var CITIES=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж'];
+  var PRE='Куда едете? ', ci=0, chi=0, del=false;
+  function tick(){
+    var el=document.getElementById('cap-top'); if(!el){ setTimeout(tick,600); return; }
+    if(window._capState&&window._capState.city){ el.textContent=window._capState.city; el.style.color='#111'; setTimeout(tick,1200); return; }
+    el.style.color='#9a9a9a';
+    var w=CITIES[ci];
+    if(!del){ chi++; if(chi>=w.length){ del=true; el.textContent=PRE+w; setTimeout(tick,1300); return; } }
+    else { chi--; if(chi<=0){ del=false; ci=(ci+1)%CITIES.length; } }
+    el.textContent = PRE + w.slice(0,chi);
+    setTimeout(tick, del?50:110);
+  }
+  if(document.readyState!=='loading') setTimeout(tick,800); else document.addEventListener('DOMContentLoaded',function(){setTimeout(tick,800);});
+})();
 // Переключатель режима поиска: обычный ↔ ИИ
 function switchSearch(mode){
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
@@ -2548,6 +2565,7 @@ function openBookModal(){
     </div>
     <div id="f-guests"></div>
     <input type="hidden" id="f-ln">
+    <div style="border-top:1px solid var(--sand3);margin:14px 0 12px"></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Заезд → Выезд</span><span>${fmtBkDates()}</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
@@ -2685,15 +2703,15 @@ function bkRenderGuests(){
     var first=(i===0);
     var nid=first?'f-fn':('f-ad'+i);
     var sync=first?' oninput="var e=document.getElementById(\'f-ln\');if(e)e.value=\'\'"':'';
-    html+='<div style="'+(i?'border-top:1px solid var(--sand3);padding-top:10px;margin-top:10px':'')+'">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">'+(first?'Заказчик':'Гость '+(i+1))+'</div>'
+    html+='<div style="'+(i?'padding-top:6px;margin-top:6px':'')+'">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">'+(first?'Заказчик (гость 1)':'Гость '+(i+1))+'</div>'
       +nameFld(nid, first?phA:phO, sync)
       +((first||foreign)?docs(nid):'')
       +'</div>';
   }
   for(var k=0;k<kids;k++){
     var age=ages[k]!=null?ages[k]:null;
-    html+='<div style="border-top:1px solid var(--sand3);padding-top:10px;margin-top:10px">'
+    html+='<div style="padding-top:6px;margin-top:6px">'
       +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">Ребёнок '+(k+1)+(age!=null?' · '+age+' '+bkAgeWord(age):'')+'</div>'
       +nameFld('f-ch'+k, foreign?'Anna Ivanova':'Аня Иванова')
       +(foreign?docs('f-ch'+k):'')
@@ -3974,6 +3992,7 @@ function ostRenderForm(oldPrice){
     +(oldPrice?'<div style="background:#fff6e0;border-radius:10px;padding:10px 12px;font-size:13px;color:#9a6b00;margin-bottom:12px">⚠️ Цена обновилась: было '+oldPrice+' BYN, актуальная — <b>'+rt.price_byn+' BYN</b></div>':'')
     +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option></select></div>\
     <div id="f-guests"></div><input type="hidden" id="f-ln">\
+    <div style="border-top:1px solid var(--sand3);margin:14px 0 12px"></div>\
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
