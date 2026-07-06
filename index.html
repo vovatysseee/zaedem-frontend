@@ -568,7 +568,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
   </div>
   <div class="hero-content">
     <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap;margin-bottom:2.2rem">Забронируй своё жильё в Беларуси</h1>
-    <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative;min-height:132px">
+    <div style="max-width:600px;margin:0 auto;width:100%;animation:fadeUp .7s .3s both;position:relative;min-height:150px">
       <!-- Переключатель режима поиска -->
       <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;animation:fadeUp .7s .15s both">
         <button id="tab-normal" onclick="switchSearch('normal')" style="border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 17px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;background:var(--lime);color:var(--green4)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Поиск</button>
@@ -2544,6 +2544,18 @@ function openBookModal(){
     <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
+    <div class="fg"><label>Гражданство</label>
+      <select id="f-citizen" onchange="bkCitizenChange()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">
+        <option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Польша</option><option>Другая страна</option>
+      </select>
+    </div>
+    <div id="f-foreign" style="display:none">
+      <div class="fgrow">
+        <div class="fg"><label>Дата рождения</label><input id="f-dob" type="date"></div>
+        <div class="fg"><label>Номер паспорта</label><input id="f-passport" placeholder="MP1234567"></div>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:-4px">Нужно для регистрации иностранцев в МВД при заселении — заполняется один раз.</div>
+    </div>
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Заезд → Выезд</span><span>${fmtBkDates()}</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
       ${payIconsHTML()}
@@ -2661,6 +2673,11 @@ function bkToast(msg){
   if(!t){t=document.createElement('div');t.id='bk-toast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2a2a2a;color:#fff;padding:12px 18px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:9999;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90%;text-align:center;opacity:0;transition:opacity .2s';document.body.appendChild(t);}
   t.textContent=msg; t.style.opacity='1';
   clearTimeout(window._bkToastT); window._bkToastT=setTimeout(function(){t.style.opacity='0';},3000);
+}
+// Гражданство: не Беларусь → показать дату рождения + номер паспорта (для регистрации в МВД)
+function bkCitizenChange(){
+  var sel=document.getElementById('f-citizen'), box=document.getElementById('f-foreign');
+  if(sel&&box) box.style.display=(sel.value&&sel.value!=='Беларусь')?'block':'none';
 }
 function bkValidate(){
   var fn=(document.getElementById('f-fn')?.value||'').trim();
@@ -3938,6 +3955,8 @@ function ostRenderForm(oldPrice){
     +extra
     +'<div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
+    <div class="fg"><label>Гражданство</label><select id="f-citizen" onchange="bkCitizenChange()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Польша</option><option>Другая страна</option></select></div>\
+    <div id="f-foreign" style="display:none"><div class="fgrow"><div class="fg"><label>Дата рождения</label><input id="f-dob" type="date"></div><div class="fg"><label>Номер паспорта</label><input id="f-passport" placeholder="MP1234567"></div></div><div style="font-size:11.5px;color:var(--muted)">Нужно для регистрации иностранцев в МВД при заселении.</div></div>\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
