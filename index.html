@@ -2547,7 +2547,7 @@ function openBookModal(){
       </select>
     </div>
     <div id="f-country-other-wrap" style="display:none"><div class="fg"><label>Укажите страну</label><input id="f-country-other" placeholder="Например: Германия"></div></div>
-    <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div>
+    <div id="f-name-row"><div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
     <div id="f-foreign" style="display:none;background:var(--sand2);border:1px solid var(--sand3);border-radius:14px;padding:14px;margin-top:4px">
@@ -2675,21 +2675,24 @@ function bkToast(msg){
 // Гражданство: не Беларусь → показать дату рождения + номер паспорта (для регистрации в МВД)
 function bkCitizenChange(){
   var sel=document.getElementById('f-citizen'), box=document.getElementById('f-foreign'), oth=document.getElementById('f-country-other-wrap');
+  var nameRow=document.getElementById('f-name-row');
   var v=sel?sel.value:'';
   var foreign=(v&&v!=='Беларусь');
   if(oth) oth.style.display=(v==='Другая страна')?'block':'none';
   if(box){ box.style.display=foreign?'block':'none'; if(foreign)bkRenderPassports(); }
+  if(nameRow) nameRow.style.display=foreign?'none':'block'; // форма МЕНЯЕТСЯ, а не растёт
 }
-// Паспорт/дата рождения на КАЖДОГО гостя (email и телефон — общие)
+// Компактные блоки на каждого гостя (имя+дата+паспорт). Email/телефон — общие.
 function bkRenderPassports(){
   var box=document.getElementById('f-guests-passports'); if(!box)return;
   var st=window._capState||{}; var n=(parseInt(st.adults)||1)+(parseInt(st.kids)||0);
   var html='';
   for(var i=0;i<n;i++){
+    var sync=(i===0)?' oninput="var e=document.getElementById(\'f-fn\');if(e)e.value=this.value"':'';
     html+='<div style="'+(i?'border-top:1px solid var(--sand3);padding-top:10px;margin-top:10px':'')+'">'
       +'<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Гость '+(i+1)+'</div>'
-      +'<div class="fgrow" style="margin:0"><div class="fg" style="margin:0"><label>Имя и фамилия</label><input id="f-gname'+i+'" placeholder="Ivan Ivanov"></div></div>'
-      +'<div class="fgrow" style="margin:0"><div class="fg" style="margin:0"><label>Дата рождения</label><input id="f-gdob'+i+'" type="date"></div><div class="fg" style="margin:0"><label>Номер паспорта</label><input id="f-gpass'+i+'" placeholder="MP1234567"></div></div>'
+      +'<div class="fg" style="margin:0 0 8px"><label>Имя и фамилия</label><input id="f-gname'+i+'"'+sync+' placeholder="Ivan Ivanov"></div>'
+      +'<div class="fgrow" style="margin:0"><div class="fg" style="margin:0"><label>Дата рождения</label><input id="f-gdob'+i+'" type="date"></div><div class="fg" style="margin:0"><label>Паспорт</label><input id="f-gpass'+i+'" placeholder="MP1234567"></div></div>'
       +'</div>';
   }
   box.innerHTML=html;
@@ -3968,7 +3971,7 @@ function ostRenderForm(oldPrice){
     +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkCitizenChange()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Польша</option><option>Другая страна</option></select></div>\
     <div id="f-country-other-wrap" style="display:none"><div class="fg"><label>Укажите страну</label><input id="f-country-other" placeholder="Например: Германия"></div></div>\
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Имена гостей — латиницей, как в паспорте</div>\
-    <div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Ivanov"></div></div>'
+    <div id="f-name-row"><div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Ivanov"></div></div></div>'
     +extra
     +'<div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
