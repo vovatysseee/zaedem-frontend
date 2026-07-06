@@ -2542,18 +2542,14 @@ function openBookModal(){
     <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">${h.name_ru}</div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${h.address||''}${room?' · '+room.name:''}</div>
     <div class="fg"><label>Гражданство гостей</label>
-      <select id="f-citizen" onchange="bkCitizenChange()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">
-        <option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Польша</option><option>Другая страна</option>
+      <select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">
+        <option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option>
       </select>
     </div>
-    <div id="f-country-other-wrap" style="display:none"><div class="fg"><label>Укажите страну</label><input id="f-country-other" placeholder="Например: Германия"></div></div>
-    <div id="f-name-row"><div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Иванов"></div></div></div>
+    <div id="f-guests"></div>
+    <input type="hidden" id="f-ln">
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
-    <div id="f-foreign" style="display:none;background:var(--sand2);border:1px solid var(--sand3);border-radius:14px;padding:14px;margin-top:4px">
-      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px">🛂 Данные иностранных гостей (для регистрации в МВД при заселении)</div>
-      <div id="f-guests-passports"></div>
-    </div>
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Заезд → Выезд</span><span>${fmtBkDates()}</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
       ${payIconsHTML()}
@@ -2565,6 +2561,7 @@ function openBookModal(){
     <button class="btn-pay btn-pay-soon" id="bk-pay-btn" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>`;
   document.getElementById('bk-modal').classList.add('open');
+  bkRenderGuests();
 }
 
 // Кнопка оплаты активна только когда обе галочки согласий отмечены.
@@ -2673,26 +2670,33 @@ function bkToast(msg){
   clearTimeout(window._bkToastT); window._bkToastT=setTimeout(function(){t.style.opacity='0';},3000);
 }
 // Гражданство: не Беларусь → показать дату рождения + номер паспорта (для регистрации в МВД)
-function bkCitizenChange(){
-  var sel=document.getElementById('f-citizen'), box=document.getElementById('f-foreign'), oth=document.getElementById('f-country-other-wrap');
-  var nameRow=document.getElementById('f-name-row');
-  var v=sel?sel.value:'';
-  var foreign=(v&&v!=='Беларусь');
-  if(oth) oth.style.display=(v==='Другая страна')?'block':'none';
-  if(box){ box.style.display=foreign?'block':'none'; if(foreign)bkRenderPassports(); }
-  if(nameRow) nameRow.style.display=foreign?'none':'block'; // форма МЕНЯЕТСЯ, а не растёт
-}
-// Компактные блоки на каждого гостя (имя+дата+паспорт). Email/телефон — общие.
-function bkRenderPassports(){
-  var box=document.getElementById('f-guests-passports'); if(!box)return;
-  var st=window._capState||{}; var n=(parseInt(st.adults)||1)+(parseInt(st.kids)||0);
+// Динамическая форма гостей: строит поля по гражданству и составу (из поиска)
+function bkAgeWord(a){ a=Math.abs(a)%100; if(a>=11&&a<=14)return 'лет'; var d=a%10; return d===1?'год':(d>=2&&d<=4?'года':'лет'); }
+function bkRenderGuests(){
+  var box=document.getElementById('f-guests'); if(!box)return;
+  var sel=document.getElementById('f-citizen'); var country=sel?sel.value:'Беларусь';
+  var foreign=(country&&country!=='Беларусь');
+  var st=window._capState||{}; var adults=parseInt(st.adults)||1; var ages=st.childAges||[]; var kids=parseInt(st.kids)||ages.length||0;
+  var phA=foreign?'Ivan Ivanov':'Иван Иванов', phO=foreign?'Anna Ivanova':'Анна Иванова', phP=foreign?'AB1234567':'MP1234567';
+  function nameFld(id,ph,extra){ return '<div class="fg" style="margin:0 0 8px"><label>Имя и фамилия</label><input id="'+id+'"'+(extra||'')+' placeholder="'+ph+'"></div>'; }
+  function docs(pfx){ return '<div class="fgrow" style="margin:0"><div class="fg" style="margin:0"><label>Дата рождения</label><input id="'+pfx+'-dob" type="date"></div><div class="fg" style="margin:0"><label>Паспорт</label><input id="'+pfx+'-pass" placeholder="'+phP+'"></div></div>'; }
   var html='';
-  for(var i=0;i<n;i++){
-    var sync=(i===0)?' oninput="var e=document.getElementById(\'f-fn\');if(e)e.value=this.value"':'';
+  for(var i=0;i<adults;i++){
+    var first=(i===0);
+    var nid=first?'f-fn':('f-ad'+i);
+    var sync=first?' oninput="var e=document.getElementById(\'f-ln\');if(e)e.value=\'\'"':'';
     html+='<div style="'+(i?'border-top:1px solid var(--sand3);padding-top:10px;margin-top:10px':'')+'">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Гость '+(i+1)+'</div>'
-      +'<div class="fg" style="margin:0 0 8px"><label>Имя и фамилия</label><input id="f-gname'+i+'"'+sync+' placeholder="Ivan Ivanov"></div>'
-      +'<div class="fgrow" style="margin:0"><div class="fg" style="margin:0"><label>Дата рождения</label><input id="f-gdob'+i+'" type="date"></div><div class="fg" style="margin:0"><label>Паспорт</label><input id="f-gpass'+i+'" placeholder="MP1234567"></div></div>'
+      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">'+(first?'Заказчик':'Гость '+(i+1))+'</div>'
+      +nameFld(nid, first?phA:phO, sync)
+      +((first||foreign)?docs(nid):'')
+      +'</div>';
+  }
+  for(var k=0;k<kids;k++){
+    var age=ages[k]!=null?ages[k]:null;
+    html+='<div style="border-top:1px solid var(--sand3);padding-top:10px;margin-top:10px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">Ребёнок '+(k+1)+(age!=null?' · '+age+' '+bkAgeWord(age):'')+'</div>'
+      +nameFld('f-ch'+k, foreign?'Anna Ivanova':'Аня Иванова')
+      +(foreign?docs('f-ch'+k):'')
       +'</div>';
   }
   box.innerHTML=html;
@@ -3968,14 +3972,10 @@ function ostRenderForm(oldPrice){
     <div style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 '+(h.address||'')+' · '+_ostSel.roomName+'</div>\
     '+ostCancelBox(rt.cancellation)
     +(oldPrice?'<div style="background:#fff6e0;border-radius:10px;padding:10px 12px;font-size:13px;color:#9a6b00;margin-bottom:12px">⚠️ Цена обновилась: было '+oldPrice+' BYN, актуальная — <b>'+rt.price_byn+' BYN</b></div>':'')
-    +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkCitizenChange()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Польша</option><option>Другая страна</option></select></div>\
-    <div id="f-country-other-wrap" style="display:none"><div class="fg"><label>Укажите страну</label><input id="f-country-other" placeholder="Например: Германия"></div></div>\
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Имена гостей — латиницей, как в паспорте</div>\
-    <div id="f-name-row"><div class="fgrow"><div class="fg"><label>Имя</label><input id="f-fn" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-ln" placeholder="Ivanov"></div></div></div>'
-    +extra
-    +'<div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
+    +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option></select></div>\
+    <div id="f-guests"></div><input type="hidden" id="f-ln">\
+    <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
-    <div id="f-foreign" style="display:none;background:var(--sand2);border:1px solid var(--sand3);border-radius:14px;padding:14px;margin-top:4px"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px">🛂 Данные иностранных гостей (для регистрации в МВД при заселении)</div><div id="f-guests-passports"></div></div>\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
@@ -3983,6 +3983,7 @@ function ostRenderForm(oldPrice){
   bkInjectConsent();
   bkInjectRoomPhoto();
   bkInjectRoomAmen();
+  bkRenderGuests();
 }
 
 // Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
