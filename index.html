@@ -597,12 +597,12 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
         <div id="ai-understood" style="display:none;margin-top:8px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border-radius:12px;padding:8px 13px;backdrop-filter:blur(8px);text-align:left"></div>
         <div style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
       </div>
-      <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:8px 8px 8px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
+      <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
           <div id="cap-top" style="font-size:14.5px;font-weight:600;color:#9a9a9a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Куда едете?</div>
           <div id="cap-bot" style="display:none;font-size:12px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Выберите даты · Количество гостей</div>
         </div>
-        <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:40px;height:40px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
       </div>
@@ -1111,7 +1111,7 @@ document.addEventListener('DOMContentLoaded',function(){
   var PRE='Куда едете? ', ci=0, chi=0, del=false;
   function tick(){
     var el=document.getElementById('cap-top'); if(!el){ setTimeout(tick,600); return; }
-    if(window._capState&&window._capState.city){ el.textContent=window._capState.city; el.style.color='#111'; setTimeout(tick,1200); return; }
+    if(window._capState&&window._capState.city){ if(typeof updCapDisplay==='function')updCapDisplay(); setTimeout(tick,1200); return; }
     el.style.color='#9a9a9a';
     var w=CITIES[ci];
     if(!del){ chi++; if(chi>=w.length){ del=true; el.textContent=PRE+w; setTimeout(tick,1300); return; } }
@@ -1582,6 +1582,7 @@ function zbRestoreRoute(){
     window._capState.adults = r.cap.adults || 2;
     window._capState.kids   = r.cap.kids || 0;
     window._capState.childAges = r.cap.childAges || [];
+    try{ if(typeof updCapDisplay==='function') updCapDisplay(); }catch(e){}
   }
   // ОТЕЛЬ: открываем сразу сохранённый объект отеля (приоритет над каталогом/выдачей)
   if(r.view==='hotel' && r.hotel){
@@ -2719,6 +2720,19 @@ function bkRenderGuests(){
   }
   box.innerHTML=html;
 }
+// Сбор данных гостей (гражданство + паспорта) для передачи в бронь → анкета МВД
+function bkCollectGuests(){
+  var citizenship=(document.getElementById('f-citizen')||{}).value||'Беларусь';
+  var passports=[];
+  ['f-fn','f-ad1','f-ad2','f-ad3','f-ad4','f-ad5','f-ch0','f-ch1','f-ch2','f-ch3','f-ch4'].forEach(function(id){
+    var nm=document.getElementById(id); if(!nm)return;
+    var dob=document.getElementById(id+'-dob'), pass=document.getElementById(id+'-pass');
+    var name=(nm.value||'').trim();
+    if(!name && !(pass&&pass.value))return;
+    passports.push({name:name, dob:(dob&&dob.value)||'', passport:(pass&&pass.value||'').trim()});
+  });
+  return {citizenship:citizenship, passports:passports};
+}
 function bkValidate(){
   var fn=(document.getElementById('f-fn')?.value||'').trim();
   var em=(document.getElementById('f-em')?.value||'').trim();
@@ -2762,7 +2776,7 @@ async function confirmBook(total){
   const _kids=(window._capState&&window._capState.kids)||0;
   const _totalGuests=gCnt+_kids;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):''})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):'',guest_citizenship:bkCollectGuests().citizenship,guest_passports:JSON.stringify(bkCollectGuests().passports)})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -3264,13 +3278,18 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   window._capState={city:'',din:null,dout:null,adults:2,kids:0};
 
   function updCapDisplay(){
-    var s=window._capState;
+    var s=window._capState||{};
     var top=document.getElementById('cap-top');
-    var bot=document.getElementById('cap-bot');
-    if(top)top.textContent=s.city||'Куда едете?';
-    var dates=s.din&&s.dout?fmtC(s.din)+' — '+fmtC(s.dout):'Выберите даты';
-    var gt=s.adults===1?'гость':s.adults<=4?'гостя':'гостей';
-    if(bot)bot.textContent=dates+' · '+s.adults+(s.kids>0?' + '+s.kids+' реб.':'')+' '+gt;
+    if(!top)return;
+    if(s.city){
+      var dates=s.din&&s.dout?(fmtC(s.din)+'–'+fmtC(s.dout)):'';
+      var gt=s.adults===1?'гость':(s.adults<=4?'гостя':'гостей');
+      var guests=s.adults?(s.adults+(s.kids>0?'+'+s.kids+'реб':'')+' '+gt):'';
+      top.textContent=[s.city,dates,guests].filter(Boolean).join(' · ');
+      top.style.color='#111';
+    } else {
+      top.textContent='Куда едете?'; top.style.color='#9a9a9a';
+    }
   }
   window.updCapDisplay=updCapDisplay;
 
