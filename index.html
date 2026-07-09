@@ -3029,6 +3029,10 @@ function openHotelApp(){
           <option value="none">Нет сайта / не используем</option>
         </select>
       </div>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--muted);margin:6px 0 12px;cursor:pointer">
+        <input type="checkbox" id="ap-consent" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--green)">
+        <span>Отправляя заявку, я соглашаюсь на <a href="privacy.html" target="_blank" style="color:var(--green);font-weight:600">обработку персональных данных</a> и принимаю политику конфиденциальности.</span>
+      </label>
       <button class="btn-pay" id="ap-btn" onclick="submitApp()">Отправить заявку →</button>
       <div id="ap-err" style="color:#e53935;font-size:12px;margin-top:8px;text-align:center"></div>
     </div>`;
@@ -3043,6 +3047,7 @@ async function submitApp(){
   const email=document.getElementById('ap-email')?.value?.trim();
   const err=document.getElementById('ap-err');
   if(!name||!city||!contact||!phone||!email){err.textContent='Заполните обязательные поля (*)';return;}
+  if(!document.getElementById('ap-consent')?.checked){err.textContent='Отметьте согласие на обработку персональных данных';return;}
   const btn=document.getElementById('ap-btn');btn.textContent='Отправляем...';btn.disabled=true;
   try{
     const r=await fetch(API+'/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_name:name,city,contact_name:contact,phone,email,booking_system:document.getElementById('ap-system')?.value||''})});
