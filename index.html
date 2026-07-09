@@ -1220,8 +1220,8 @@ async function aiSearch(){
     if(_d&&_d.parsed){ var a=_d.parsed;
       if(a.city)p.city=a.city;
       if(a.category)p.category=a.category;
-      if(a.adults)p.adults=a.adults;
-      if(a.kids!=null)p.kids=a.kids;
+      if(a.adults)p.adults=parseInt(a.adults)||p.adults;
+      if(a.kids!=null)p.kids=parseInt(a.kids)||0;
       if(Array.isArray(a.childAges)&&a.childAges.length)p.childAges=a.childAges;
       if(a.priceMax)p.priceMax=a.priceMax;
       if(Array.isArray(a.amenities)&&a.amenities.length)p.amenities=a.amenities;
@@ -1232,8 +1232,8 @@ async function aiSearch(){
   }catch(e){}
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
-  window._capState.adults=p.adults||window._capState.adults||2;
-  window._capState.kids=p.kids||0;
+  window._capState.adults=parseInt(p.adults)||parseInt(window._capState.adults)||2;
+  window._capState.kids=parseInt(p.kids)||0;
   window._capState.childAges=[]; for(var i=0;i<(p.kids||0);i++)window._capState.childAges.push((p.childAges&&p.childAges[i]!=null)?p.childAges[i]:7);
   // Даты: если ИИ вернул конкретные — берём их; иначе разбираем из фразы; иначе дефолт
   var _q=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
@@ -1424,7 +1424,7 @@ function hpBuildGuests(){
 function hpChG(type,d,e){
   if(e)e.stopPropagation();
   window._capState=window._capState||{adults:2,kids:0};
-  if(type==='a')window._capState.adults=Math.max(1,Math.min(10,(window._capState.adults||2)+d));
+  if(type==='a')window._capState.adults=Math.max(1,Math.min(10,(parseInt(window._capState.adults)||2)+d));
   else{
     window._capState.kids=Math.max(0,Math.min(6,(window._capState.kids||0)+d));
     window._capState.childAges=window._capState.childAges||[];
@@ -1586,8 +1586,8 @@ function zbRestoreRoute(){
     window._capState.city   = r.cap.city || '';
     window._capState.din    = r.cap.din  ? new Date(r.cap.din)  : null;
     window._capState.dout   = r.cap.dout ? new Date(r.cap.dout) : null;
-    window._capState.adults = r.cap.adults || 2;
-    window._capState.kids   = r.cap.kids || 0;
+    window._capState.adults = parseInt(r.cap.adults) || 2;
+    window._capState.kids   = parseInt(r.cap.kids) || 0;
     window._capState.childAges = r.cap.childAges || [];
     try{ if(typeof updCapDisplay==='function') updCapDisplay(); }catch(e){}
   }
@@ -2168,7 +2168,7 @@ function serpSearchBuildCal(){
 }
 
 function serpSearchChG(t,d){
-  if(t==='a')_serpSD.adults=Math.max(1,Math.min(8,_serpSD.adults+d));
+  if(t==='a')_serpSD.adults=Math.max(1,Math.min(8,(parseInt(_serpSD.adults)||2)+d));
   else {
     _serpSD.kids=Math.max(0,Math.min(6,_serpSD.kids+d));
     _serpSD.childAges=_serpSD.childAges||[];
@@ -2212,7 +2212,7 @@ function serpSearchSubmit(){
   window._capState.city=_serpSD.city;
   window._capState.din=_serpSD.din;
   window._capState.dout=_serpSD.dout;
-  window._capState.adults=_serpSD.adults;
+  window._capState.adults=parseInt(_serpSD.adults)||2;
   window._capState.kids=_serpSD.kids;
   window._capState.childAges=(_serpSD.childAges||[]).slice(0,_serpSD.kids);
   if(_serpSD.din)dIn=_serpSD.din; if(_serpSD.dout)dOut=_serpSD.dout; if(_serpSD.adults)gCnt=_serpSD.adults; // синхрон дат с отелем
@@ -2231,8 +2231,8 @@ function serpEditSearch(){
   _serpSD.city=cs.city||_serpSD.city||'';
   _serpSD.din=cs.din||null;
   _serpSD.dout=cs.dout||null;
-  _serpSD.adults=cs.adults||2;
-  _serpSD.kids=cs.kids||0;
+  _serpSD.adults=parseInt(cs.adults)||2;
+  _serpSD.kids=parseInt(cs.kids)||0;
   _serpSD.childAges=(cs.childAges||[]).slice();
   _serpSD.nav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
   // Позиция под pill
@@ -3345,6 +3345,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
 
   function updCapDisplay(){
     var s=window._capState||{};
+    if(s){ s.adults=parseInt(s.adults)||2; s.kids=parseInt(s.kids)||0; }
     var top=document.getElementById('cap-top');
     if(!top)return;
     if(s.city){
