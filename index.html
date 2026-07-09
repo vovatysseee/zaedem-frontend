@@ -1206,15 +1206,8 @@ async function aiSearch(){
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
   var p=aiParse(q), el=document.getElementById('ai-understood');
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
-  // ГИБРИД: если конструктор уверенно разобрал — ИИ НЕ зовём (экономия + скорость).
-  // Уверенно = есть город + короткий понятный запрос без «мутных» признаков.
-  var _wordCount=q.trim().split(/\s+/).length;
-  var _hasCity=!!p.city;
-  var _hasWeird=/[a-z]{4,}/i.test(q.replace(/wi-?fi/gi,'')) || _wordCount>9; // латиница-слова или длинная фраза
-  var _confident=_hasCity && _wordCount<=8 && !_hasWeird;
-  // Пробуем настоящий ИИ (Yandex GPT) ТОЛЬКО если конструктор не уверен. Не ответил — остаёмся на локальном разборе.
+  // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
   try{
-    if(_confident) throw new Error('skip-ai'); // уверенно разобрали сами — ИИ не тратим
     var _r=await fetch(API+'/api/ai/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q})});
     var _d=await _r.json();
     if(_d&&_d.parsed){ var a=_d.parsed;
@@ -1875,7 +1868,6 @@ function serpRender(){
          +'</div>'
          +ratHtml
          +tagsHtml
-         +aiMatchBadge(h)
          +'<div class="sr-foot">'
            +priceBlock
            +'<button class="sr-book">Смотреть</button>'
