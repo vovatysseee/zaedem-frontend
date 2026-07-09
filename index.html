@@ -1206,8 +1206,15 @@ async function aiSearch(){
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
   var p=aiParse(q), el=document.getElementById('ai-understood');
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
-  // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
+  // ГИБРИД: если конструктор уверенно разобрал — ИИ НЕ зовём (экономия + скорость).
+  // Уверенно = есть город + короткий понятный запрос без «мутных» признаков.
+  var _wordCount=q.trim().split(/\s+/).length;
+  var _hasCity=!!p.city;
+  var _hasWeird=/[a-z]{4,}/i.test(q.replace(/wi-?fi/gi,'')) || _wordCount>9; // латиница-слова или длинная фраза
+  var _confident=_hasCity && _wordCount<=8 && !_hasWeird;
+  // Пробуем настоящий ИИ (Yandex GPT) ТОЛЬКО если конструктор не уверен. Не ответил — остаёмся на локальном разборе.
   try{
+    if(_confident) throw new Error('skip-ai'); // уверенно разобрали сами — ИИ не тратим
     var _r=await fetch(API+'/api/ai/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q})});
     var _d=await _r.json();
     if(_d&&_d.parsed){ var a=_d.parsed;
@@ -1466,7 +1473,7 @@ function openHotel(id){
   const revs=h.revs||[];
   const amenities=h.amenities||[];
   const phone=h.phone||'';
-  const desc=h.description_ru||h.description||'';
+  const desc=cleanText(h.description_ru||h.description||'');
   const pricePerNight=h.price||rooms[0]?.price||0;
   const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
@@ -1494,7 +1501,7 @@ function openHotel(id){
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера</h3>
         <div class="hp-rooms">${rooms.map((r,i)=>`
           <div class="room hp-room-row" data-ridx="${i}" onclick="selRoomPick(${i})" style="cursor:pointer">
-            <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров. · ${r.desc}</div></div>
+            <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров.${r.desc?" · "+cleanText(r.desc):""}</div></div>
             <div style="text-align:right;flex-shrink:0">
               <div class="rprice">${r.price} BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>
               ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${r.avail}!</div>`:''}
@@ -1649,6 +1656,19 @@ function amenName(a){
   return AMEN_RU[k]||en||'';
 }
 function amenIcon(a){ if(a&&typeof a==='object')return a.i||a.icon||''; return ''; }
+// Чистка описаний от мусорных символов (битая кодировка, HTML-сущности, спецсимволы)
+function cleanText(t){
+  if(!t) return '';
+  var s=String(t);
+  s=s.replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  s=s.replace(/&[a-z]+;/gi,' ');            // прочие сущности
+  s=s.replace(/<[^>]+>/g,' ');              // случайные HTML-теги
+  s=s.replace(/[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,''); // «ромбик» и управляющие
+  s=s.replace(/\s*\(\s*\)\s*/g,' ');        // пустые скобки
+  s=s.replace(/[•·▪◦]+/g,' · ');            // разнобойные буллеты → единый
+  s=s.replace(/\s{2,}/g,' ').replace(/\s+([,.;:!?])/g,'$1').trim();
+  return s;
+}
 // Чистка адреса: убираем дубли города и мусорные скобки/пустые части
 function cleanAddr(addr){
   if(!addr) return '';
@@ -3871,6 +3891,7 @@ function ostAmenRU(a){
   var s=String(a||'').trim(); if(!s)return '';
   var key=s.toLowerCase();
   if(OST_ROOM_AMEN_RU[key])return OST_ROOM_AMEN_RU[key];
+  if(typeof AMEN_RU!=='undefined'&&AMEN_RU[key])return AMEN_RU[key]; // запасной большой словарь
   if(/[а-я]/i.test(s))return s.charAt(0).toUpperCase()+s.slice(1); // уже по-русски — оставляем
   s=s.replace(/[-_]+/g,' ').trim();
   return s.charAt(0).toUpperCase()+s.slice(1);
