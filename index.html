@@ -1709,6 +1709,22 @@ function srNightsLabel(){
     if(!ticking){window.requestAnimationFrame(onScroll);ticking=true;}
   },{passive:true});
 })();
+// AI-бейдж «подходит ли вам»: сверяет потребности из запроса гостя с удобствами объекта
+var AI_MATCH_SYN={'животн':['животн','питомц','собак','кошк','pet'],'парковк':['парковк','стоянк','parking','машин'],'wi-fi':['wi-fi','wifi','интернет','inet'],'интернет':['интернет','wi-fi','wifi'],'бан':['бан','саун','sauna'],'саун':['саун','бан'],'бассейн':['бассейн','pool'],'кухн':['кухн','kitchen'],'завтрак':['завтрак','breakfast'],'кондиц':['кондиц','air cond','ac'],'камин':['камин'],'мангал':['мангал','барбекю','bbq','гриль'],'озер':['озер','вода','пляж','река'],'дет':['дет','ребён','ребен','семейн','крроват','кроват']};
+function aiMatchBadge(h){
+  var needs=(window._aiAmenities||[]);
+  if(!needs.length) return '';
+  var hay=(h.amenities||[]).map(function(a){return amenName(a).toLowerCase()+' '+String(a&&a.key||'').toLowerCase();}).join(' | ')+' '+String(h.name_ru||'').toLowerCase();
+  var chips=[], seen={};
+  needs.forEach(function(n){
+    var nl=String(n).toLowerCase().trim(); if(!nl||seen[nl])return; seen[nl]=1;
+    var hit=hay.indexOf(nl)>=0;
+    if(!hit){ for(var k in AI_MATCH_SYN){ if(nl.indexOf(k)>=0){ if(AI_MATCH_SYN[k].some(function(s){return hay.indexOf(s)>=0;})){hit=true;break;} } } }
+    if(hit) chips.push('<span style="display:inline-block;background:#eaf3de;color:#27500a;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin:3px 3px 0 0">✓ '+n+'</span>');
+  });
+  if(!chips.length) return '';
+  return '<div style="margin:2px 0 0">'+chips.join('')+'</div>';
+}
 function serpRender(){
   // фильтры
   var cats=[];
@@ -1802,7 +1818,7 @@ function serpRender(){
     var imgFull=photosFull[0]||'';
     var typeLbl=serpCatLabel(h);
     var rn=parseFloat(h.rating||0);var ratLbl=rn>=5?'5 звёзд':rn>=4?'4 звезды':rn>=3?'3 звезды':rn>=2?'2 звезды':'';
-    var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+a.i+' '+a.n+'</span>';}).join('');
+    var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+(amenIcon(a)||'')+' '+amenName(a)+'</span>';}).join('');
     var dots=photos.length>1?photos.map(function(_,i){return '<div class="sr-dot'+(i===0?' on':'')+'"></div>';}).join(''):'';
 
 
@@ -1839,6 +1855,7 @@ function serpRender(){
          +'</div>'
          +ratHtml
          +tagsHtml
+         +aiMatchBadge(h)
          +'<div class="sr-foot">'
            +priceBlock
            +'<button class="sr-book">Смотреть</button>'
