@@ -1055,7 +1055,7 @@ function renderHotels(){
     box.innerHTML=list.map(function(h){
       var img=h.photos&&h.photos[0]?h.photos[0]:'';
       var thumb=img?srNormPhoto(img):'';
-      var loc=h.address?h.address.split(',').pop().trim():'';
+      var loc=cleanAddr(h.address); loc=loc?loc.split(',').pop().trim():'';
       return '<div class="home-cv" style="flex:0 0 200px;cursor:pointer" onclick="openHotel(this.dataset.id)" data-id="'+h.id+'">'
         +'<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--sand2)">'
         +(img?'<img src="'+thumb+'" data-full="'+img+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
@@ -1483,10 +1483,10 @@ function openHotel(id){
     <div class="hp-layout">
       <div>
         <h1 class="hp-title">${h.name_ru}</h1>
-        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${h.address||''}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
+        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${cleanAddr(h.address)}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         ${(h.latitude&&h.longitude)?`<div id="hp-nearby" style="margin:0 0 1.25rem"></div>`:''}
-        ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen"><span class="ai">${a.i||'✓'}</span>${a.n||a}</div>`).join('')}</div>`:''}
+        ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen"><span class="ai">${amenIcon(a)||String.fromCharCode(10003)}</span>${amenName(a)}</div>`).join("")}</div>`:''}
         ${isOst?`
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера и тарифы</h3>
         <div id="ost-rates"><div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">⏳ Загружаем актуальные тарифы и цены…</div></div>`:``}
@@ -1638,8 +1638,32 @@ function goBack(){
 }
 var serpMapOpen = false;
 
+// Перевод удобств на русский (когда из базы приходит английское/пустое)
+var AMEN_RU={'wi-fi':'Wi-Fi','wifi':'Wi-Fi','free wifi':'Wi-Fi','free wi-fi':'Wi-Fi','internet':'Интернет','parking':'Парковка','free parking':'Бесплатная парковка','private parking':'Своя парковка','air conditioning':'Кондиционер','air conditioner':'Кондиционер','airconditioning':'Кондиционер','kitchen':'Кухня','kitchenette':'Мини-кухня','breakfast':'Завтрак','free breakfast':'Завтрак включён','pool':'Бассейн','swimming pool':'Бассейн','indoor pool':'Крытый бассейн','outdoor pool':'Открытый бассейн','spa':'СПА','sauna':'Сауна','banya':'Баня','gym':'Тренажёрный зал','fitness':'Фитнес','fitness center':'Фитнес-центр','restaurant':'Ресторан','bar':'Бар','tv':'Телевизор','television':'Телевизор','flat-screen tv':'Телевизор','cable tv':'Кабельное ТВ','pets allowed':'Можно с животными','pet friendly':'Можно с животными','pets':'Можно с животными','non-smoking':'Для некурящих','non-smoking rooms':'Номера для некурящих','smoke-free':'Для некурящих','elevator':'Лифт','lift':'Лифт','balcony':'Балкон','terrace':'Терраса','garden':'Сад','bbq':'Барбекю','bbq facilities':'Зона барбекю','barbecue':'Барбекю','fireplace':'Камин','washing machine':'Стиральная машина','laundry':'Прачечная','24-hour front desk':'Круглосуточная стойка','24-hour reception':'Круглосуточная стойка','airport shuttle':'Трансфер','shuttle':'Трансфер','room service':'Обслуживание номеров','heating':'Отопление','safe':'Сейф','safety deposit box':'Сейф','minibar':'Мини-бар','hot tub':'Джакузи','jacuzzi':'Джакузи','beach':'Пляж','beachfront':'Первая линия','lake':'Озеро','lake view':'Вид на озеро','river':'Река','bathroom':'Ванная','private bathroom':'Своя ванная','shower':'Душ','hairdryer':'Фен','hair dryer':'Фен','refrigerator':'Холодильник','fridge':'Холодильник','microwave':'Микроволновка','coffee machine':'Кофемашина','coffee maker':'Кофеварка','dishwasher':'Посудомойка','iron':'Утюг','wardrobe':'Шкаф','desk':'Рабочий стол','soundproofing':'Шумоизоляция','family rooms':'Семейные номера','free cancellation':'Бесплатная отмена','24-hour security':'Охрана 24ч','ev charging':'Зарядка электро','electric vehicle charging station':'Зарядка электромобилей','daily housekeeping':'Ежедневная уборка','luggage storage':'Камера хранения','concierge':'Консьерж','wheelchair accessible':'Для маломобильных','free toiletries':'Туалетные принадлежности','towels':'Полотенца','linens':'Постельное бельё','wardrobe or closet':'Шкаф'};
+function amenName(a){
+  if(a==null) return '';
+  if(typeof a==='string'){ var k0=a.toLowerCase().trim(); return AMEN_RU[k0]||a; }
+  // объект: сначала русское, потом перевод из англ., потом как есть
+  var ru=a.name_ru||a.n; if(ru&&String(ru).trim()) return ru;
+  var en=a.name_en||a.name||a.key||''; var k=String(en).toLowerCase().trim();
+  return AMEN_RU[k]||en||'';
+}
+function amenIcon(a){ if(a&&typeof a==='object')return a.i||a.icon||''; return ''; }
+// Чистка адреса: убираем дубли города и мусорные скобки/пустые части
+function cleanAddr(addr){
+  if(!addr) return '';
+  var parts=String(addr).split(',').map(function(s){return s.trim();})
+    .filter(function(s){ return s && s!=='()' && s!=='( )' && !/^[\(\)\[\]\-–—\s]*$/.test(s); });
+  // убрать пустые скобки внутри частей и схлопнуть пробелы
+  parts=parts.map(function(s){ return s.replace(/\(\s*\)/g,'').replace(/\s{2,}/g,' ').trim(); }).filter(Boolean);
+  // убрать подряд идущие дубли (Минск, Минск → Минск), регистронезависимо
+  var out=[]; parts.forEach(function(s){ if(!out.length||out[out.length-1].toLowerCase()!==s.toLowerCase())out.push(s); });
+  // убрать любые повторы одного и того же значения (не только подряд)
+  var seen={}; out=out.filter(function(s){ var l=s.toLowerCase(); if(seen[l])return false; seen[l]=1; return true; });
+  return out.join(', ');
+}
 function serpCatLabel(h){
-  var parts=String(h.address||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+  var parts=cleanAddr(h.address).split(',').map(function(s){return s.trim();}).filter(Boolean);
   var city = parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
   var tail = city ? ' • '+city : '';
   if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель')+tail;
