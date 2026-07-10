@@ -1214,6 +1214,7 @@ function zbResetCapsule(){
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
 function zbRenderLast(){
   var reg=document.getElementById('last-search-pill');
+  console.log('РЕНДЕР плашки. reg=', !!reg, 'lastReg=', window._lastReg);
   if(!reg)return;
   var L=window._lastReg;
   if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
@@ -2640,7 +2641,7 @@ function serpOpen(){
   window._serpReset=true;
   // запоминаем последний поиск для кликабельной плашки (в памяти → F5 сбрасывает).
   // Сохраняем ВСЕГДА когда есть город; ИИ-поиск потом сам уберёт эту плашку (у него своя).
-  try{ var _cs=window._capState||{}; if(_cs.city){ var _lbl=_cs.city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; window._lastReg={label:_lbl,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}; } }catch(e){}
+  try{ var _cs=window._capState||{}; if(_cs.city){ var _lbl=_cs.city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; window._lastReg={label:_lbl,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}; } }catch(e){} console.log('СОХРАНЕНО в serpOpen:', window._lastReg);
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
