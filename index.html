@@ -1214,7 +1214,6 @@ function zbResetCapsule(){
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
 function zbRenderLast(){
   var reg=document.getElementById('last-search-pill');
-  console.log('zbRenderLast: reg=',!!reg,'lastReg=',window._lastReg,'| покажу:',!!(window._lastReg&&window._lastReg.label));
   if(!reg)return;
   var L=window._lastReg;
   if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
@@ -1728,8 +1727,6 @@ function goHomeReset(){
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
   try{ zbResetCapsule(); }catch(e){}                 // капсула → «Куда едете?»
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
-  console.log('ВОЗВРАТ goHomeReset. _lastReg=', window._lastReg);
-  console.log('ВОЗВРАТ домой. _lastReg=', window._lastReg);
   try{ zbRenderLast(); }catch(e){}                   // показать плашку обычного поиска
 }
 
@@ -1857,6 +1854,18 @@ function aiMatchBadge(h){
   return '<div style="margin:2px 0 0">'+chips.join('')+'</div>';
 }
 function serpRender(){
+  // Сохраняем плашку-памятку ОБЫЧНОГО поиска (не ИИ, не категория). serpRender рисует результаты при любом поиске.
+  try{
+    if(!window._fromAI && !window._catMode){
+      var _pc=(window._capState&&window._capState.city)||((document.getElementById('s-dest')||{}).value||'').trim();
+      if(_pc){
+        var _pcs=window._capState||{}; var _plbl=_pc;
+        if(_pcs.din&&_pcs.dout)_plbl+=' · '+fmtC(_pcs.din)+'–'+fmtC(_pcs.dout);
+        var _pad=parseInt(_pcs.adults)||2; _plbl+=' · '+_pad+' гост.';
+        window._lastReg={label:_plbl,city:_pc,din:_pcs.din?_pcs.din.getTime():null,dout:_pcs.dout?_pcs.dout.getTime():null,adults:_pad,kids:parseInt(_pcs.kids)||0};
+      }
+    }
+  }catch(e){}
   // фильтры
   var cats=[];
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
