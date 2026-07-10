@@ -1401,6 +1401,8 @@ function hpApplyDates(){
   window._capState=window._capState||{}; window._capState.din=_hpCal.din; window._capState.dout=_hpCal.dout;
   window._hpDatesDirty=false;
   if(typeof updSum==='function')try{updSum();}catch(_){}
+  // пересохраняем маршрут, чтобы новые даты пережили обновление страницы (F5)
+  try{ if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id); }catch(_){}
   if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
 }
 function hpConfirmDates(e){
@@ -1489,6 +1491,7 @@ function hpApplyGuests(e){
   // пересчёт тарифов под новое число гостей
   if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
   if(typeof updSum==='function')try{updSum();}catch(_){}
+  try{ if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id); }catch(_){}
 }
 
 // «Что рядом» — тянет POI с карты по координатам объекта (мягко: нет данных → блок скрыт)
@@ -1591,8 +1594,22 @@ function zbSaveRoute(view, hotelId){
     var cs = window._capState || {};
     var hObj = null;
     if(view==='hotel'){
-      hObj = (typeof curHotel!=='undefined' && curHotel && curHotel.id===hotelId) ? curHotel
+      var _src = (typeof curHotel!=='undefined' && curHotel && curHotel.id===hotelId) ? curHotel
            : (((typeof HOTELS!=='undefined' && HOTELS)||[]).find(function(x){return x.id===hotelId;}) || null);
+      // Сохраняем ОБРЕЗАННУЮ копию (у Островка объект огромный → sessionStorage переполняется и всё падает)
+      if(_src){
+        hObj = {
+          id:_src.id, name_ru:_src.name_ru, name_en:_src.name_en, address:_src.address,
+          category:_src.category, price:_src.price, oldPrice:_src.oldPrice, stars:_src.stars,
+          rating:_src.rating, reviews_count:_src.reviews_count, source:_src.source,
+          lat:_src.lat, lng:_src.lng, city_ru:_src.city_ru, checkin:_src.checkin, checkout:_src.checkout,
+          description_ru:_src.description_ru, description:_src.description, phone:_src.phone,
+          photos:(_src.photos||[]).slice(0,8),
+          amenities:_src.amenities||[],
+          rooms:_src.rooms||[], revs:(_src.revs||[]).slice(0,6),
+          ostId:_src.ostId||_src.hid
+        };
+      }
     }
     sessionStorage.setItem('zb_route', JSON.stringify({
       view: view, hotelId: hotelId || null,
@@ -1614,7 +1631,7 @@ function zbSaveRoute(view, hotelId){
       cat: window._catMode || null,
       hotel: hObj
     }));
-  }catch(e){}
+  }catch(e){ /* если даже обрезанное не влезло — не критично */ }
 }
 function zbClearRoute(){ try{ sessionStorage.removeItem('zb_route'); }catch(e){} }
 function zbRestoreRoute(){
@@ -1644,10 +1661,11 @@ function zbRestoreRoute(){
   if(r.view==='hotel' && r.hotel){
     try{
       if(typeof HOTELS!=='undefined' && HOTELS && !HOTELS.find(function(x){return x.id===r.hotel.id;})) HOTELS.push(r.hotel);
-      // восстанавливаем, откуда пришли, чтобы «Назад» вернул по маршруту (выдача/каталог/главная)
+      openHotel(r.hotelId);
+      // ВАЖНО: ставим маршрут ПОСЛЕ openHotel (openHotel сбрасывает _fromSerp внутри себя),
+      // иначе «Назад» потеряет, откуда пришли, и уйдёт на главную.
       window._catMode = r.cat || null;
       window._fromSerp = !!(r.fromSerp || r.cat);
-      openHotel(r.hotelId);
     }catch(e){}
     reveal();
     return;
