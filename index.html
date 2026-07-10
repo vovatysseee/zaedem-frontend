@@ -1206,18 +1206,13 @@ function aiParse(t){
 // ── Плашка «последний поиск» (запоминаем ТОЛЬКО последнее, кликом возвращаемся) ──
 // Сброс капсулы на «Куда едете?» (при возврате на главную). Плашка _lastReg остаётся отдельно.
 function zbResetCapsule(){
-  window._capState={adults:2,kids:0,din:null,dout:null,city:'',childAges:[]};
-  try{ dIn=null; dOut=null; }catch(e){}
-  var sd=document.getElementById('s-dest'); if(sd)sd.value='';
-  if(typeof updCapDisplay==='function')updCapDisplay();
+  // ОТКЛЮЧЕНО: сброс капсулы вызывал проблемы с гостями. Капсула сохраняет состояние как раньше.
+  return;
 }
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
 function zbRenderLast(){
-  var reg=document.getElementById('last-search-pill');
-  if(!reg)return;
-  var L=window._lastReg;
-  if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
-  else reg.style.display='none';
+  // ОТКЛЮЧЕНО: плашка обычного поиска временно убрана (вызывала нестабильность). Возврат к стабильной базе.
+  var reg=document.getElementById('last-search-pill'); if(reg)reg.style.display='none';
 }
 function zbRunLast(){
   var L=window._lastReg; if(!L)return;
@@ -1854,18 +1849,6 @@ function aiMatchBadge(h){
   return '<div style="margin:2px 0 0">'+chips.join('')+'</div>';
 }
 function serpRender(){
-  // Сохраняем плашку-памятку ОБЫЧНОГО поиска (не ИИ, не категория). serpRender рисует результаты при любом поиске.
-  try{
-    if(!window._fromAI && !window._catMode){
-      var _pc=(window._capState&&window._capState.city)||((document.getElementById('s-dest')||{}).value||'').trim();
-      if(_pc){
-        var _pcs=window._capState||{}; var _plbl=_pc;
-        if(_pcs.din&&_pcs.dout)_plbl+=' · '+fmtC(_pcs.din)+'–'+fmtC(_pcs.dout);
-        var _pad=parseInt(_pcs.adults)||2; _plbl+=' · '+_pad+' гост.';
-        window._lastReg={label:_plbl,city:_pc,din:_pcs.din?_pcs.din.getTime():null,dout:_pcs.dout?_pcs.dout.getTime():null,adults:_pad,kids:parseInt(_pcs.kids)||0};
-      }
-    }
-  }catch(e){}
   // фильтры
   var cats=[];
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
