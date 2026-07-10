@@ -2288,6 +2288,7 @@ function serpSearchSubmit(){
   window._capState.childAges=(_serpSD.childAges||[]).slice(0,_serpSD.kids);
   if(_serpSD.din)dIn=_serpSD.din; if(_serpSD.dout)dOut=_serpSD.dout; if(_serpSD.adults)gCnt=_serpSD.adults; // синхрон дат с отелем
   var sd=document.getElementById('s-dest');if(sd)sd.value=_serpSD.city;
+  window._fromAI=false; // это обычный поиск → плашка сохранится
   serpSearchClose();
   serpOpen();
 }
