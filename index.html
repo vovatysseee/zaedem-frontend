@@ -1243,6 +1243,25 @@ function capSearch(){
   try{ var _cs=window._capState||{}; if(_cs.city){ var _l=_cs.city; if(_cs.din&&_cs.dout)_l+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _a=parseInt(_cs.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_a,kids:parseInt(_cs.kids)||0}; } }catch(e){}
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
+// Повтор ИИ-поиска ИЗ ПАМЯТИ — без обращения к ИИ (токены НЕ тратятся)
+function aiReplayLast(){
+  var R=window._lastAiResult; if(!R||!R.city)return;
+  window._catMode=null; window._fromAI=true;
+  window._capState=window._capState||{};
+  window._capState.city=R.city;
+  window._capState.din=R.din?new Date(R.din):null;
+  window._capState.dout=R.dout?new Date(R.dout):null;
+  window._capState.adults=parseInt(R.adults)||2;
+  window._capState.kids=parseInt(R.kids)||0;
+  try{ if(window._capState.din)dIn=new Date(window._capState.din); if(window._capState.dout)dOut=new Date(window._capState.dout); }catch(e){}
+  window._aiCategory=R.category||null;
+  window._aiPriceMax=R.priceMax||0;
+  window._aiAmenities=R.amenities||[];
+  window._aiAvoid=R.avoid||[];
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
+  try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
+  window._lastReg=null; // это ИИ-повтор → обычную плашку не создаём
+}
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
@@ -1293,10 +1312,16 @@ async function aiSearch(){
   // синхронизируем галочки категорий с выбором ИИ (чтобы UI отражал)
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
   window._aiAvoid=p.avoid||[];
+  // СНИМОК разбора ИИ — чтобы повтор по плашке шёл ИЗ ПАМЯТИ, без нового запроса к ИИ (без токенов)
+  window._lastAiResult={ city:p.city, category:p.category||null, priceMax:p.priceMax||0,
+    amenities:p.amenities||[], avoid:p.avoid||[],
+    din:din?din.getTime():null, dout:dout?dout.getTime():null,
+    adults:parseInt(p.adults)||parseInt(window._capState.adults)||2, kids:parseInt(p.kids)||0,
+    label:el?'':'' };
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
   if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
-    if(p.city){ el.style.cursor='pointer'; el.title='Повторить этот поиск'; el.onclick=function(){ var iq=document.getElementById('ai-q'); if(iq&&window._lastAiQuery)iq.value=window._lastAiQuery; aiSearch(); }; } else { el.style.cursor='default'; el.onclick=null; } }
+    if(p.city){ el.style.cursor='pointer'; el.title='Повторить поиск (из памяти, без ИИ)'; el.onclick=function(){ aiReplayLast(); }; } else { el.style.cursor='default'; el.onclick=null; } }
   if(!p.city)return;
   window._catMode=null;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
