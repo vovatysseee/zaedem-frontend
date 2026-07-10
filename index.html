@@ -1240,7 +1240,7 @@ function capSearch(){
     if(_sd && _sd.value && _sd.value.trim()){ window._capState=window._capState||{}; window._capState.city=_sd.value.trim(); }
   }catch(e){}
   // сохраняем плашку-памятку этого поиска
-  try{ var _cs=window._capState||{}; if(_cs.city){ var _l=_cs.city; if(_cs.din&&_cs.dout)_l+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _a=parseInt(_cs.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_a,kids:parseInt(_cs.kids)||0}; } }catch(e){}
+  try{ var _cs=window._capState||{}; if(_cs.city){ var _l=_cs.city; if(_cs.din&&_cs.dout)_l+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _a=parseInt(_cs.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_a,kids:parseInt(_cs.kids)||0}; } }catch(e){} console.log('[REG] лупа-поиск, _lastReg=',window._lastReg);
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 async function aiSearch(){
@@ -1701,6 +1701,7 @@ function goHomeReset(){
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
   try{ zbResetCapsule(); }catch(e){}                 // капсула → «Куда едете?»
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
+  console.log('[REG] возврат домой. _lastReg =', window._lastReg);
   try{ zbRenderLast(); }catch(e){}                   // показать плашку обычного поиска
 }
 
@@ -2302,7 +2303,7 @@ function serpSearchSubmit(){
   if(_serpSD.din)dIn=_serpSD.din; if(_serpSD.dout)dOut=_serpSD.dout; if(_serpSD.adults)gCnt=_serpSD.adults; // синхрон дат с отелем
   var sd=document.getElementById('s-dest');if(sd)sd.value=_serpSD.city;
   // сохраняем плашку-памятку ЭТОГО поиска (новый заменяет старый)
-  try{ if(_serpSD.city){ var _l=_serpSD.city; if(_serpSD.din&&_serpSD.dout)_l+=' · '+fmtC(_serpSD.din)+'–'+fmtC(_serpSD.dout); var _a=parseInt(_serpSD.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_serpSD.city,din:_serpSD.din?_serpSD.din.getTime():null,dout:_serpSD.dout?_serpSD.dout.getTime():null,adults:_a,kids:_serpSD.kids||0}; } }catch(e){}
+  try{ if(_serpSD.city){ var _l=_serpSD.city; if(_serpSD.din&&_serpSD.dout)_l+=' · '+fmtC(_serpSD.din)+'–'+fmtC(_serpSD.dout); var _a=parseInt(_serpSD.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_serpSD.city,din:_serpSD.din?_serpSD.din.getTime():null,dout:_serpSD.dout?_serpSD.dout.getTime():null,adults:_a,kids:_serpSD.kids||0}; } }catch(e){} console.log('[REG] капсульный поиск, _lastReg=',window._lastReg);
   window._fromAI=false;
   serpSearchClose();
   serpOpen();
