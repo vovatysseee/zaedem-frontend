@@ -1206,26 +1206,58 @@ function aiParse(t){
 // ── Плашка «последний поиск» (запоминаем ТОЛЬКО последнее, кликом возвращаемся) ──
 // Сброс капсулы на «Куда едете?» (при возврате на главную). Плашка _lastReg остаётся отдельно.
 function zbResetCapsule(){
-  // ОТКЛЮЧЕНО: сброс капсулы вызывал проблемы с гостями. Капсула сохраняет состояние как раньше.
-  return;
+  // Полный сброс капсулы + ВСЕХ переменных гостей/дат (иначе пикеры показывают старое — это и ломало гостей)
+  window._capState={adults:2,kids:0,din:null,dout:null,city:'',childAges:[]};
+  try{ dIn=null; dOut=null; }catch(e){}
+  try{ if(typeof gCnt!=='undefined')gCnt=2; }catch(e){}
+  try{ if(typeof gAdults!=='undefined')gAdults=2; }catch(e){}
+  try{ if(typeof gKids!=='undefined')gKids=0; }catch(e){}
+  try{ if(typeof _serpSD!=='undefined'&&_serpSD){_serpSD.step=0;_serpSD.city='';_serpSD.din=null;_serpSD.dout=null;_serpSD.adults=2;_serpSD.kids=0;} }catch(e){}
+  var sd=document.getElementById('s-dest'); if(sd)sd.value='';
+  try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
+}
+// Снимок ТЕКУЩЕГО поиска в плашку-памятку. Берём из _capState — его обновляют ВСЕ редакторы
+// (капсула, шаги поиска, даты/гости на странице отеля) → в плашке всегда ПОСЛЕДНИЕ значения.
+// ВАЖНО: без fmtC — она объявлена в другом scope; из-за этого прежние попытки молча падали внутри try/catch.
+function zbSnapshotPill(){
+  try{
+    var cs=window._capState||{};
+    var city=String(cs.city||'').trim()||String((document.getElementById('s-dest')||{}).value||'').trim();
+    if(!city)return; // поиска не было — плашку не трогаем
+    var f=function(x){var d=new Date(x);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
+    var lbl=city;
+    if(cs.din&&cs.dout)lbl+=' · '+f(cs.din)+'–'+f(cs.dout);
+    var ad=parseInt(cs.adults)||2, kd=parseInt(cs.kids)||0;
+    lbl+=' · '+ad+(kd>0?'+'+kd+' реб.':'')+' '+(ad===1?'гость':(ad<=4?'гостя':'гостей'));
+    window._lastReg={label:lbl,city:city,
+      din:cs.din?new Date(cs.din).getTime():null,
+      dout:cs.dout?new Date(cs.dout).getTime():null,
+      adults:ad,kids:kd,childAges:(cs.childAges||[]).slice()};
+  }catch(e){}
 }
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
 function zbRenderLast(){
-  // ОТКЛЮЧЕНО: плашка обычного поиска временно убрана (вызывала нестабильность). Возврат к стабильной базе.
-  var reg=document.getElementById('last-search-pill'); if(reg)reg.style.display='none';
+  var reg=document.getElementById('last-search-pill');
+  if(!reg)return;
+  var L=window._lastReg;
+  if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
+  else reg.style.display='none';
 }
 function zbRunLast(){
-  var L=window._lastReg; if(!L)return;
+  var L=window._lastReg; if(!L||!L.city)return;
+  window._catMode=null; window._fromAI=false;
   window._capState=window._capState||{};
-  if(L.city)window._capState.city=L.city;
-  if(L.din)window._capState.din=new Date(L.din);
-  if(L.dout)window._capState.dout=new Date(L.dout);
+  window._capState.city=L.city;
+  window._capState.din=L.din?new Date(L.din):null;
+  window._capState.dout=L.dout?new Date(L.dout):null;
   window._capState.adults=parseInt(L.adults)||2;
   window._capState.kids=parseInt(L.kids)||0;
-  try{ if(window._capState.din)dIn=new Date(window._capState.din); if(window._capState.dout)dOut=new Date(window._capState.dout); }catch(e){}
-  if(typeof updCapDisplay==='function')updCapDisplay();
-  window._fromAI=false;
-  serpOpen();
+  window._capState.childAges=(L.childAges||[]).slice();
+  try{ dIn=L.din?new Date(L.din):null; dOut=L.dout?new Date(L.dout):null; }catch(e){}
+  try{ if(typeof gCnt!=='undefined')gCnt=parseInt(L.adults)||2; }catch(e){}
+  var sd=document.getElementById('s-dest'); if(sd)sd.value=L.city;
+  try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
+  try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 // Кнопка-лупа капсулы: запускает поиск по текущему состоянию (город/даты/гости)
 function capSearch(){
@@ -1234,8 +1266,6 @@ function capSearch(){
     var _sd=document.getElementById('s-dest');
     if(_sd && _sd.value && _sd.value.trim()){ window._capState=window._capState||{}; window._capState.city=_sd.value.trim(); }
   }catch(e){}
-  // сохраняем плашку-памятку этого поиска
-  try{ var _cs=window._capState||{}; if(_cs.city){ var _l=_cs.city; if(_cs.din&&_cs.dout)_l+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _a=parseInt(_cs.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_a,kids:parseInt(_cs.kids)||0}; } }catch(e){}
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 // Повтор ИИ-поиска ИЗ ПАМЯТИ — без обращения к ИИ (токены НЕ тратятся)
@@ -1255,7 +1285,6 @@ function aiReplayLast(){
   window._aiAvoid=R.avoid||[];
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
-  window._lastReg=null; // это ИИ-повтор → обычную плашку не создаём
 }
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
@@ -1320,7 +1349,6 @@ async function aiSearch(){
   if(!p.city)return;
   window._catMode=null;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
-  window._lastReg=null; // ИИ-поиск: обычную плашку убираем (у ИИ своя «Понял…»)
 }
 function scrollToHotels(){document.getElementById('hotels-section').scrollIntoView({behavior:'smooth'})}
 function getNights(){const a=new Date(document.getElementById('hp-in')?.value||getIn()),b=new Date(document.getElementById('hp-out')?.value||getOut());return Math.max(1,Math.round((b-a)/86400000))}
@@ -1720,9 +1748,10 @@ function goHomeReset(){
   var nav=document.querySelector('nav'); if(nav)nav.style.display='';
   window._catMode=null; window._fromSerp=false;
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
-  try{ zbResetCapsule(); }catch(e){}                 // капсула → «Куда едете?»
+  try{ zbSnapshotPill(); }catch(e){}                 // 1) СНАЧАЛА снимок текущего поиска (со всеми правками дат/гостей)
+  try{ zbResetCapsule(); }catch(e){}                 // 2) потом капсула → «Куда едете?» (готова к новому)
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
-  try{ zbRenderLast(); }catch(e){}                   // показать плашку обычного поиска
+  try{ zbRenderLast(); }catch(e){}                   // 3) показать плашку-памятку
 }
 
 function goBack(){
@@ -2322,8 +2351,6 @@ function serpSearchSubmit(){
   window._capState.childAges=(_serpSD.childAges||[]).slice(0,_serpSD.kids);
   if(_serpSD.din)dIn=_serpSD.din; if(_serpSD.dout)dOut=_serpSD.dout; if(_serpSD.adults)gCnt=_serpSD.adults; // синхрон дат с отелем
   var sd=document.getElementById('s-dest');if(sd)sd.value=_serpSD.city;
-  // сохраняем плашку-памятку ЭТОГО поиска (новый заменяет старый)
-  try{ if(_serpSD.city){ var _l=_serpSD.city; if(_serpSD.din&&_serpSD.dout)_l+=' · '+fmtC(_serpSD.din)+'–'+fmtC(_serpSD.dout); var _a=parseInt(_serpSD.adults)||2; _l+=' · '+_a+' гост.'; window._lastReg={label:_l,city:_serpSD.city,din:_serpSD.din?_serpSD.din.getTime():null,dout:_serpSD.dout?_serpSD.dout.getTime():null,adults:_a,kids:_serpSD.kids||0}; } }catch(e){}
   window._fromAI=false;
   serpSearchClose();
   serpOpen();
@@ -2634,9 +2661,8 @@ function serpOpen(){
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
   // запоминаем последний поиск для кликабельной плашки (в памяти → F5 сбрасывает).
-  // Сохраняем ВСЕГДА когда есть город (берём из того же источника, что и выдача: _capState ИЛИ поле s-dest).
-  try{ var _cs=window._capState||{}; var _city=_cs.city||((document.getElementById('s-dest')||{}).value||'').trim();
-    if(_city){ if(!_cs.city)_cs.city=_city; var _lbl=_city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; window._lastReg={label:_lbl,city:_city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}; } }catch(e){}
+  // Нормализуем: город всегда лежит в _capState (снимок плашки и все редакторы работают с ним)
+  try{ var _cs0=window._capState||{}; if(!_cs0.city){ var _cv0=((document.getElementById('s-dest')||{}).value||'').trim(); if(_cv0)_cs0.city=_cv0; } }catch(e){}
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
