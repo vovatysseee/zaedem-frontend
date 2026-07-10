@@ -839,8 +839,8 @@ document.addEventListener('mousedown',function(e){
 function p2(n){return String(n).padStart(2,'0')}
 function fmtS(d){return d?d.getDate()+' '+MN[d.getMonth()].slice(0,3).toLowerCase():''}
 function fmtV(d){return d?d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()):''}
-function getIn(){return dIn?fmtV(dIn):fmtV(new Date(Date.now()+86400000))}
-function getOut(){return dOut?fmtV(dOut):fmtV(new Date(Date.now()+3*86400000))}
+function getIn(){var cs=window._capState||{};return dIn?fmtV(dIn):(cs.din?fmtV(cs.din):fmtV(new Date(Date.now()+86400000)))}
+function getOut(){var cs=window._capState||{};return dOut?fmtV(dOut):(cs.dout?fmtV(cs.dout):fmtV(new Date(Date.now()+3*86400000)))}
 function sameDay(a,b){return a&&b&&a.getTime()===b.getTime()}
 
 // ПОПАПЫ
@@ -1363,7 +1363,7 @@ function hpConfirmDates(e){
 // ── Модуль гостей на странице отеля (взрослые + дети с возрастом) ──
 function hpGuestsLabel(){
   var s=window._capState||{};
-  var a=s.adults||2, k=s.kids||0;
+  var a=parseInt(s.adults)||2, k=parseInt(s.kids)||0;
   var t=a+' '+(a===1?'взрослый':a<=4?'взрослых':'взрослых');
   if(k>0)t+=', '+k+' '+(k===1?'ребёнок':k<=4?'ребёнка':'детей');
   return t;
@@ -1582,6 +1582,12 @@ function zbRestoreRoute(){
     window._capState.adults = parseInt(r.cap.adults) || 2;
     window._capState.kids   = parseInt(r.cap.kids) || 0;
     window._capState.childAges = r.cap.childAges || [];
+    // Синхронизируем ГЛОБАЛЬНЫЕ переменные дат/гостей (их использует страница отеля)
+    try{
+      if(window._capState.din)  dIn = new Date(window._capState.din);
+      if(window._capState.dout) dOut = new Date(window._capState.dout);
+      if(typeof gCnt!=='undefined') gCnt = parseInt(window._capState.adults) || 2;
+    }catch(e){}
     try{ if(typeof updCapDisplay==='function') updCapDisplay(); }catch(e){}
   }
   // ОТЕЛЬ: открываем сразу сохранённый объект отеля (приоритет над каталогом/выдачей)
