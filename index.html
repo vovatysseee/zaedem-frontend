@@ -1713,6 +1713,7 @@ function goBack(){
     document.getElementById('main-page').style.display='block';
     if(nav)nav.style.display='';
     zbClearRoute();
+    try{ zbRenderLast(); }catch(e){}
   }
   window.scrollTo(0,0);
   fitHeroTitleDeferred();
@@ -2643,6 +2644,7 @@ function serpClose(){
   var mp=document.getElementById('main-page');if(mp)mp.style.display='block';
   var nav=document.querySelector('nav');if(nav)nav.style.display='';
   if(typeof zbClearRoute==='function')zbClearRoute();
+  try{ zbRenderLast(); }catch(e){}
   serpMapOpen=false;
   document.body.classList.remove('map-open');
   var map=document.getElementById('serp-map');if(map)map.classList.remove('mob-open');
