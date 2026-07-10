@@ -606,6 +606,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.5" stroke-linecap="round" width="18" height="18"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
       </div>
+      <div id="last-search-pill" onclick="zbRunLast()" style="display:none;margin-top:10px;cursor:pointer;font-size:12.5px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:50px;padding:7px 15px;backdrop-filter:blur(8px);max-width:100%;box-sizing:border-box;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
       <!-- Категории-значки под капсулой (стиль Airbnb) -->
       <div class="hero-cats">
         <button onclick="openCategory('hotel')" class="hero-cat" aria-label="Отели">
@@ -1126,6 +1127,7 @@ function switchSearch(mode){
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
   var tN=document.getElementById('tab-normal'), tA=document.getElementById('tab-ai');
   var base='border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 17px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;';
+  try{ setTimeout(function(){ zbRenderLast(); }, 60); }catch(e){}
   var on=base+'background:var(--lime);color:var(--green4)';
   var off=base+'background:rgba(255,255,255,.2);color:#fff';
   if(mode==='ai'){
@@ -1201,9 +1203,47 @@ function aiParse(t){
   }
   return r;
 }
+// ── Плашка «последний поиск» (запоминаем ТОЛЬКО последнее, кликом возвращаемся) ──
+function zbSaveLast(obj){ try{ sessionStorage.setItem('zb_last', JSON.stringify(obj)); }catch(e){} zbRenderLast(); }
+function zbGetLast(){ try{ return JSON.parse(sessionStorage.getItem('zb_last')||'null'); }catch(e){ return null; } }
+function zbRenderLast(){
+  var last=zbGetLast();
+  // плашка на обычном поиске (под капсулой)
+  var reg=document.getElementById('last-search-pill');
+  if(reg){
+    if(last&&last.label){ reg.textContent='↻ '+last.label; reg.style.display='block'; }
+    else reg.style.display='none';
+  }
+  // плашка на ИИ-поиске (переиспользуем ai-understood, если сейчас пусто)
+  var ai=document.getElementById('ai-understood');
+  if(ai && last && last.type==='ai' && last.q && !ai.innerHTML.trim()){
+    ai.innerHTML='↻ '+last.label; ai.style.display='block'; ai.style.cursor='pointer';
+    ai.onclick=function(){ zbRunLast(); };
+  }
+}
+function zbRunLast(){
+  var last=zbGetLast(); if(!last)return;
+  if(last.type==='ai' && last.q){
+    switchSearch('ai');
+    var inp=document.getElementById('ai-q'); if(inp)inp.value=last.q;
+    aiSearch();
+  } else if(last.type==='reg'){
+    // восстанавливаем состояние и открываем выдачу
+    window._capState=window._capState||{};
+    if(last.city)window._capState.city=last.city;
+    if(last.din)window._capState.din=new Date(last.din);
+    if(last.dout)window._capState.dout=new Date(last.dout);
+    if(last.adults)window._capState.adults=parseInt(last.adults)||2;
+    if(last.kids!=null)window._capState.kids=parseInt(last.kids)||0;
+    try{ if(window._capState.din)dIn=new Date(window._capState.din); if(window._capState.dout)dOut=new Date(window._capState.dout); }catch(e){}
+    if(typeof updCapDisplay==='function')updCapDisplay();
+    serpOpen();
+  }
+}
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
+  try{ zbSaveLast({type:'ai',q:q,label:q.length>60?q.slice(0,60)+'…':q}); }catch(e){}
   var p=aiParse(q), el=document.getElementById('ai-understood');
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
   // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
@@ -1547,6 +1587,7 @@ function zbSaveRoute(view, hotelId){
     }
     sessionStorage.setItem('zb_route', JSON.stringify({
       view: view, hotelId: hotelId || null,
+      fromSerp: !!window._fromSerp,
       cap: {
         city: cs.city || '',
         din:  cs.din  ? cs.din.getTime()  : null,
@@ -1594,7 +1635,9 @@ function zbRestoreRoute(){
   if(r.view==='hotel' && r.hotel){
     try{
       if(typeof HOTELS!=='undefined' && HOTELS && !HOTELS.find(function(x){return x.id===r.hotel.id;})) HOTELS.push(r.hotel);
-      window._fromSerp=false; // назад → на главную (выдачи под отелем нет)
+      // восстанавливаем, откуда пришли, чтобы «Назад» вернул по маршруту (выдача/каталог/главная)
+      window._catMode = r.cat || null;
+      window._fromSerp = !!(r.fromSerp || r.cat);
       openHotel(r.hotelId);
     }catch(e){}
     reveal();
@@ -1629,11 +1672,16 @@ function zbRestoreRoute(){
 function goBack(){
   document.getElementById('hotel-page').classList.remove('open');document.body.classList.remove('on-hotel');
   var nav=document.querySelector('nav');
-  if(window._fromSerp){
-    var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
+  if(window._catMode){
+    // вернуться в каталог (категория/эксклюзив) — перестраиваем
+    try{ if(window._catMode==='excl'){ catShowExcl(); } else { catStart(window._catMode); } }catch(e){ try{serpOpen();}catch(_){} }
     if(nav)nav.style.display='none';
+  } else if(window._fromSerp){
+    // вернуться в выдачу — перестраиваем результаты из текущего состояния
+    try{ serpOpen(); }catch(e){
+      var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
+    }
     window._fromSerp=false;
-    zbSaveRoute('serp');
   } else {
     document.getElementById('main-page').style.display='block';
     if(nav)nav.style.display='';
@@ -1778,21 +1826,22 @@ function serpRender(){
     return true;
   });
 
-  // AI: мягкий фильтр по удобствам — если есть точные совпадения, показываем их;
-  // если данных нет (у Островка удобства в карточке тонкие) — не обнуляем выдачу.
+  // AI: удобства и слова-пожелания («центр», «у озера», «баня») — МЯГКО.
+  // Не выкидываем объекты (иначе пусто), а считаем очки совпадения → они поднимаются выше.
   if(window._aiAmenities&&window._aiAmenities.length){
     var _am=window._aiAmenities.map(function(a){return String(a).toLowerCase();});
-    var _matched=list.filter(function(h){
-      var names=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ');
-      return _am.every(function(a){return names.indexOf(a)>=0;});
+    list.forEach(function(h){
+      var hay=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ')
+              +' '+String(h.name_ru||'').toLowerCase()+' '+String(h.address||'').toLowerCase()+' '+String(h.description_ru||'').toLowerCase();
+      h._aiScore=_am.reduce(function(n,a){return n+(hay.indexOf(a)>=0?1:0);},0);
     });
-    if(_matched.length)list=_matched;
-  }
-  // AI: исключить объекты с нежелательным удобством («без парковки»)
+  } else { list.forEach(function(h){ h._aiScore=0; }); }
+  // AI: «без X» — исключаем только если у объекта ЯВНО есть это удобство (данные есть)
   if(window._aiAvoid&&window._aiAvoid.length){
     var _av=window._aiAvoid.map(function(a){return String(a).toLowerCase();});
     list=list.filter(function(h){
       var names=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ');
+      if(!names.trim())return true; // нет данных об удобствах — не выкидываем
       return !_av.some(function(a){return names.indexOf(a)>=0;});
     });
   }
@@ -1808,6 +1857,8 @@ function serpRender(){
     if(sortMode==='price_asc') return (a.price||0)-(b.price||0);
     if(sortMode==='price_desc')return (b.price||0)-(a.price||0);
     if(sortMode==='rating_desc')return (b.rating||0)-(a.rating||0);
+    // при AI-поиске — сначала объекты, что лучше подходят под пожелания (очки совпадения)
+    if((b._aiScore||0)!==(a._aiScore||0))return (b._aiScore||0)-(a._aiScore||0);
     // recommended: отели первые, потом рейтинг
     var oa=a.category==='hotel'?0:a.category==='guest'?1:2;
     var ob=b.category==='hotel'?0:b.category==='guest'?1:2;
@@ -2523,6 +2574,8 @@ function serpOpen(){
   }catch(_e){}
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
   window._serpReset=true;
+  // запоминаем последний обычный поиск (для кликабельной плашки)
+  try{ var _cs=window._capState||{}; if(_cs.city){ var _lbl=_cs.city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; zbSaveLast({type:'reg',label:_lbl,city:_cs.city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}); } }catch(e){}
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
@@ -3842,7 +3895,7 @@ function ddcChG(t,d){
   window.updCapDisplay&&window.updCapDisplay();
 }
 
-loadHotels().then(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} })
+loadHotels().then(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} try{zbRenderLast();}catch(e){} })
             .catch(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} });
 
 // ═════════════════════════════════════════════════════
@@ -3876,6 +3929,7 @@ function ostCancelBox(c){
 
 // Перевод/чистка удобств номера (Островок иногда отдаёт английскими кодами)
 var OST_ROOM_AMEN_RU={
+  'pillows':'Подушки','pillow':'Подушки','mini bar':'Мини-бар','minibar':'Мини-бар','mini-bar':'Мини-бар','pillow menu':'Выбор подушек','bathrobe':'Халат','slippers':'Тапочки','towels':'Полотенца','linens':'Постельное бельё','bidet':'Биде','toilet':'Туалет','bathtub':'Ванна','bath':'Ванна','shower':'Душ','free toiletries':'Туалетные принадлежности','wardrobe':'Шкаф','closet':'Шкаф','clothes rack':'Вешалка','drying rack':'Сушилка','seating area':'Зона отдыха','sofa':'Диван','coffee machine':'Кофемашина','tea/coffee maker':'Чай/кофе','electric kettle':'Электрочайник','kettle':'Чайник','kitchenware':'Посуда','dining table':'Обеденный стол','socket near bed':'Розетка у кровати','streaming service':'Стриминг','laptop safe':'Сейф для ноутбука','trouser press':'Пресс для брюк',
  'wi-fi':'Wi-Fi','wifi':'Wi-Fi','free-wifi':'Wi-Fi','internet':'Интернет','air-conditioning':'Кондиционер','airconditioning':'Кондиционер',
  'tv':'Телевизор','television':'Телевизор','cable-tv':'Кабельное ТВ','flat-screen-tv':'Телевизор',
  'balcony':'Балкон','terrace':'Терраса','private-bathroom':'Свой санузел','bathroom':'Ванная комната','shower':'Душ','bath':'Ванна',
