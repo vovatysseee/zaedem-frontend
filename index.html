@@ -1214,6 +1214,7 @@ function zbResetCapsule(){
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
 function zbRenderLast(){
   var reg=document.getElementById('last-search-pill');
+  console.log('zbRenderLast: reg=',!!reg,'lastReg=',window._lastReg,'| покажу:',!!(window._lastReg&&window._lastReg.label));
   if(!reg)return;
   var L=window._lastReg;
   if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
@@ -1727,6 +1728,8 @@ function goHomeReset(){
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
   try{ zbResetCapsule(); }catch(e){}                 // капсула → «Куда едете?»
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
+  console.log('ВОЗВРАТ goHomeReset. _lastReg=', window._lastReg);
+  console.log('ВОЗВРАТ домой. _lastReg=', window._lastReg);
   try{ zbRenderLast(); }catch(e){}                   // показать плашку обычного поиска
 }
 
@@ -2641,7 +2644,7 @@ function serpOpen(){
   // запоминаем последний поиск для кликабельной плашки (в памяти → F5 сбрасывает).
   // Сохраняем ВСЕГДА когда есть город (берём из того же источника, что и выдача: _capState ИЛИ поле s-dest).
   try{ var _cs=window._capState||{}; var _city=_cs.city||((document.getElementById('s-dest')||{}).value||'').trim();
-    console.log('ГОРОД debug: _capState.city=',(window._capState||{}).city,'| s-dest=',(document.getElementById('s-dest')||{}).value,'| итог _city=',_city,'| _lastReg станет=',_city?'да':'НЕТ'); if(_city){ if(!_cs.city)_cs.city=_city; var _lbl=_city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; window._lastReg={label:_lbl,city:_city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}; } }catch(e){}
+    if(_city){ if(!_cs.city)_cs.city=_city; var _lbl=_city; if(_cs.din&&_cs.dout)_lbl+=' · '+fmtC(_cs.din)+'–'+fmtC(_cs.dout); var _ad=parseInt(_cs.adults)||2; _lbl+=' · '+_ad+' гост.'; window._lastReg={label:_lbl,city:_city,din:_cs.din?_cs.din.getTime():null,dout:_cs.dout?_cs.dout.getTime():null,adults:_ad,kids:parseInt(_cs.kids)||0}; } }catch(e){}
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
