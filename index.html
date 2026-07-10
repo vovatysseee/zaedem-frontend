@@ -1240,6 +1240,15 @@ function zbRunLast(){
     serpOpen();
   }
 }
+// Кнопка-лупа капсулы: запускает поиск по текущему состоянию (город/даты/гости)
+function capSearch(){
+  try{
+    // подтянуть город из инпута, если есть
+    var _sd=document.getElementById('s-dest');
+    if(_sd && _sd.value && _sd.value.trim()){ window._capState=window._capState||{}; window._capState.city=_sd.value.trim(); }
+  }catch(e){}
+  try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
+}
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
@@ -3929,6 +3938,7 @@ function ostCancelBox(c){
 
 // Перевод/чистка удобств номера (Островок иногда отдаёт английскими кодами)
 var OST_ROOM_AMEN_RU={
+  'bedsheets':'Постельное бельё','bed sheets':'Постельное бельё','blackout blinds':'Плотные шторы','blackout curtains':'Плотные шторы','addon service':'Доп. услуги','add-on service':'Доп. услуги','high speed internet access':'Скоростной интернет','high-speed internet':'Скоростной интернет','internet access':'Интернет','free wifi':'Wi-Fi','wireless internet':'Wi-Fi','carpeted':'Ковровое покрытие','carpet':'Ковёр','tile floor':'Плиточный пол','hardwood floor':'Паркет','private entrance':'Отдельный вход','city view':'Вид на город','garden view':'Вид на сад','pool view':'Вид на бассейн','mountain view':'Вид на горы','sea view':'Вид на море','courtyard view':'Вид во двор','interconnected rooms':'Смежные номера','soundproof':'Шумоизоляция','soundproofing':'Шумоизоляция','wake-up service':'Будильник','alarm clock':'Будильник','telephone':'Телефон','phone':'Телефон','fan':'Вентилятор','ceiling fan':'Вентилятор','heating':'Отопление','air conditioning':'Кондиционер','private pool':'Свой бассейн','coffee/tea maker':'Чай/кофе','tea and coffee':'Чай/кофе','dishwasher':'Посудомойка','oven':'Духовка','stovetop':'Плита','toaster':'Тостер','cleaning products':'Средства для уборки','washing machine':'Стиральная машина','drying rack for clothing':'Сушилка','flat-screen tv':'Телевизор','streaming':'Стриминг','cable channels':'Кабельное ТВ','satellite channels':'Спутниковое ТВ','game console':'Игровая приставка','books dvds music':'Книги/DVD/музыка','baby safety gates':'Ворота безопасности','board games':'Настольные игры',
   'pillows':'Подушки','pillow':'Подушки','mini bar':'Мини-бар','minibar':'Мини-бар','mini-bar':'Мини-бар','pillow menu':'Выбор подушек','bathrobe':'Халат','slippers':'Тапочки','towels':'Полотенца','linens':'Постельное бельё','bidet':'Биде','toilet':'Туалет','bathtub':'Ванна','bath':'Ванна','shower':'Душ','free toiletries':'Туалетные принадлежности','wardrobe':'Шкаф','closet':'Шкаф','clothes rack':'Вешалка','drying rack':'Сушилка','seating area':'Зона отдыха','sofa':'Диван','coffee machine':'Кофемашина','tea/coffee maker':'Чай/кофе','electric kettle':'Электрочайник','kettle':'Чайник','kitchenware':'Посуда','dining table':'Обеденный стол','socket near bed':'Розетка у кровати','streaming service':'Стриминг','laptop safe':'Сейф для ноутбука','trouser press':'Пресс для брюк',
  'wi-fi':'Wi-Fi','wifi':'Wi-Fi','free-wifi':'Wi-Fi','internet':'Интернет','air-conditioning':'Кондиционер','airconditioning':'Кондиционер',
  'tv':'Телевизор','television':'Телевизор','cable-tv':'Кабельное ТВ','flat-screen-tv':'Телевизор',
