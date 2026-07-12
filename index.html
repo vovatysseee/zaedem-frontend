@@ -595,6 +595,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           </button>
         </div>
         <div id="ai-understood" style="display:none;margin-top:8px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border-radius:12px;padding:8px 13px;backdrop-filter:blur(8px);text-align:left"></div>
+        <div id="ai-last-pill" onclick="aiReplayLast()" style="display:none;margin-top:8px;cursor:pointer;font-size:12.5px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:50px;padding:7px 15px;backdrop-filter:blur(8px);max-width:100%;box-sizing:border-box;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
         <div style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
       </div>
       <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
@@ -840,8 +841,8 @@ document.addEventListener('mousedown',function(e){
 function p2(n){return String(n).padStart(2,'0')}
 function fmtS(d){return d?d.getDate()+' '+MN[d.getMonth()].slice(0,3).toLowerCase():''}
 function fmtV(d){return d?d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()):''}
-function getIn(){var cs=window._capState||{};return dIn?fmtV(dIn):(cs.din?fmtV(cs.din):fmtV(new Date(Date.now()+86400000)))}
-function getOut(){var cs=window._capState||{};return dOut?fmtV(dOut):(cs.dout?fmtV(cs.dout):fmtV(new Date(Date.now()+3*86400000)))}
+function getIn(){var cs=window._capState||{};var d=zbNotPast(dIn)||zbNotPast(cs.din);return d?fmtV(d):fmtV(new Date(Date.now()+86400000))}
+function getOut(){var cs=window._capState||{};var i=zbNotPast(dIn)||zbNotPast(cs.din);var o=zbNotPast(dOut)||zbNotPast(cs.dout);if(o&&i&&o<=i)o=null;if(o)return fmtV(o);if(i)return fmtV(new Date(i.getTime()+2*86400000));return fmtV(new Date(Date.now()+3*86400000))}
 function sameDay(a,b){return a&&b&&a.getTime()===b.getTime()}
 
 // ПОПАПЫ
@@ -1127,11 +1128,13 @@ function switchSearch(mode){
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
   var tN=document.getElementById('tab-normal'), tA=document.getElementById('tab-ai');
   var base='border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 17px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;';
-  try{ setTimeout(function(){ zbRenderLast(); }, 60); }catch(e){}
+  try{ setTimeout(function(){ zbRenderLast(); zbRenderAiLast(); }, 60); }catch(e){}
   var on=base+'background:var(--lime);color:var(--green4)';
   var off=base+'background:rgba(255,255,255,.2);color:#fff';
   if(mode==='ai'){
     if(aiWrap)aiWrap.style.display='block'; if(cap)cap.style.display='none';
+    var lsp=document.getElementById('last-search-pill'); if(lsp)lsp.style.display='none'; // плашка обычного поиска — только у себя
+    try{ zbRenderAiLast(); }catch(e){}
     if(tA)tA.style.cssText=on;
     if(tN)tN.style.cssText=off;
     var q=document.getElementById('ai-q'); if(q)setTimeout(function(){q.focus();},50);
@@ -1219,28 +1222,69 @@ function zbResetCapsule(){
 // Снимок ТЕКУЩЕГО поиска в плашку-памятку. Берём из _capState — его обновляют ВСЕ редакторы
 // (капсула, шаги поиска, даты/гости на странице отеля) → в плашке всегда ПОСЛЕДНИЕ значения.
 // ВАЖНО: без fmtC — она объявлена в другом scope; из-за этого прежние попытки молча падали внутри try/catch.
+// Дата не в прошлом: возвращает Date (полночь) или null, если даты нет / она уже прошла.
+// Единая защита от дат «задним числом» (ИИ-разбор, плашки, восстановление после F5).
+function zbNotPast(d){
+  if(!d)return null;
+  var x=new Date(d); if(isNaN(x))return null; x.setHours(0,0,0,0);
+  var t=new Date(); t.setHours(0,0,0,0);
+  return x<t?null:x;
+}
+// Единый текст плашки: город · даты · гости
+function zbPillLabel(city,din,dout,adults,kids){
+  var f=function(x){var d=new Date(x);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
+  var lbl=city;
+  if(din&&dout)lbl+=' · '+f(din)+'–'+f(dout);
+  var ad=parseInt(adults)||2, kd=parseInt(kids)||0;
+  lbl+=' · '+ad+(kd>0?'+'+kd+' реб.':'')+' '+(ad===1?'гость':(ad<=4?'гостя':'гостей'));
+  return lbl;
+}
 function zbSnapshotPill(){
   try{
     var cs=window._capState||{};
     var city=String(cs.city||'').trim()||String((document.getElementById('s-dest')||{}).value||'').trim();
     if(!city)return; // поиска не было — плашку не трогаем
-    var f=function(x){var d=new Date(x);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
-    var lbl=city;
-    if(cs.din&&cs.dout)lbl+=' · '+f(cs.din)+'–'+f(cs.dout);
     var ad=parseInt(cs.adults)||2, kd=parseInt(cs.kids)||0;
-    lbl+=' · '+ad+(kd>0?'+'+kd+' реб.':'')+' '+(ad===1?'гость':(ad<=4?'гостя':'гостей'));
-    window._lastReg={label:lbl,city:city,
+    window._lastReg={label:zbPillLabel(city,cs.din,cs.dout,ad,kd),city:city,
       din:cs.din?new Date(cs.din).getTime():null,
       dout:cs.dout?new Date(cs.dout).getTime():null,
       adults:ad,kids:kd,childAges:(cs.childAges||[]).slice()};
   }catch(e){}
 }
+// Снимок ИИ-поиска: синхронизируем сохранённый ИИ-результат с ТЕКУЩИМ состоянием
+// (город/даты/гости тянутся из _capState — все правки по пути попадают в плашку ИИ).
+// ИИ-фильтры (категория/цена/удобства/avoid) остаются от разбора — их редакторы не меняют.
+function zbSnapshotAiPill(){
+  try{
+    var R=window._lastAiResult; if(!R)return;
+    var cs=window._capState||{};
+    if(cs.city&&String(cs.city).trim())R.city=String(cs.city).trim();
+    if(!R.city)return;
+    R.din=cs.din?new Date(cs.din).getTime():R.din;
+    R.dout=cs.dout?new Date(cs.dout).getTime():R.dout;
+    R.adults=parseInt(cs.adults)||R.adults||2;
+    R.kids=(cs.kids!=null)?(parseInt(cs.kids)||0):(R.kids||0);
+    R.childAges=(cs.childAges||R.childAges||[]).slice();
+    R.label=zbPillLabel(R.city,R.din,R.dout,R.adults,R.kids);
+  }catch(e){}
+}
 // ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
+// Показывается ТОЛЬКО на вкладке обычного поиска — на вкладке ИИ своя плашка.
 function zbRenderLast(){
   var reg=document.getElementById('last-search-pill');
   if(!reg)return;
+  var aiw=document.getElementById('ai-wrap');
+  var aiMode=aiw&&aiw.style.display==='block';
   var L=window._lastReg;
-  if(L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
+  if(!aiMode&&L&&L.label){ reg.textContent='↻ '+L.label; reg.style.display='block'; }
+  else reg.style.display='none';
+}
+// ── Плашка «последний ИИ-поиск» (живёт внутри ai-wrap → видна только на вкладке ИИ) ──
+function zbRenderAiLast(){
+  var reg=document.getElementById('ai-last-pill');
+  if(!reg)return;
+  var R=window._lastAiResult;
+  if(R&&R.city){ reg.textContent='↻ ✨ '+(R.label||zbPillLabel(R.city,R.din,R.dout,R.adults,R.kids)); reg.style.display='block'; }
   else reg.style.display='none';
 }
 function zbRunLast(){
@@ -1248,12 +1292,16 @@ function zbRunLast(){
   window._catMode=null; window._fromAI=false;
   window._capState=window._capState||{};
   window._capState.city=L.city;
-  window._capState.din=L.din?new Date(L.din):null;
-  window._capState.dout=L.dout?new Date(L.dout):null;
+  // даты из плашки могли «протухнуть» (полночь/старая сессия) — прошлые отбрасываем, дефолты подставятся сами
+  var _ld=zbNotPast(L.din), _lo=zbNotPast(L.dout);
+  if(_ld&&_lo&&_lo<=_ld)_lo=null;
+  if(!_ld||!_lo){_ld=null;_lo=null;}
+  window._capState.din=_ld;
+  window._capState.dout=_lo;
   window._capState.adults=parseInt(L.adults)||2;
   window._capState.kids=parseInt(L.kids)||0;
   window._capState.childAges=(L.childAges||[]).slice();
-  try{ dIn=L.din?new Date(L.din):null; dOut=L.dout?new Date(L.dout):null; }catch(e){}
+  try{ dIn=_ld?new Date(_ld):null; dOut=_lo?new Date(_lo):null; }catch(e){}
   try{ if(typeof gCnt!=='undefined')gCnt=parseInt(L.adults)||2; }catch(e){}
   var sd=document.getElementById('s-dest'); if(sd)sd.value=L.city;
   try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
@@ -1274,11 +1322,19 @@ function aiReplayLast(){
   window._catMode=null; window._fromAI=true;
   window._capState=window._capState||{};
   window._capState.city=R.city;
-  window._capState.din=R.din?new Date(R.din):null;
-  window._capState.dout=R.dout?new Date(R.dout):null;
+  // прошлые даты отбрасываем — дефолты подставятся при поиске
+  var _rd=zbNotPast(R.din), _ro=zbNotPast(R.dout);
+  if(_rd&&_ro&&_ro<=_rd)_ro=null;
+  if(!_rd||!_ro){_rd=null;_ro=null;}
+  window._capState.din=_rd;
+  window._capState.dout=_ro;
   window._capState.adults=parseInt(R.adults)||2;
   window._capState.kids=parseInt(R.kids)||0;
+  window._capState.childAges=(R.childAges||[]).slice();
+  var _sdai=document.getElementById('s-dest'); if(_sdai)_sdai.value=R.city;
   try{ if(window._capState.din)dIn=new Date(window._capState.din); if(window._capState.dout)dOut=new Date(window._capState.dout); }catch(e){}
+  try{ if(typeof gCnt!=='undefined')gCnt=parseInt(R.adults)||2; }catch(e){}
+  try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
   window._aiCategory=R.category||null;
   window._aiPriceMax=R.priceMax||0;
   window._aiAmenities=R.amenities||[];
@@ -1317,7 +1373,9 @@ async function aiSearch(){
   // Даты: если ИИ вернул конкретные — берём их; иначе разбираем из фразы; иначе дефолт
   var _q=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
   var din, dout;
-  if(p._din&&p._dout&&!isNaN(p._din)&&!isNaN(p._dout)){ din=p._din; dout=p._dout; }
+  // Даты от ИИ проверяем: прошлые/перевёрнутые отбрасываем → разбор фразы → дефолт
+  var _aid=zbNotPast(p._din), _aio=zbNotPast(p._dout);
+  if(_aid&&_aio&&_aio>_aid){ din=_aid; dout=_aio; }
   else {
     var dd=aiDates(_q, p.nights);
     if(dd){ din=dd.din; dout=dd.dout; }
@@ -1341,7 +1399,9 @@ async function aiSearch(){
     amenities:p.amenities||[], avoid:p.avoid||[],
     din:din?din.getTime():null, dout:dout?dout.getTime():null,
     adults:parseInt(p.adults)||parseInt(window._capState.adults)||2, kids:parseInt(p.kids)||0,
-    label:el?'':'' };
+    childAges:(window._capState.childAges||[]).slice(),
+    label:'' };
+  try{ window._lastAiResult.label=zbPillLabel(window._lastAiResult.city,din,dout,window._lastAiResult.adults,window._lastAiResult.kids); }catch(e){}
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
   if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
@@ -1566,7 +1626,10 @@ function openHotel(id){
   const pricePerNight=h.price||rooms[0]?.price||0;
   const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
-  var _sp=document.getElementById('serp-page');if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');document.body.classList.remove('on-serp');}else{window._fromSerp=false;}
+  var _sp=document.getElementById('serp-page');
+  if(window._zbRestoringRoute){ if(_sp){_sp.classList.remove('open');document.body.classList.remove('on-serp');} } // восстановление после F5: _fromSerp уже выставлен из сохранённого маршрута — не перетираем
+  else if(_sp){window._fromSerp=_sp.classList.contains('open');_sp.classList.remove('open');document.body.classList.remove('on-serp');}
+  else{window._fromSerp=false;}
   var _nav=document.querySelector('nav');if(_nav)_nav.style.display='none';
   document.getElementById('hotel-page').classList.add('open');document.body.classList.add('on-hotel');
   document.getElementById('serp-page').classList.remove('open');document.body.classList.remove('on-serp');
@@ -1651,6 +1714,7 @@ function zbSaveRoute(view, hotelId){
           photos:(_src.photos||[]).slice(0,8),
           amenities:_src.amenities||[],
           rooms:_src.rooms||[], revs:(_src.revs||[]).slice(0,6),
+          hid:_src.hid||_src.ostId,           // без hid после F5 не грузятся тарифы Островка
           ostId:_src.ostId||_src.hid
         };
       }
@@ -1688,8 +1752,12 @@ function zbRestoreRoute(){
   if(r.cap){
     window._capState = window._capState || {};
     window._capState.city   = r.cap.city || '';
-    window._capState.din    = r.cap.din  ? new Date(r.cap.din)  : null;
-    window._capState.dout   = r.cap.dout ? new Date(r.cap.dout) : null;
+    // даты из сохранённого маршрута могли протухнуть (вкладка жила через полночь) — прошлые отбрасываем
+    var _rrd=zbNotPast(r.cap.din), _rro=zbNotPast(r.cap.dout);
+    if(_rrd&&_rro&&_rro<=_rrd)_rro=null;
+    if(!_rrd||!_rro){_rrd=null;_rro=null;}
+    window._capState.din    = _rrd;
+    window._capState.dout   = _rro;
     window._capState.adults = parseInt(r.cap.adults) || 2;
     window._capState.kids   = parseInt(r.cap.kids) || 0;
     window._capState.childAges = r.cap.childAges || [];
@@ -1705,12 +1773,14 @@ function zbRestoreRoute(){
   if(r.view==='hotel' && r.hotel){
     try{
       if(typeof HOTELS!=='undefined' && HOTELS && !HOTELS.find(function(x){return x.id===r.hotel.id;})) HOTELS.push(r.hotel);
-      openHotel(r.hotelId);
-      // ВАЖНО: ставим маршрут ПОСЛЕ openHotel (openHotel сбрасывает _fromSerp внутри себя),
-      // иначе «Назад» потеряет, откуда пришли, и уйдёт на главную.
+      // ВАЖНО: маршрут ставим ДО openHotel под флагом _zbRestoringRoute — openHotel его не перетирает
+      // и внутренняя zbSaveRoute пишет в sessionStorage ПРАВИЛЬНЫЙ fromSerp (раньше писала false,
+      // и после второго F5 «Назад» уводил на главную вместо выдачи).
       window._catMode = r.cat || null;
       window._fromSerp = !!(r.fromSerp || r.cat);
-    }catch(e){}
+      window._zbRestoringRoute = true;
+      try{ openHotel(r.hotelId); } finally { window._zbRestoringRoute = false; }
+    }catch(e){ window._zbRestoringRoute = false; }
     reveal();
     return;
   }
@@ -1749,9 +1819,12 @@ function goHomeReset(){
   window._catMode=null; window._fromSerp=false;
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
   try{ zbSnapshotPill(); }catch(e){}                 // 1) СНАЧАЛА снимок текущего поиска (со всеми правками дат/гостей)
+  try{ zbSnapshotAiPill(); }catch(e){}               // 1б) снимок ИИ-поиска — тоже с учётом всех правок по пути
   try{ zbResetCapsule(); }catch(e){}                 // 2) потом капсула → «Куда едете?» (готова к новому)
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
+  var au=document.getElementById('ai-understood'); if(au){au.style.display='none';au.innerHTML='';au.onclick=null;} // живой разбор → в плашку
   try{ zbRenderLast(); }catch(e){}                   // 3) показать плашку-памятку
+  try{ zbRenderAiLast(); }catch(e){}                 // 3б) и плашку ИИ (видна только на табе ИИ)
 }
 
 function goBack(){
@@ -2663,6 +2736,15 @@ function serpOpen(){
   // запоминаем последний поиск для кликабельной плашки (в памяти → F5 сбрасывает).
   // Нормализуем: город всегда лежит в _capState (снимок плашки и все редакторы работают с ним)
   try{ var _cs0=window._capState||{}; if(!_cs0.city){ var _cv0=((document.getElementById('s-dest')||{}).value||'').trim(); if(_cv0)_cs0.city=_cv0; } }catch(e){}
+  // Нормализуем даты: прошлые отбрасываем, пустые заполняем реальными датами поиска (getIn/getOut).
+  // Тогда пилюля/плашки/отель всегда показывают город · даты · гости, и задним числом не искать.
+  try{
+    var _cs1=window._capState=window._capState||{};
+    _cs1.din=zbNotPast(_cs1.din); _cs1.dout=zbNotPast(_cs1.dout);
+    if(_cs1.din&&_cs1.dout&&_cs1.dout<=_cs1.din)_cs1.dout=null;
+    if(!_cs1.din||!_cs1.dout){ _cs1.din=null; _cs1.dout=null; _cs1.din=new Date(getIn()+'T00:00:00'); _cs1.dout=new Date(getOut()+'T00:00:00'); }
+    dIn=new Date(_cs1.din); dOut=new Date(_cs1.dout);
+  }catch(e){}
   if(typeof zbSaveRoute==='function') zbSaveRoute('serp');
   var mp=document.getElementById('main-page');if(mp){mp.style.display='none';}
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
@@ -3484,10 +3566,16 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var top=document.getElementById('cap-top');
     if(!top)return;
     if(s.city){
-      var dates=s.din&&s.dout?(fmtC(s.din)+'–'+fmtC(s.dout)):'';
-      var gt=s.adults===1?'гость':(s.adults<=4?'гостя':'гостей');
-      var guests=s.adults?(s.adults+(s.kids>0?'+'+s.kids+'реб':'')+' '+gt):'';
-      top.textContent=[s.city,dates,guests].filter(Boolean).join(' · ');
+      // Строгий порядок: город → даты → гости. Пока дат нет — гостей не показываем (визуально не ломаем шаги).
+      var parts=[s.city];
+      if(s.din&&s.dout){
+        parts.push(fmtC(s.din)+'–'+fmtC(s.dout));
+        var gt=s.adults===1?'гость':(s.adults<=4?'гостя':'гостей');
+        parts.push(s.adults+(s.kids>0?'+'+s.kids+'реб':'')+' '+gt);
+      } else {
+        parts.push('Выберите даты');
+      }
+      top.textContent=parts.join(' · ');
       top.style.color='#111';
     } else {
       top.textContent='Куда едете?'; top.style.color='#9a9a9a';
@@ -4081,7 +4169,7 @@ async function loadOstRates(h){
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
     var kids=(window._capState&&window._capState.childAges)||[];
     window._bookChildAges=Array.isArray(kids)?kids.slice():[];  // возрасты, под которые посчитаны цены — их и покажем в брони
-    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY})});
+    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid||h.ostId,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY})});
     var data=await r.json();
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
     window._ostBookEnabled=!!data.booking_enabled;
