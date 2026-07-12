@@ -69,10 +69,10 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
 
 
 
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(165deg,rgba(5,25,12,.9) 0%,rgba(10,45,22,.78) 45%,rgba(20,80,45,.55) 100%);pointer-events:none}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(165deg,rgba(5,25,12,.82) 0%,rgba(10,45,22,.6) 45%,rgba(20,80,45,.36) 100%);pointer-events:none}
 .hero-slides{position:absolute;inset:0;z-index:0;overflow:hidden}
-.hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1);transition:opacity 2s ease, transform 12s linear;will-change:opacity,transform;backface-visibility:hidden}
-.hero-slide.active{opacity:1;transform:scale(1.1)}
+.hero-slide{position:absolute;inset:0;background-size:cover;background-position:center 38%;opacity:0;transform:scale(1);transition:opacity 2.2s ease, transform 18s linear;will-change:opacity,transform;backface-visibility:hidden}
+.hero-slide.active{opacity:1;transform:scale(1.06)}
 .hero-content{position:relative;z-index:2}
 .hero-content{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:140px 2.5rem 180px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:visible}
 .hero h1{font-family:'Unbounded',sans-serif;font-size:clamp(1.2rem,2.4vw,1.7rem);font-weight:600;color:#fff;line-height:1.3;margin-bottom:.7rem;letter-spacing:-.3px;animation:fadeUp .7s .1s both;white-space:nowrap}
@@ -567,11 +567,13 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 <div id="main-page">
 <div class="hero">
   <div class="hero-slides">
-    <div class="hero-slide active" style="background-image:url('img/photo_2026-05-31_06-48-01.jpg')"><div class="hero-overlay"></div></div>
+    <!-- Отключены (ИИ-Минск и корабль). Вернуть = раскомментировать:
+    <div class="hero-slide" style="background-image:url('img/photo_2026-05-31_06-48-01.jpg')"><div class="hero-overlay"></div></div>
     <div class="hero-slide" style="background-image:url('img/wallpaperbetter_com_1920x1200.jpg')"><div class="hero-overlay"></div></div>
-    <div class="hero-slide" style="background-image:url('img/pexels-siarhei-nester-318033361-27143622.jpg')"><div class="hero-overlay"></div></div>
+    -->
+    <div class="hero-slide active" style="background-image:url('img/pexels-siarhei-nester-318033361-27143622.jpg')"><div class="hero-overlay"></div></div>
     <div class="hero-slide" style="background-image:url('img/pexels-irina-a-balashova-33695312.jpg')"><div class="hero-overlay"></div></div>
-    
+    <!-- Третий слайд (замок Мир/Несвиж в сумерках): загрузи фото в img/ и добавь по образцу выше -->
   </div>
   <div class="hero-content">
     <h1 class="hero-title" style="font-family:'Unbounded',sans-serif;font-weight:600;color:#fff;animation:fadeUp .7s .1s both;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.3;letter-spacing:-.3px;white-space:nowrap;margin-bottom:2.2rem">Забронируй своё жильё в Беларуси</h1>
@@ -1457,14 +1459,15 @@ async function aiSearch(){
   if(!_guestsOk)_miss.push('сколько гостей');
   if(_miss.length){
     if(el){
-      el.innerHTML='⚠ Уточните, пожалуйста: <b>'+_miss.join(', ')+'</b>. Например: «квартира в Минске 12–15 августа на двоих»';
+      el.innerHTML='<span style="color:#FFD54F;font-size:16px;vertical-align:-2px">⚠</span> Уточните, пожалуйста: <b>'+_miss.join(', ')+'</b>. Например: «квартира в Минске 12–15 августа на двоих»';
       el.style.display='block'; el.style.cursor='default'; el.onclick=null; el.title='';
-      // жёлтая плашка — предупреждение видно, не сливается с фоном
-      el.style.background='rgba(255,213,79,.96)'; el.style.color='#4a3800'; el.style.fontWeight='600';
+      // плашка прозрачная как обычно, заметность даёт жёлтый значок и тонкая жёлтая рамка
+      el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff';
+      el.style.border='1px solid rgba(255,213,79,.6)';
     }
     return; // поиск не стартует, пока данные не корректны
   }
-  if(el){ el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff'; el.style.fontWeight=''; } // обычный разбор — стандартный вид
+  if(el){ el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff'; el.style.border='none'; } // обычный разбор — стандартный вид
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
   window._capState.adults=parseInt(p.adults)||parseInt(window._capState.adults)||2;
@@ -1617,6 +1620,32 @@ function hpConfirmDates(e){
 }
 
 // ── Модуль гостей на странице отеля (взрослые + дети с возрастом) ──
+// ── «Спросить у отеля»: ИИ отвечает строго по данным ЭТОГО объекта (бэк /api/ai/hotel-qa) ──
+function hpQaToggle(){
+  var b=document.getElementById('hp-qa'); if(!b)return;
+  b.style.display=(b.style.display==='none'||!b.style.display)?'block':'none';
+  if(b.style.display==='block'){ var i=document.getElementById('hp-qa-q'); if(i)setTimeout(function(){i.focus();},50); }
+}
+async function hpQaAsk(){
+  var i=document.getElementById('hp-qa-q'), a=document.getElementById('hp-qa-a');
+  if(!i||!a||!curHotel)return;
+  var q=i.value.trim(); if(!q)return;
+  a.style.display='block'; a.innerHTML='🧠 Смотрю описание объекта…';
+  try{
+    var h=curHotel;
+    var payload={ q:q, hotel:{
+      name:h.name_ru||'',
+      desc:String(h.description_ru||h.desc||'').slice(0,3000),
+      amenities:(h.amenities||[]).map(function(x){return String(x&&x.n||x);}).slice(0,40),
+      checkin:h.check_in||'', checkout:h.check_out||''
+    }};
+    var r=await fetch(API+'/api/ai/hotel-qa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var d=await r.json();
+    if(d&&d.answer)a.textContent=d.answer;
+    else if(d&&d.limit)a.textContent='Лимит вопросов на сегодня исчерпан. Уточните у отеля через чат поддержки.';
+    else a.textContent='Не получилось ответить — уточните у отеля через чат поддержки.';
+  }catch(e){ a.textContent='Сервис недоступен — уточните у отеля через чат поддержки.'; }
+}
 function hpGuestsLabel(){
   var s=window._capState||{};
   var a=parseInt(s.adults)||2, k=parseInt(s.kids)||0;
@@ -1747,6 +1776,17 @@ function openHotel(id){
         <h1 class="hp-title">${h.name_ru}</h1>
         <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${cleanAddr(h.address)}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
+        <div style="margin:0 0 1.5rem">
+          <button onclick="hpQaToggle()" style="display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:9px 16px;font-size:13px;font-weight:700;color:var(--green);font-family:inherit;cursor:pointer">💬 Спросить у отеля</button>
+          <div id="hp-qa" style="display:none;margin-top:10px;border:1.5px solid var(--sand3);border-radius:14px;padding:12px 14px;background:#fff">
+            <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Отвечу по описанию и удобствам этого объекта. Например: «Есть парковка?», «Можно с собакой?», «Во сколько заезд?»</div>
+            <div style="display:flex;gap:8px">
+              <input id="hp-qa-q" type="text" maxlength="200" placeholder="Ваш вопрос..." onkeydown="if(event.key==='Enter')hpQaAsk()" style="flex:1;border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none">
+              <button onclick="hpQaAsk()" style="border:none;background:var(--green);color:#fff;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Спросить</button>
+            </div>
+            <div id="hp-qa-a" style="display:none;margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.6;background:var(--sand1,#faf8f4);border-radius:10px;padding:10px 12px"></div>
+          </div>
+        </div>
         ${(h.latitude&&h.longitude)?`<div id="hp-nearby" style="margin:0 0 1.25rem"></div>`:''}
         ${amenities.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Удобства</h3><div class="hp-amenities">${amenities.map(a=>`<div class="amen"><span class="ai">${amenIcon(a)||String.fromCharCode(10003)}</span>${amenName(a)}</div>`).join("")}</div>`:''}
         ${isOst?`
