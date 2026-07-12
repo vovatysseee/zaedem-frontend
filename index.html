@@ -725,6 +725,10 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
         <div id="serp-meta" class="serp-meta" style="margin-bottom:0"></div>
         <div class="serp-sort-wrap">
           <button class="sf-clear" id="sf-clear" onclick="serpClearFilters()" style="display:none">Сбросить фильтры</button>
+          <div id="serp-pmode" style="display:inline-flex;border:1.5px solid var(--sand3);border-radius:50px;overflow:hidden;background:#fff">
+            <button id="pm-trip" onclick="serpPriceMode('trip')" style="border:none;padding:7px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--green);color:#fff">За поездку</button>
+            <button id="pm-night" onclick="serpPriceMode('night')" style="border:none;padding:7px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:var(--muted)">За ночь</button>
+          </div>
           <label for="serp-sort">Сортировка:</label>
           <select class="serp-sort" id="serp-sort" onchange="serpFilterChange()">
             <option value="recommended">Рекомендуемые</option>
@@ -1092,8 +1096,20 @@ function renderHotels(){
     var lg=real.length?real.slice(0,5):g.slice(0,1);   // реальные усадьбы из базы приоритетнее черновика
     bg.innerHTML=lg.length?lg.map(card).join(''):'<p style="padding:1rem;color:var(--muted)">Скоро появятся</p>'; }
 }
-// Топ-5 отелей и апартаментов из каталога Островка для каруселей главной
+// Топ-5 отелей и апартаментов из каталога Островка для каруселей главной.
+// МГНОВЕННАЯ ГЛАВНАЯ: сначала рисуем из localStorage-кэша (если свежее 6 часов),
+// свежие данные тихо подъезжают из сети и обновляют кэш. Любой сбой кэша → просто сеть, как раньше.
+var ZB_TOP_CACHE='zb_top_v1'; // версия в ключе: поменяли формат → старый кэш игнорируется сам
 async function loadTopCarousels(){
+  // 1) мгновенно из кэша
+  try{
+    var c=JSON.parse(localStorage.getItem(ZB_TOP_CACHE)||'null');
+    if(c&&c.t&&(Date.now()-c.t)<6*3600*1000&&Array.isArray(c.h)&&Array.isArray(c.a)&&(c.h.length||c.a.length)){
+      window._topHotels=c.h; window._topAparts=c.a; window._topLoaded=true;
+      renderHotels();
+    }
+  }catch(e){}
+  // 2) сеть — источник истины
   async function top(cat){
     try{
       var r=await fetch(API+'/api/catalog?category='+encodeURIComponent(cat)+'&offset=0&limit=12');
@@ -1107,8 +1123,15 @@ async function loadTopCarousels(){
     return [];
   }
   var res=await Promise.all([top('hotel'),top('apart')]);
-  window._topHotels=res[0]; window._topAparts=res[1];
+  // сеть пустая/упала → НЕ затираем то, что показали из кэша
+  if(res[0].length)window._topHotels=res[0];
+  if(res[1].length)window._topAparts=res[1];
   window._topLoaded=true;
+  // 3) обновляем кэш только непустыми данными
+  try{
+    if((window._topHotels||[]).length||(window._topAparts||[]).length)
+      localStorage.setItem(ZB_TOP_CACHE,JSON.stringify({t:Date.now(),h:window._topHotels||[],a:window._topAparts||[]}));
+  }catch(e){}
   renderHotels();
 }
 
@@ -2045,6 +2068,27 @@ function srNightsCount(){
   if(din&&dout){return Math.max(1,Math.round((new Date(dout)-new Date(din))/86400000));}
   return 1;
 }
+// ── Режим цены в выдаче: «за поездку» (по умолчанию, честный итог) / «за ночь». Выбор помнится. ──
+function srPriceMode(){
+  try{ var m=localStorage.getItem('zb_price_mode'); if(m==='night'||m==='trip')return m; }catch(e){}
+  return 'trip';
+}
+function serpPriceMode(m){
+  try{ localStorage.setItem('zb_price_mode', m==='night'?'night':'trip'); }catch(e){}
+  serpPmodePaint();
+  try{ serpRender(); }catch(e){}
+}
+function serpPmodePaint(){
+  var m=srPriceMode();
+  var bt=document.getElementById('pm-trip'), bn=document.getElementById('pm-night');
+  if(bt){ bt.style.background=(m==='trip')?'var(--green)':'transparent'; bt.style.color=(m==='trip')?'#fff':'var(--muted)'; }
+  if(bn){ bn.style.background=(m==='night')?'var(--green)':'transparent'; bn.style.color=(m==='night')?'#fff':'var(--muted)'; }
+}
+function srNightPrice(h){
+  if(h&&h.price)return h.price;
+  if(h&&h.price_total){ var nn=srNightsCount(); return Math.round(h.price_total/Math.max(1,nn)); }
+  return 0;
+}
 function srTotalPrice(h){
   if(h&&h.price_total)return h.price_total;
   return (h&&h.price?h.price:0)*srNightsCount();
@@ -2153,8 +2197,8 @@ function serpRender(){
   // Сортировка (в каталоге со стандартным порядком — сохраняем порядок базы: фото→Минск→звёзды)
   if(!(window._catMode && sortMode==='recommended')){
   list.sort(function(a,b){
-    if(sortMode==='price_asc') return (a.price||0)-(b.price||0);
-    if(sortMode==='price_desc')return (b.price||0)-(a.price||0);
+    if(sortMode==='price_asc') return (srPriceMode()==='night'?srNightPrice(a)-srNightPrice(b):srTotalPrice(a)-srTotalPrice(b));
+    if(sortMode==='price_desc')return (srPriceMode()==='night'?srNightPrice(b)-srNightPrice(a):srTotalPrice(b)-srTotalPrice(a));
     if(sortMode==='rating_desc')return (b.rating||0)-(a.rating||0);
     // при AI-поиске — сначала объекты, что лучше подходят под пожелания (очки совпадения)
     if((b._aiScore||0)!==(a._aiScore||0))return (b._aiScore||0)-(a._aiScore||0);
@@ -2211,8 +2255,11 @@ function serpRender(){
      var priceBlock=h.catalog
        ? '<div class="sr-price"><div class="sr-price-main" style="font-size:15px">Цена по датам</div><div class="sr-price-sub">выберите даты</div></div>'
        : '<div class="sr-price">'+oldPriceHtml
-           +'<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
-           +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>'
+           +(srPriceMode()==='night'
+             ? '<div class="sr-price-main">от '+srNightPrice(h)+' BYN</div>'
+               +'<div class="sr-price-sub">за ночь \u00b7 с налогами</div>'
+             : '<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
+               +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>')
          +'</div>';
      c.innerHTML='<div class="'+imgCls+'">'+imgHtml+freeBadge+favBtn+navHtml+dotsHtml+cntHtml+'</div>'
        +'<div class="sr-body">'
@@ -2899,6 +2946,7 @@ function serpOpen(){
   var hp=document.getElementById('hotel-page');if(hp)hp.classList.remove('open');document.body.classList.remove('on-hotel');
   var sp=document.getElementById('serp-page');if(sp){sp.classList.add('open');document.body.classList.add('on-serp');}
   var nav=document.querySelector('nav');if(nav)nav.style.display='none';
+  try{ serpPmodePaint(); }catch(e){}
   // Обновляем pill
   var dest=(window._capState&&window._capState.city?window._capState.city:((document.getElementById('s-dest')||{}).value||'')).trim();
   var pill=document.getElementById('serp-pill-text');
