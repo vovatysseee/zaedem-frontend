@@ -1001,8 +1001,9 @@ window.FB=[
    rooms:[{id:1,name:'Стандарт',desc:'TV, кухонный уголок, Wi-Fi',cap:2,beds:2,price:70,avail:2},{id:2,name:'Коттедж',desc:'Домик, кухня, веранда',cap:4,beds:4,price:120,avail:1}],
    revs:[{name:'Роман П.',city:'Брест',ava:'Р',rat:5,date:'20 мая 2026',text:'Тишина, природа, озеро — просто кайф!'}],phone:'+375 16 533-02-56',checkin:'14:00',checkout:'12:00'},
 ];
-// Черновики (FB) скрыты из выдачи и каруселей. Оставляем ТОЛЬКО усадьбы —
-// у Островка усадеб нет вообще, поэтому 1 черновик держит категорию живой.
+// Черновики (FB) помечены draft:true и НИКОГДА не попадают в результаты поиска.
+// В пуле остаётся ТОЛЬКО усадьба (у Островка усадеб нет) — для карусели главной.
+FB.forEach(function(h){h.draft=true;});
 window.FB_KEEP=FB.filter(function(h){return h.category==='guest';});
 HOTELS=[...window.FB_KEEP];
 
@@ -1281,6 +1282,9 @@ function zbPillLabel(city,din,dout,adults,kids){
   lbl+=' · '+ad+(kd>0?'+'+kd+' реб.':'')+' '+(ad===1?'гость':(ad<=4?'гостя':'гостей'));
   return lbl;
 }
+function zbPersistPills(){
+  try{ sessionStorage.setItem('zb_pills',JSON.stringify({reg:window._lastReg||null,ai:window._lastAiResult||null,origin:window._searchOrigin||'normal'})); }catch(e){}
+}
 function zbSnapshotPill(){
   try{
     var cs=window._capState||{};
@@ -1291,6 +1295,7 @@ function zbSnapshotPill(){
       din:cs.din?new Date(cs.din).getTime():null,
       dout:cs.dout?new Date(cs.dout).getTime():null,
       adults:ad,kids:kd,childAges:(cs.childAges||[]).slice()};
+    zbPersistPills();
   }catch(e){}
 }
 // Снимок ИИ-поиска: синхронизируем сохранённый ИИ-результат с ТЕКУЩИМ состоянием
@@ -1308,9 +1313,10 @@ function zbSnapshotAiPill(){
     R.kids=(cs.kids!=null)?(parseInt(cs.kids)||0):(R.kids||0);
     R.childAges=(cs.childAges||R.childAges||[]).slice();
     R.label=zbPillLabel(R.city,R.din,R.dout,R.adults,R.kids);
+    zbPersistPills();
   }catch(e){}
 }
-// ── Плашка «последний ОБЫЧНЫЙ поиск» (в памяти → F5 автоматически сбрасывает) ──
+// ── Плашка «последний ОБЫЧНЫЙ поиск» (память сессии: переживает F5 через zb_pills) ──
 // Показывается ТОЛЬКО на вкладке обычного поиска — на вкладке ИИ своя плашка.
 function zbRenderLast(){
   var reg=document.getElementById('last-search-pill');
@@ -1353,6 +1359,7 @@ function zbRunLast(){
 // Кнопка-лупа капсулы: запускает поиск по текущему состоянию (город/даты/гости)
 function capSearch(){
   window._fromAI=false; window._searchOrigin='normal';
+  try{ zbPersistPills(); }catch(e){}
   try{
     var _sd=document.getElementById('s-dest');
     if(_sd && _sd.value && _sd.value.trim()){ window._capState=window._capState||{}; window._capState.city=_sd.value.trim(); }
@@ -1409,6 +1416,25 @@ async function aiSearch(){
       if(a.dout)p._dout=new Date(a.dout+'T00:00:00');
     }
   }catch(e){}
+  // Санитизация: строки «null/undefined/-» от ИИ = города нет (и никаких null на экране)
+  if(p.city&&/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim()))p.city=null;
+  if(p.city)p.city=String(p.city).trim();
+  // Проверяем, что РАСПОЗНАНО из запроса: город, даты, гости. Чего-то нет — не ищем, просим уточнить.
+  var _qchk=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
+  var _dChk=zbNotPast(p._din), _oChk=zbNotPast(p._dout);
+  var _datesOk=!!((_dChk&&_oChk&&_oChk>_dChk)||aiDates(_qchk,p.nights)||p.weekend||p.nights);
+  var _guestsOk=(parseInt(p.adults)||0)>0;
+  var _miss=[];
+  if(!p.city)_miss.push('город');
+  if(!_datesOk)_miss.push('даты');
+  if(!_guestsOk)_miss.push('сколько гостей');
+  if(_miss.length){
+    if(el){
+      el.innerHTML='⚠ Уточните, пожалуйста: <b>'+_miss.join(', ')+'</b>. Например: «квартира в Минске 12–15 августа на двоих»';
+      el.style.display='block'; el.style.cursor='default'; el.onclick=null; el.title='';
+    }
+    return; // поиск не стартует, пока данные не корректны
+  }
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
   window._capState.adults=parseInt(p.adults)||parseInt(window._capState.adults)||2;
@@ -1446,6 +1472,7 @@ async function aiSearch(){
     childAges:(window._capState.childAges||[]).slice(),
     label:'' };
   try{ window._lastAiResult.label=zbPillLabel(window._lastAiResult.city,din,dout,window._lastAiResult.adults,window._lastAiResult.kids); }catch(e){}
+  try{ zbPersistPills(); }catch(e){} // происхождение + снимок ИИ переживают F5 сразу, не дожидаясь возврата домой
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
   if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
@@ -1786,8 +1813,70 @@ function zbSaveRoute(view, hotelId){
       hotel: hObj
     }));
   }catch(e){ /* если даже обрезанное не влезло — не критично */ }
+  try{ zbWriteHash(view, hotelId); }catch(e){}
 }
 function zbClearRoute(){ try{ sessionStorage.removeItem('zb_route'); }catch(e){} }
+// ── ШЕРИНГ-ССЫЛКИ: состояние поиска/отеля живёт в #hash → ссылку можно скинуть в TG/Viber,
+//    получатель откроет ТУ ЖЕ выдачу или ТОТ ЖЕ отель с теми же датами и гостями. ──
+function zbWriteHash(view, hotelId){
+  try{
+    var cs=window._capState||{};
+    var f=function(d){ if(!d)return ''; var x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+    var h='';
+    if(window._catMode){ h='#c='+encodeURIComponent(window._catMode); }
+    else{
+      var seg=[encodeURIComponent(cs.city||''),f(cs.din),f(cs.dout),parseInt(cs.adults)||2,parseInt(cs.kids)||0,(cs.childAges||[]).join(',')].join('|');
+      if(view==='hotel'&&hotelId!=null) h='#h='+encodeURIComponent(String(hotelId))+'|'+seg;
+      else if(cs.city) h='#s='+seg;
+    }
+    if(h) history.replaceState(null,'',location.pathname+location.search+h);
+    else zbClearHash();
+  }catch(e){}
+}
+function zbClearHash(){ try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){} }
+// Открытие по ссылке. true → hash обработан (восстановление из sessionStorage пропускаем).
+function zbOpenFromHash(){
+  var raw=location.hash||''; if(raw.length<4)return false;
+  var m=raw.match(/^#(s|h|c)=(.+)$/); if(!m)return false;
+  var kind=m[1], val=m[2];
+  // Своя вкладка (F5): если sessionStorage-маршрут совпадает с hash — пусть работает быстрое
+  // восстановление с полным объектом отеля. Hash нужен ПОЛУЧАТЕЛЮ ссылки (у него маршрута нет).
+  try{
+    var r=JSON.parse(sessionStorage.getItem('zb_route')||'null');
+    if(r){
+      if(kind==='h'&&r.view==='hotel'&&String(r.hotelId)===decodeURIComponent(val.split('|')[0]))return false;
+      if(kind==='s'&&r.view==='serp')return false;
+      if(kind==='c'&&r.cat)return false;
+    }
+  }catch(e){}
+  if(kind==='c'){ try{ catStart(decodeURIComponent(val)); }catch(e){ return false; } return true; }
+  var parts=val.split('|'), hotelId=null;
+  if(kind==='h'){ hotelId=decodeURIComponent(parts.shift()||''); if(!hotelId)return false; }
+  var city=decodeURIComponent(parts[0]||'');
+  if(!city)return false;
+  var din=zbNotPast(parts[1]?new Date(parts[1]+'T00:00:00'):null);
+  var dout=zbNotPast(parts[2]?new Date(parts[2]+'T00:00:00'):null);
+  if(din&&dout&&dout<=din){din=null;dout=null;}
+  if(!din||!dout){din=null;dout=null;}
+  var ad=Math.max(1,Math.min(10,parseInt(parts[3])||2));
+  var kd=Math.max(0,Math.min(6,parseInt(parts[4])||0));
+  var ages=(parts[5]||'').split(',').filter(function(x){return x!=='';}).map(function(x){return Math.max(0,Math.min(17,parseInt(x)||7));}).slice(0,kd);
+  while(ages.length<kd)ages.push(7);
+  window._capState=window._capState||{};
+  window._capState.city=city; window._capState.din=din; window._capState.dout=dout;
+  window._capState.adults=ad; window._capState.kids=kd; window._capState.childAges=ages; window._capState.gDone=true;
+  try{ dIn=din?new Date(din):null; dOut=dout?new Date(dout):null; if(typeof gCnt!=='undefined')gCnt=ad; }catch(e){}
+  var sd=document.getElementById('s-dest'); if(sd)sd.value=city;
+  try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
+  if(kind==='h'){
+    // Отель уже в пуле (свой/черновик/из базы) → открываем сразу; иначе грузим выдачу города и авто-откроем
+    var loc=HOTELS.find(function(x){return String(x.id)===String(hotelId);});
+    if(loc){ try{ openHotel(loc.id); return true; }catch(e){} }
+    window._pendingOpenHotel=hotelId;
+  }
+  try{ serpOpen(); }catch(e){ return false; }
+  return true;
+}
 function zbRestoreRoute(){
   var de=document.documentElement;
   function reveal(){ try{ de.classList.remove('zb-restoring'); de.classList.remove('zb-restoring-hotel'); }catch(e){} }
@@ -1865,6 +1954,7 @@ function goHomeReset(){
   var nav=document.querySelector('nav'); if(nav)nav.style.display='';
   window._catMode=null; window._fromSerp=false;
   try{ if(typeof zbClearRoute==='function')zbClearRoute(); }catch(e){}
+  try{ zbClearHash(); }catch(e){}
   try{ zbSnapshotPill(); }catch(e){}                 // 1) СНАЧАЛА снимок текущего поиска (со всеми правками дат/гостей)
   try{ zbSnapshotAiPill(); }catch(e){}               // 1б) снимок ИИ-поиска — тоже с учётом всех правок по пути
   try{ zbResetCapsule(); }catch(e){}                 // 2) потом капсула → «Куда едете?» (готова к новому)
@@ -2017,7 +2107,8 @@ function serpRender(){
   if(sr)starsMin=parseInt(sr.value)||0;
   var sortMode=(document.getElementById('serp-sort')||{}).value||'recommended';
 
-  var hotels=HOTELS&&HOTELS.length?HOTELS:(window.FB||[]);
+  // Черновики в выдачу не попадают никогда (и фолбэка на них нет)
+  var hotels=(HOTELS&&HOTELS.length?HOTELS:[]).filter(function(h){return !h.draft;});
   var city=(window._capState&&window._capState.city||'').toLowerCase().trim();
   // Фильтруем по городу если есть совпадения, иначе показываем всё
   var cityFiltered=city?hotels.filter(function(h){
@@ -2673,6 +2764,13 @@ async function serpLoadOstrovok(){
     // Рендерим только если SERP ещё открыт
     var sp=document.getElementById('serp-page');
     if(sp&&sp.classList.contains('open'))serpRender();
+    // Пришли по ссылке на отель → открываем его, как только выдача города загрузилась
+    if(window._pendingOpenHotel){
+      var _pid=window._pendingOpenHotel; window._pendingOpenHotel=null;
+      var _ph=HOTELS.find(function(x){return String(x.id)===String(_pid);});
+      if(_ph){ try{ openHotel(_ph.id); }catch(e){} }
+      else if(typeof bkToast==='function'){ bkToast('Этот объект сейчас недоступен — показали город'); }
+    }
   }
 }
 
@@ -3904,7 +4002,20 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     if(back)back.style.visibility=n>1?'visible':'hidden';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
     var ft=document.getElementById('cs-footer');if(ft)ft.style.display=(n===3?'block':'none');
-    if(n===3){window._capState=window._capState||{};window._capState.gDone=true;try{updCapDisplay();}catch(e){}}
+    if(n===3){
+      // Счётчики берём из РЕАЛЬНОГО состояния (иначе после ИИ «2+ребёнок» тут висело «2 / 0»
+      // и любое касание счётчика стирало ребёнка)
+      window._capState=window._capState||{};window._capState.gDone=true;
+      csAdults=parseInt(window._capState.adults)||2;
+      csKids=parseInt(window._capState.kids)||0;
+      window._csChildAges=(window._capState.childAges||[]).slice();
+      var _an3=document.getElementById('cs-an');if(_an3)_an3.textContent=csAdults;
+      var _kn3=document.getElementById('cs-kn');if(_kn3)_kn3.textContent=csKids;
+      var _am3=document.getElementById('cs-am');if(_am3)_am3.style.opacity=csAdults<=1?'0.3':'1';
+      var _km3=document.getElementById('cs-km');if(_km3)_km3.style.opacity=csKids<=0?'0.3':'1';
+      try{csRenderAges();}catch(e){}
+      try{updCapDisplay();}catch(e){}
+    }
     if(n===2)csBuildCal();
   };
   window.csGoBack=function(){if(csCurrentStep>1)csStep(csCurrentStep-1);};
@@ -4104,6 +4215,18 @@ function ddcRenderAges(){
   box.innerHTML=html;
 }
 function ddcSetAge(i,v){ ddcChildAges[i]=parseInt(v); if(window._capState)window._capState.childAges=ddcChildAges.slice(0,ddcKids); }
+// Синхронизация счётчиков десктоп-попапа с реальным состоянием (вызывается при открытии шага «Гости»)
+function ddcSyncGuests(){
+  var cs=window._capState||{};
+  ddcAdults=parseInt(cs.adults)||2;
+  ddcKids=parseInt(cs.kids)||0;
+  ddcChildAges=(cs.childAges||[]).slice();
+  var an=document.getElementById('ddc-an');if(an)an.textContent=ddcAdults;
+  var kn=document.getElementById('ddc-kn');if(kn)kn.textContent=ddcKids;
+  var am=document.getElementById('ddc-am');if(am)am.style.opacity=ddcAdults<=1?'0.3':'1';
+  var km=document.getElementById('ddc-km');if(km)km.style.opacity=ddcKids<=0?'0.3':'1';
+  try{ddcRenderAges();}catch(e){}
+}
 function ddcChG(t,d){
   if(t==='a'){ddcAdults=Math.max(1,Math.min(8,ddcAdults+d));}
   else{
@@ -4122,7 +4245,28 @@ function ddcChG(t,d){
   window.updCapDisplay&&window.updCapDisplay();
 }
 
-loadHotels().then(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} try{zbRenderLast();}catch(e){} try{loadTopCarousels();}catch(e){} })
+loadHotels().then(function(){
+  var _byLink=false;
+  try{ _byLink=zbOpenFromHash(); }catch(e){}
+  if(!_byLink){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} }
+  else{ try{ document.documentElement.classList.remove('zb-restoring'); document.documentElement.classList.remove('zb-restoring-hotel'); }catch(e){} }
+  // F5 ГЛАВНОЙ = полный сброс: плашки, таб, память — чистый лист.
+  // Память (zb_pills: происхождение таба и снимки) живёт только пока открыт
+  // поиск/отель — чтобы F5 и «назад» там не теряли маршрут и исходный таб.
+  try{
+    var _onMain=!document.body.classList.contains('on-serp')&&!document.body.classList.contains('on-hotel');
+    if(_onMain){
+      sessionStorage.removeItem('zb_pills');
+      window._lastReg=null; window._lastAiResult=null; window._searchOrigin='normal';
+    }else if(!window._lastReg&&!window._lastAiResult){
+      var _pp=JSON.parse(sessionStorage.getItem('zb_pills')||'null');
+      if(_pp){ window._lastReg=_pp.reg||null; window._lastAiResult=_pp.ai||null; window._searchOrigin=_pp.origin||window._searchOrigin||'normal'; }
+    }
+  }catch(e){}
+  try{zbRenderLast();}catch(e){}
+  try{zbRenderAiLast();}catch(e){}
+  try{loadTopCarousels();}catch(e){}
+})
             .catch(function(){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} });
 
 // ═════════════════════════════════════════════════════
@@ -4503,7 +4647,7 @@ function ostFail(e){
     </div>
     <div id="ddc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
     <div id="ddc-hint" style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;min-height:16px">Выберите дату заезда</div>
-    <button id="ddc-next-btn" style="display:none;width:100%;margin-top:12px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer" onclick="(function(){var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';var s=document.getElementById('ddc-search');if(s)s.style.display='block';var dl=document.getElementById('ddc-dates-label');var h=document.getElementById('ddc-hint');if(dl&&h)dl.textContent=h.textContent;window._capState=window._capState||{};window._capState.gDone=true;if(typeof updCapDisplay==='function')updCapDisplay();})()">Далее</button>
+    <button id="ddc-next-btn" style="display:none;width:100%;margin-top:12px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer" onclick="(function(){var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';var s=document.getElementById('ddc-search');if(s)s.style.display='block';var dl=document.getElementById('ddc-dates-label');var h=document.getElementById('ddc-hint');if(dl&&h)dl.textContent=h.textContent;window._capState=window._capState||{};window._capState.gDone=true;if(typeof ddcSyncGuests==='function')ddcSyncGuests();if(typeof updCapDisplay==='function')updCapDisplay();})()">Далее</button>
   </div>
   <!-- Гости — появляются после выбора дат -->
   <div id="ddc-guests-section" style="display:none">
