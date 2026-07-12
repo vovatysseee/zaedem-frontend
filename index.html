@@ -63,8 +63,8 @@ nav{background:rgba(10,45,22,.96);backdrop-filter:blur(16px);display:flex;align-
    Плашки/разбор ИИ появляются → иконки категорий смещаются вниз ВНУТРИ фона (как на телефоне),
    а сам фон стоит на месте и не растёт. */
 @media(min-width:601px){
-  .hero{height:65vh;height:max(65vh,660px);justify-content:flex-start}
-  .hero-content{padding:140px 2.5rem 40px}
+  .hero{height:58vh;height:max(58vh,560px);justify-content:flex-start}
+  .hero-content{padding:80px 2.5rem 30px}
 }
 
 
@@ -1058,7 +1058,10 @@ function starsH(n,sz){return n?`<span style="color:#f5b700;font-size:${sz||12}px
 function catLabel(h){return h.stars?'★'.repeat(h.stars):(h.category==='guest'?'Агроусадьба':h.category==='apart'?'Апартаменты':'Отель')}
 
 function renderHotels(){
-  var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
+  // НЕ трогаем main-page, если открыт отель/выдача: loadTopCarousels приходит позже восстановления
+  // после F5 и раньше выбрасывал на главную поверх страницы отеля.
+  var _onOther=document.body.classList.contains('on-hotel')||document.body.classList.contains('on-serp');
+  var _mp=document.getElementById('main-page');if(_mp&&!_onOther)_mp.style.display='block';
   function card(h){
     var img=h.photos&&h.photos[0]?h.photos[0]:'';
     var thumb=img?srNormPhoto(img):'';
