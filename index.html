@@ -1630,8 +1630,15 @@ async function hpQaAsk(){
     // Берём РОВНО тот текст, что показан на странице (у отелей Островка описание в поле description, без _ru),
     // плюс удобства из комнат — чтобы ИИ видел всё, что видит гость.
     var _desc=String(h.description_ru||h.description||h.desc||'');
+    // Фолбэк: если в объекте пусто (описание Островка догружается асинхронно) — читаем прямо с экрана
+    if(_desc.trim().length<20){
+      var _dEl=document.querySelector('#hp-content .hp-desc');
+      if(_dEl&&_dEl.textContent&&_dEl.textContent.trim().length>_desc.trim().length)_desc=_dEl.textContent.trim();
+    }
     var _amen=(h.amenities||[]).map(function(x){return String(x&&x.n||x);});
     (h.rooms||[]).forEach(function(r){ if(r&&r.desc)_amen.push(String(r.desc)); });
+    // Удобства тоже с экрана как подстраховка
+    try{ document.querySelectorAll('#hp-content .hp-amenities .amen').forEach(function(a){var t=a.textContent.replace(/[✓\s]+/,' ').trim();if(t)_amen.push(t);}); }catch(_){}
     var payload={ q:q, hotel:{
       name:h.name_ru||h.name||'',
       desc:_desc.slice(0,3500),
@@ -4539,6 +4546,14 @@ async function loadOstRates(h){
     window._ostBookEnabled=!!data.booking_enabled;
     // Подтягиваем полное описание и реальные удобства на страницу отеля
     if(data.hotel){
+      // ВАЖНО: пишем данные и в объект (curHotel/h) — иначе консьерж «Спросить у отеля»
+      // читает пустое описание (на экране текст есть, а в объекте его не было)
+      try{
+        if(data.hotel.description){ h.description=data.hotel.description; if(curHotel&&curHotel.id===h.id)curHotel.description=data.hotel.description; }
+        if(data.hotel.amenities&&data.hotel.amenities.length){ h.amenities=data.hotel.amenities.map(function(a){return {n:String(a)};}); if(curHotel&&curHotel.id===h.id)curHotel.amenities=h.amenities; }
+        if(data.hotel.check_in){ h.check_in=data.hotel.check_in; if(curHotel&&curHotel.id===h.id)curHotel.check_in=data.hotel.check_in; }
+        if(data.hotel.check_out){ h.check_out=data.hotel.check_out; if(curHotel&&curHotel.id===h.id)curHotel.check_out=data.hotel.check_out; }
+      }catch(_){}
       var hpc=document.getElementById('hp-content');
       if(hpc&&data.hotel.description){
         var de=hpc.querySelector('.hp-desc');
