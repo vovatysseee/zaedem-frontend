@@ -1164,6 +1164,9 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 // Переключатель режима поиска: обычный ↔ ИИ
 function switchSearch(mode,noFocus){
+  // Ручной выбор таба запоминаем как «откуда человек начал» (_searchOrigin).
+  // Авто-возврат из goHomeReset идёт с noFocus=true и происхождение НЕ меняет.
+  if(!noFocus)window._searchOrigin=(mode==='ai')?'ai':'normal';
   var aiWrap=document.getElementById('ai-wrap'), cap=document.getElementById('cap-main');
   var tN=document.getElementById('tab-normal'), tA=document.getElementById('tab-ai');
   var base='border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 17px;border-radius:50px;display:inline-flex;align-items:center;gap:7px;';
@@ -1328,7 +1331,7 @@ function zbRenderAiLast(){
 }
 function zbRunLast(){
   var L=window._lastReg; if(!L||!L.city)return;
-  window._catMode=null; window._fromAI=false;
+  window._catMode=null; window._fromAI=false; window._searchOrigin='normal';
   window._capState=window._capState||{};
   window._capState.city=L.city;
   // даты из плашки могли «протухнуть» (полночь/старая сессия) — прошлые отбрасываем, дефолты подставятся сами
@@ -1349,7 +1352,7 @@ function zbRunLast(){
 }
 // Кнопка-лупа капсулы: запускает поиск по текущему состоянию (город/даты/гости)
 function capSearch(){
-  window._fromAI=false;
+  window._fromAI=false; window._searchOrigin='normal';
   try{
     var _sd=document.getElementById('s-dest');
     if(_sd && _sd.value && _sd.value.trim()){ window._capState=window._capState||{}; window._capState.city=_sd.value.trim(); }
@@ -1359,7 +1362,7 @@ function capSearch(){
 // Повтор ИИ-поиска ИЗ ПАМЯТИ — без обращения к ИИ (токены НЕ тратятся)
 function aiReplayLast(){
   var R=window._lastAiResult; if(!R||!R.city)return;
-  window._catMode=null; window._fromAI=true;
+  window._catMode=null; window._fromAI=true; window._searchOrigin='ai';
   window._capState=window._capState||{};
   window._capState.city=R.city;
   // прошлые даты отбрасываем — дефолты подставятся при поиске
@@ -1386,7 +1389,7 @@ function aiReplayLast(){
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
-  window._fromAI=true; window._lastAiQuery=q;
+  window._fromAI=true; window._lastAiQuery=q; window._searchOrigin='ai';
   var p=aiParse(q), el=document.getElementById('ai-understood');
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
   // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
@@ -1869,8 +1872,9 @@ function goHomeReset(){
   var au=document.getElementById('ai-understood'); if(au){au.style.display='none';au.innerHTML='';au.onclick=null;} // живой разбор → в плашку
   try{ zbRenderLast(); }catch(e){}                   // 3) показать плашку-памятку
   try{ zbRenderAiLast(); }catch(e){}                 // 3б) и плашку ИИ (видна только на табе ИИ)
-  // 4) Возврат на тот таб, через который искали: зашёл через ИИ → назад на таб ИИ (без автофокуса — не дёргаем клавиатуру)
-  try{ if(typeof switchSearch==='function')switchSearch(window._fromAI?'ai':'normal',true); }catch(e){}
+  // 4) Возврат туда, откуда человек НАЧАЛ (_searchOrigin): зашёл через ИИ → назад на таб ИИ,
+  //    даже если по пути правил даты/гостей (правки сбрасывают _fromAI, но не происхождение).
+  try{ if(typeof switchSearch==='function')switchSearch(window._searchOrigin==='ai'?'ai':'normal',true); }catch(e){}
 }
 
 function goBack(){
