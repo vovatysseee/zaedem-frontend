@@ -721,6 +721,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
         <div class="sf-tag" id="sft-free"  onclick="serpToggleTag('sft-free')">Бесплатная отмена</div>
       </div>
 
+      <div id="serp-ai-chips" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
       <div class="serp-sortbar">
         <div id="serp-meta" class="serp-meta" style="margin-bottom:0"></div>
         <div class="serp-sort-wrap">
@@ -1007,8 +1008,11 @@ window.FB=[
 ];
 // Черновики (FB) помечены draft:true и НИКОГДА не попадают в результаты поиска.
 // В пуле остаётся ТОЛЬКО усадьба (у Островка усадеб нет) — для карусели главной.
+// Демо-объекты (Минск Отель, Виктория, Bresta Grand, Припять, Ezera Park) ФИЗИЧЕСКИ удалены из пула:
+// остаётся только усадьба. Ни одна лазейка (фолбэки, слайдеры, избранное) их больше не увидит.
+FB=FB.filter(function(h){return h.category==='guest';});
 FB.forEach(function(h){h.draft=true;});
-window.FB_KEEP=FB.filter(function(h){return h.category==='guest';});
+window.FB_KEEP=FB;
 HOTELS=[...window.FB_KEEP];
 
 async function loadHotels(){
@@ -1455,9 +1459,12 @@ async function aiSearch(){
     if(el){
       el.innerHTML='⚠ Уточните, пожалуйста: <b>'+_miss.join(', ')+'</b>. Например: «квартира в Минске 12–15 августа на двоих»';
       el.style.display='block'; el.style.cursor='default'; el.onclick=null; el.title='';
+      // жёлтая плашка — предупреждение видно, не сливается с фоном
+      el.style.background='rgba(255,213,79,.96)'; el.style.color='#4a3800'; el.style.fontWeight='600';
     }
     return; // поиск не стартует, пока данные не корректны
   }
+  if(el){ el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff'; el.style.fontWeight=''; } // обычный разбор — стандартный вид
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
   window._capState.adults=parseInt(p.adults)||parseInt(window._capState.adults)||2;
@@ -2134,7 +2141,47 @@ function aiMatchBadge(h){
   if(!chips.length) return '';
   return '<div style="margin:2px 0 0">'+chips.join('')+'</div>';
 }
+// ── ИИ-чипы над выдачей: показываем, ЧТО понял ИИ, каждый фильтр снимается одним тапом ──
+function serpRenderAiChips(){
+  var box=document.getElementById('serp-ai-chips');
+  if(!box)return;
+  var chips=[];
+  var chip=function(label,onclk,neg){
+    return '<button onclick="'+onclk+'" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid '+(neg?'#e8b4b4':'var(--sand3)')+';background:'+(neg?'#fdf3f3':'#fff')+';border-radius:50px;padding:6px 12px;font-size:12px;font-weight:600;color:'+(neg?'#a33':'var(--ink)')+';font-family:inherit;cursor:pointer">'+label+' <span style="color:#bbb;font-size:13px;line-height:1">×</span></button>';
+  };
+  if(window._aiCategory){
+    var cl=window._aiCategory==='apart'?'Апартаменты':window._aiCategory==='guest'?'Усадьбы':'Отели';
+    chips.push(chip('🏠 '+cl,'aiChipRemove(\'cat\')'));
+  }
+  if(window._aiPriceMax>0)chips.push(chip('💰 до '+window._aiPriceMax+' BYN','aiChipRemove(\'price\')'));
+  (window._aiAmenities||[]).forEach(function(a,i){chips.push(chip('✓ '+a,'aiChipRemove(\'amen\','+i+')'));});
+  (window._aiAvoid||[]).forEach(function(a,i){chips.push(chip('✕ без: '+a,'aiChipRemove(\'avoid\','+i+')',true));});
+  if(chips.length){ box.innerHTML=chips.join(''); box.style.display='flex'; }
+  else { box.innerHTML=''; box.style.display='none'; }
+}
+function aiChipRemove(type,idx){
+  if(type==='cat'){
+    window._aiCategory=null;
+    ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=true;});
+  }
+  else if(type==='price'){ window._aiPriceMax=0; }
+  else if(type==='amen'&&window._aiAmenities){ window._aiAmenities.splice(idx,1); }
+  else if(type==='avoid'&&window._aiAvoid){ window._aiAvoid.splice(idx,1); }
+  // синхронизируем память ИИ: «назад» и плашка покажут актуальные фильтры без снятых
+  try{
+    var R=window._lastAiResult;
+    if(R){
+      R.category=window._aiCategory||null;
+      R.priceMax=window._aiPriceMax||0;
+      R.amenities=(window._aiAmenities||[]).slice();
+      R.avoid=(window._aiAvoid||[]).slice();
+      zbPersistPills();
+    }
+  }catch(e){}
+  try{ serpRender(); }catch(e){}
+}
 function serpRender(){
+  try{ serpRenderAiChips(); }catch(e){}
   // фильтры
   var cats=[];
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
@@ -2188,6 +2235,33 @@ function serpRender(){
       return !_av.some(function(a){return names.indexOf(a)>=0;});
     });
   }
+  // СТРАХОВКА ОТ ПУСТОЙ ВЫДАЧИ: жёсткие ИИ-фильтры (цена/категория) оставили ноль →
+  // ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой.
+  // Поиск никогда не «умирает» из-за фильтров ИИ.
+  window._aiRelaxed=null;
+  if(!list.length&&(window._aiPriceMax>0||window._aiCategory)){
+    var relaxed=baseList.filter(function(h){
+      if(cats.length&&!cats.includes(h.category))return false; // категорию пока держим
+      if(priceMax>0&&h.price>priceMax)return false;
+      if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
+      if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
+      if(wantFree&&!h.cancellation)return false;
+      return true; // БЕЗ ИИ-цены
+    });
+    if(relaxed.length&&window._aiPriceMax>0){ list=relaxed; window._aiRelaxed='price'; }
+    else if(window._aiCategory){
+      // и без ИИ-категории (последний рубеж)
+      relaxed=baseList.filter(function(h){
+        if(priceMax>0&&h.price>priceMax)return false;
+        if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
+        if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
+        if(wantFree&&!h.cancellation)return false;
+        return true;
+      });
+      if(relaxed.length){ list=relaxed; window._aiRelaxed='cat'; }
+    }
+    if(window._aiRelaxed)list.forEach(function(h){ if(h._aiScore==null)h._aiScore=0; });
+  }
 
   // Активны ли какие-то фильтры (для кнопки сброса)
   var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree;
@@ -2211,7 +2285,11 @@ function serpRender(){
   }
 
   var meta=document.getElementById('serp-meta');
-  if(meta)meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
+  if(meta){
+    if(window._aiRelaxed==='price')meta.textContent='Точных совпадений по цене нет — показали похожие ('+list.length+'). Снимите чип цены или посмотрите варианты ниже';
+    else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+')';
+    else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
+  }
 
   var cards=document.getElementById('serp-cards');
   if(!cards)return;
