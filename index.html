@@ -1965,14 +1965,27 @@ function zbWriteHash(view, hotelId){
       if(view==='hotel'&&hotelId!=null) h='#h='+encodeURIComponent(String(hotelId))+'|'+seg;
       else if(cs.city) h='#s='+seg;
     }
-    if(h) history.replaceState(null,'',location.pathname+location.search+h);
-    else zbClearHash();
+    if(h){
+      // pushState при СМЕНЕ экрана (новый шаг истории → браузерный Назад работает),
+      // replaceState при обновлении того же экрана (правка дат/гостей — не плодим шаги).
+      var _newUrl = location.pathname + location.search + h;
+      var _prevHash = window._zbLastHash || '';
+      var _prevKind = _prevHash.slice(0,3), _curKind = h.slice(0,3); // '#s=','#h=','#c='
+      if(_prevKind !== _curKind && !window._zbRestoringRoute){
+        history.pushState(null,'',_newUrl);   // сменили тип экрана — новый шаг
+      } else {
+        history.replaceState(null,'',_newUrl); // тот же экран — заменяем
+      }
+      window._zbLastHash = h;
+    }
+    else { zbClearHash(); window._zbLastHash=''; }
   }catch(e){}
 }
-function zbClearHash(){ try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){} }
+function zbClearHash(){ try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); window._zbLastHash=''; }catch(e){} }
 // Открытие по ссылке. true → hash обработан (восстановление из sessionStorage пропускаем).
 function zbOpenFromHash(){
   var raw=location.hash||''; if(raw.length<4)return false;
+  window._zbLastHash = raw.slice(0, raw.indexOf('=')+1) ? raw : window._zbLastHash;
   var m=raw.match(/^#(s|h|c)=(.+)$/); if(!m)return false;
   var kind=m[1], val=m[2];
   // Своя вкладка (F5): если sessionStorage-маршрут совпадает с hash — пусть работает быстрое
@@ -4491,6 +4504,32 @@ function ddcChG(t,d){
   window.updCapDisplay&&window.updCapDisplay();
 }
 
+// ── Браузерный/свайп «Назад» на мобильном: раньше уводил СО ВСЕГО САЙТА (popstate не слушался).
+// Теперь синхронизируем историю браузера с внутренней навигацией через hash. ──
+window.addEventListener('popstate', function(){
+  try{
+    var h = location.hash || '';
+    var onHotel = document.body.classList.contains('on-hotel');
+    var onSerp  = document.body.classList.contains('on-serp');
+    // Пустой hash → пользователь ушёл в начало истории → на главную (мягкий сброс, без выхода с сайта)
+    if(!h || h.length < 4){
+      if(onHotel || onSerp){ goHomeReset(); window.scrollTo(0,0); try{fitHeroTitleDeferred();}catch(e){} }
+      return;
+    }
+    // Есть hash → восстановим состояние, которое он описывает (отель/выдача/каталог)
+    var m = h.match(/^#(s|h|c)=/);
+    if(!m) return;
+    // Если сейчас на отеле, а hash уже про выдачу/каталог (#s / #c) — это «назад из отеля»
+    if(onHotel && (m[1]==='s' || m[1]==='c')){
+      var hp=document.getElementById('hotel-page');
+      if(hp){ hp.classList.remove('open'); document.body.classList.remove('on-hotel'); }
+      try{ if(typeof zbOpenFromHash==='function') zbOpenFromHash(); }catch(e){}
+      window.scrollTo(0,0); return;
+    }
+    // Прочие случаи — просто разворачиваем состояние из hash
+    try{ if(typeof zbOpenFromHash==='function') zbOpenFromHash(); }catch(e){}
+  }catch(e){}
+});
 loadHotels().then(function(){
   var _byLink=false;
   try{ _byLink=zbOpenFromHash(); }catch(e){}
