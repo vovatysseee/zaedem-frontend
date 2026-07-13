@@ -538,6 +538,10 @@ body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
   .sf-dropdown{position:absolute;left:0;right:auto;min-width:200px;max-width:calc(100vw - 32px);z-index:9999}
   .serp-cards-grid{grid-template-columns:1fr!important}
   .serp-sortbar{flex-direction:column;align-items:stretch;gap:8px}
+  .serp-sort-wrap{display:flex;align-items:center;gap:8px;width:100%}
+  .serp-sort-wrap .sort-lbl{display:none}
+  .serp-sort-wrap #serp-pmode{flex-shrink:0}
+  .serp-sort-wrap .serp-sort{flex:1;min-width:0}
 }
 @media(max-width:600px){
   .hero-title{white-space:nowrap;letter-spacing:-.3px!important;padding:0 8px}
@@ -725,11 +729,11 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
         <div id="serp-meta" class="serp-meta" style="margin-bottom:0"></div>
         <div class="serp-sort-wrap">
           <button class="sf-clear" id="sf-clear" onclick="serpClearFilters()" style="display:none">Сбросить фильтры</button>
-          <div id="serp-pmode" style="display:inline-flex;border:1.5px solid var(--sand3);border-radius:50px;overflow:hidden;background:#fff">
-            <button id="pm-trip" onclick="serpPriceMode('trip')" style="border:none;padding:7px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--green);color:#fff">За поездку</button>
-            <button id="pm-night" onclick="serpPriceMode('night')" style="border:none;padding:7px 12px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:var(--muted)">За ночь</button>
+          <div id="serp-pmode" style="display:inline-flex;border:1.5px solid var(--sand3);border-radius:50px;overflow:hidden;background:#fff;flex-shrink:0">
+            <button id="pm-trip" onclick="serpPriceMode('trip')" style="border:none;padding:6px 11px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--green);color:#fff;white-space:nowrap">За поездку</button>
+            <button id="pm-night" onclick="serpPriceMode('night')" style="border:none;padding:6px 11px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:var(--muted);white-space:nowrap">За ночь</button>
           </div>
-          <label for="serp-sort">Сортировка:</label>
+          <label for="serp-sort" class="sort-lbl">Сортировка:</label>
           <select class="serp-sort" id="serp-sort" onchange="serpFilterChange()">
             <option value="recommended">Рекомендуемые</option>
             <option value="price_asc">Сначала дешёвые</option>
@@ -1639,10 +1643,14 @@ async function hpQaAsk(){
     (h.rooms||[]).forEach(function(r){ if(r&&r.desc)_amen.push(String(r.desc)); });
     // Удобства тоже с экрана как подстраховка
     try{ document.querySelectorAll('#hp-content .hp-amenities .amen').forEach(function(a){var t=a.textContent.replace(/[✓\s]+/,' ').trim();if(t)_amen.push(t);}); }catch(_){}
+    var _near=(h._nearby||[]).slice(0,12);
+    // «Что рядом» тоже с экрана как подстраховка
+    try{ document.querySelectorAll('#hp-nearby span').forEach(function(sp){var t=sp.textContent.trim();if(t&&t.length<40&&_near.indexOf(t)<0)_near.push(t);}); }catch(_){}
     var payload={ q:q, hotel:{
       name:h.name_ru||h.name||'',
       desc:_desc.slice(0,3500),
       amenities:_amen.slice(0,60),
+      nearby:_near.slice(0,12),
       checkin:h.check_in||h.checkin||'', checkout:h.check_out||h.checkout||''
     }};
     var r=await fetch(API+'/api/ai/hotel-qa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
@@ -1744,6 +1752,11 @@ async function loadNearby(lat,lon){
     var r=await fetch(API+'/api/nearby?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon));
     var d=await r.json();
     var list=(d&&d.nearby)||[];
+    // Сохраняем POI в объект — чтобы консьерж отвечал на «что рядом / есть кафе / далеко ли аптека»
+    try{
+      var _near=list.map(function(x){return String(x.label)+' '+String(x.dist);});
+      if(curHotel){curHotel._nearby=_near;}
+    }catch(_){}
     if(!list.length){ box.style.display='none'; return; }
     box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
@@ -2335,6 +2348,17 @@ function serpRender(){
     if(window._aiRelaxed==='price')meta.textContent='Точных совпадений по цене нет — показали похожие ('+list.length+'). Снимите чип цены или посмотрите варианты ниже';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+')';
     else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
+  }
+  // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса
+  var cardsBox=document.getElementById('serp-cards');
+  if(!list.length&&cardsBox){
+    cardsBox.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
+      +'<div style="font-size:40px;margin-bottom:12px">🔍</div>'
+      +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">По этим фильтрам ничего нет</div>'
+      +'<div style="font-size:13px;margin-bottom:16px">Попробуйте поднять цену или снять часть фильтров</div>'
+      +'<button onclick="serpClearFilters()" style="border:none;background:var(--green);color:#fff;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Сбросить фильтры</button>'
+      +'</div>';
+    return;
   }
 
   var cards=document.getElementById('serp-cards');
