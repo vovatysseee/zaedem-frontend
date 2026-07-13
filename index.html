@@ -3472,7 +3472,7 @@ function openAuth(tab){
       <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:16px">Войти</div>
       <div style="display:flex;background:var(--sand2);border-radius:12px;padding:4px;margin-bottom:20px;gap:3px">
         <button onclick="openAuth('tourist')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='tourist'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-3px;margin-right:5px"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>Турист</button>
-        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Отельер</button>
+        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Партнёр</button>
       </div>
       ${tab==='tourist'?`
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Найдите бронь по номеру и email.</div>
@@ -3481,7 +3481,7 @@ function openAuth(tab){
         <button class="btn-pay" onclick="findBooking()">Найти мою бронь →</button>
         <div id="b-err" style="color:#e53935;font-size:12px;margin-top:8px;text-align:center"></div>
       `:`
-        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Войдите с данными которые получили при подключении отеля.</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Войдите с данными которые получили при подключении объекта.</div>
         <div class="fg"><label>Email</label><input type="email" id="h-email" placeholder="hotel@example.com"></div>
         <div class="fg"><label>Пароль</label><input type="password" id="h-pass" placeholder="••••••••"></div>
         <button class="btn-pay" onclick="hotelLogin()">Войти в кабинет →</button>
