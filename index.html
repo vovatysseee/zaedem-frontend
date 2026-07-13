@@ -2302,8 +2302,15 @@ function serpRender(){
   if(sr)starsMin=parseInt(sr.value)||0;
   var sortMode=(document.getElementById('serp-sort')||{}).value||'recommended';
 
-  // Черновики в выдачу не попадают никогда (и фолбэка на них нет)
-  var hotels=(HOTELS&&HOTELS.length?HOTELS:[]).filter(function(h){return !h.draft;});
+  // Демо/тестовые объекты гасим по имени на ЛЮБОМ источнике (в т.ч. если завелись в каталоге Островка).
+  // Плюс отсекаем черновики. Раньше «Минск Отель» просачивался из каталога — теперь нет.
+  var DEMO_NAMES=['минск отель','виктория','bresta grand','ezera park','припять','отель припять'];
+  var hotels=(HOTELS&&HOTELS.length?HOTELS:[]).filter(function(h){
+    if(h.draft)return false;
+    var nm=String(h.name_ru||h.name||'').toLowerCase().trim();
+    if(DEMO_NAMES.indexOf(nm)>=0)return false;
+    return true;
+  });
   var city=(window._capState&&window._capState.city||'').toLowerCase().trim();
   // Фильтруем по городу если есть совпадения, иначе показываем всё
   var cityFiltered=city?hotels.filter(function(h){
@@ -2339,29 +2346,23 @@ function serpRender(){
       return !_av.some(function(a){return names.indexOf(a)>=0;});
     });
   }
-  // СТРАХОВКА ОТ ПУСТОЙ ВЫДАЧИ: жёсткие ИИ-фильтры (цена/категория) оставили ноль →
-  // ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой.
-  // Поиск никогда не «умирает» из-за фильтров ИИ.
+  // СТРАХОВКА ОТ ПУСТОЙ ВЫДАЧИ: жёсткие фильтры (цена/категория/звёзды) — хоть ИИ, хоть выставленные руками —
+  // оставили ноль → ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой «снимите фильтр».
+  // Поиск никогда не «умирает» из-за фильтров.
   window._aiRelaxed=null;
-  if(!list.length&&(window._aiPriceMax>0||window._aiCategory)){
+  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0)){
+    // 1) отпускаем цену (и ИИ, и ручную) — оставляем категорию/звёзды
     var relaxed=baseList.filter(function(h){
-      if(cats.length&&!cats.includes(h.category))return false; // категорию пока держим
-      if(priceMax>0&&h.price>priceMax)return false;
+      if(cats.length&&!cats.includes(h.category))return false;
       if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
       if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
       if(wantFree&&!h.cancellation)return false;
-      return true; // БЕЗ ИИ-цены
+      return true; // БЕЗ фильтра цены
     });
-    if(relaxed.length&&window._aiPriceMax>0){ list=relaxed; window._aiRelaxed='price'; }
-    else if(window._aiCategory){
-      // и без ИИ-категории (последний рубеж)
-      relaxed=baseList.filter(function(h){
-        if(priceMax>0&&h.price>priceMax)return false;
-        if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
-        if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
-        if(wantFree&&!h.cancellation)return false;
-        return true;
-      });
+    if(relaxed.length&&(window._aiPriceMax>0||priceMax>0)){ list=relaxed; window._aiRelaxed='price'; }
+    else {
+      // 2) последний рубеж — оставляем только город (снимаем категорию/звёзды/цену)
+      relaxed=baseList.slice();
       if(relaxed.length){ list=relaxed; window._aiRelaxed='cat'; }
     }
     if(window._aiRelaxed)list.forEach(function(h){ if(h._aiScore==null)h._aiScore=0; });
@@ -2391,8 +2392,8 @@ function serpRender(){
   var meta=document.getElementById('serp-meta');
   if(meta){
     if(!list.length&&window._ostrovokLoading)meta.textContent='Загружаем варианты…';
-    else if(window._aiRelaxed==='price')meta.textContent='Точных совпадений по цене нет — показали похожие ('+list.length+'). Снимите чип цены или посмотрите варианты ниже';
-    else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+')';
+    else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
+    else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
     else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
   }
   // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
