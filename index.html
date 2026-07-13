@@ -810,16 +810,8 @@ const DW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const GL=['','1 гость','2 гостя','3 гостя','4 гостя','5 гостей','6 гостей','7 гостей','8 гостей'];
 let dIn=null,dOut=null,navIn=new Date(),navOut=new Date(),curPop=null,gCnt=2;
 let HOTELS=[],favs=new Set(),activeF='all',curHotel=null,payM='card';
-// Демо/тестовые объекты, которые могут прийти из каталога Островка — вырезаем на ЛЮБОМ входе данных,
-// чтобы они не мелькали при загрузке и не попадали ни в выдачу, ни в карусели.
-var ZB_DEMO_NAMES=['минск отель','виктория','bresta grand','ezera park','ezera park hotel','припять','отель припять'];
-function zbNotDemo(h){
-  if(!h)return false;
-  if(h.draft)return false;
-  var nm=String(h.name_ru||h.name||'').toLowerCase().trim();
-  return ZB_DEMO_NAMES.indexOf(nm)<0;
-}
-function zbClean(arr){ return (Array.isArray(arr)?arr:[]).filter(zbNotDemo); }
+// Тестовые объекты удалены из БД; паузу/статусы прячет бэк (is_active + status).
+// На фронте остаётся только отсев витринных черновиков (draft) из выдачи.
 let gPhotos=[],gIdx=0,curSlide=0,slideTimer=null;
 
 const CITIES=[
@@ -1120,7 +1112,7 @@ async function loadTopCarousels(){
   try{
     var c=JSON.parse(localStorage.getItem(ZB_TOP_CACHE)||'null');
     if(c&&c.t&&(Date.now()-c.t)<6*3600*1000&&Array.isArray(c.h)&&Array.isArray(c.a)&&(c.h.length||c.a.length)){
-      window._topHotels=zbClean(c.h); window._topAparts=zbClean(c.a); window._topLoaded=true;
+      window._topHotels=c.h||[]; window._topAparts=c.a||[]; window._topLoaded=true;
       renderHotels();
     }
   }catch(e){}
@@ -1139,8 +1131,8 @@ async function loadTopCarousels(){
   }
   var res=await Promise.all([top('hotel'),top('apart')]);
   // сеть пустая/упала → НЕ затираем то, что показали из кэша
-  if(res[0].length)window._topHotels=zbClean(res[0]);
-  if(res[1].length)window._topAparts=zbClean(res[1]);
+  if(res[0].length)window._topHotels=res[0];
+  if(res[1].length)window._topAparts=res[1];
   window._topLoaded=true;
   // 3) обновляем кэш только непустыми данными
   try{
@@ -2312,7 +2304,7 @@ function serpRender(){
   if(sr)starsMin=parseInt(sr.value)||0;
   var sortMode=(document.getElementById('serp-sort')||{}).value||'recommended';
 
-  var hotels=zbClean(HOTELS&&HOTELS.length?HOTELS:[]);
+  var hotels=(HOTELS&&HOTELS.length?HOTELS:[]).filter(function(h){return !h.draft;});
   var city=(window._capState&&window._capState.city||'').toLowerCase().trim();
   // Фильтруем по городу если есть совпадения, иначе показываем всё
   var cityFiltered=city?hotels.filter(function(h){
@@ -3003,7 +2995,7 @@ async function serpLoadOstrovok(){
     var data=await resp.json();
 
     if(data.hotels&&data.hotels.length){
-      HOTELS=[...zbClean(data.hotels),...HOTELS];
+      HOTELS=[...data.hotels,...HOTELS];
     }
   }catch(e){
     console.warn('Ostrovok search error:',e.message);
@@ -3058,8 +3050,8 @@ async function catLoad(reset){
     var url='https://api.zaedem.by/api/catalog?category='+encodeURIComponent(window._catMode)+'&offset='+window._catOffset+'&limit=50';
     var r=await fetch(url); var data=await r.json();
     if(data&&data.ok&&Array.isArray(data.hotels)){
-      if(reset) HOTELS=zbClean(data.hotels);
-      else HOTELS=HOTELS.concat(zbClean(data.hotels));
+      if(reset) HOTELS=data.hotels.slice();
+      else HOTELS=HOTELS.concat(data.hotels);
       window._catOffset += data.hotels.length;
       window._catTotal=data.total;
       window._catHasMore=!!data.hasMore;
