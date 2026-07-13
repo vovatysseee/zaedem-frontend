@@ -782,8 +782,8 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 <footer>
   <div class="wrap">
     <div class="ft-inner">
-      <div><div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования отелей. Принимаем белорусские и российские карты.</p><div class="ft-pay-block" style="margin-top:12px"><span id="ft-pay-icons"></span></div></div>
-      <div class="ft-col"><h4>Отелям</h4><a onclick="openHotelApp()">Добавить свой отель</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div>
+      <div><div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования жилья. Принимаем белорусские и российские карты.</p><div class="ft-pay-block" style="margin-top:12px"><span id="ft-pay-icons"></span></div></div>
+      <div class="ft-col"><h4>Партнёрам</h4><a onclick="openHotelApp()">Добавить свой объект</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div>
       <div class="ft-col"><h4>Компания</h4><a>О Заедем.by</a><a>Контакты</a><a href="privacy.html" class="legal-link">Политика конфиденциальности</a><a href="oferta.html" class="legal-link">Публичная оферта</a></div>
     </div>
     <div class="ft-bottom">
@@ -1658,9 +1658,9 @@ async function hpQaAsk(){
     var r=await fetch(API+'/api/ai/hotel-qa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var d=await r.json();
     if(d&&d.answer)a.textContent=d.answer;
-    else if(d&&d.limit)a.textContent='Лимит вопросов на сегодня исчерпан. Уточните у отеля через чат поддержки.';
-    else a.textContent='Не получилось ответить — уточните у отеля через чат поддержки.';
-  }catch(e){ a.textContent='Сервис недоступен — уточните у отеля через чат поддержки.'; }
+    else if(d&&d.limit)a.textContent='Лимит вопросов на сегодня исчерпан. Попробуйте завтра.';
+    else a.textContent='Не получилось ответить. Попробуйте переформулировать вопрос.';
+  }catch(e){ a.textContent='Сервис временно недоступен. Попробуйте позже.'; }
 }
 function hpGuestsLabel(){
   var s=window._capState||{};
@@ -1839,7 +1839,7 @@ function openHotel(id){
         <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${cleanAddr(h.address)}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         <div style="margin:0 0 1.5rem">
-          <button onclick="hpQaToggle()" style="display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:9px 16px;font-size:13px;font-weight:700;color:var(--green);font-family:inherit;cursor:pointer">💬 Спросить у отеля</button>
+          <button onclick="hpQaToggle()" style="display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:9px 16px;font-size:13px;font-weight:700;color:var(--green);font-family:inherit;cursor:pointer">💬 Спросить об объекте</button>
           <div id="hp-qa" style="display:none;margin-top:10px;border:1.5px solid var(--sand3);border-radius:14px;padding:12px 14px;background:#fff">
             <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Отвечу по описанию и удобствам этого объекта. Например: «Есть парковка?», «Можно с собакой?», «Во сколько заезд?»</div>
             <div style="display:flex;gap:8px">
@@ -2390,13 +2390,21 @@ function serpRender(){
 
   var meta=document.getElementById('serp-meta');
   if(meta){
-    if(window._aiRelaxed==='price')meta.textContent='Точных совпадений по цене нет — показали похожие ('+list.length+'). Снимите чип цены или посмотрите варианты ниже';
+    if(!list.length&&window._ostrovokLoading)meta.textContent='Загружаем варианты…';
+    else if(window._aiRelaxed==='price')meta.textContent='Точных совпадений по цене нет — показали похожие ('+list.length+'). Снимите чип цены или посмотрите варианты ниже';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+')';
     else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
   }
-  // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса
+  // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
+  // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
   var cardsBox=document.getElementById('serp-cards');
   if(!list.length&&cardsBox){
+    if(window._ostrovokLoading){
+      cardsBox.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
+        +'<div style="font-size:32px;margin-bottom:12px">⏳</div>'
+        +'<div style="font-size:14px">Загружаем варианты…</div></div>';
+      return;
+    }
     cardsBox.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
       +'<div style="font-size:40px;margin-bottom:12px">🔍</div>'
       +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">По этим фильтрам ничего нет</div>'
@@ -3679,9 +3687,9 @@ function openHotelApp(){
   document.getElementById('app-body').innerHTML=`
     <button onclick="document.getElementById('app-modal').classList.remove('open')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
     <div style="clear:both">
-      <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:4px">Добавить отель</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:4px">Добавить объект</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Заполните форму — свяжемся в течение 24 часов</div>
-      <div class="fg"><label>Название отеля *</label><input type="text" id="ap-name" placeholder="Гостиница «Минск»"></div>
+      <div class="fg"><label>Название объекта *</label><input type="text" id="ap-name" placeholder="Гостиница «Минск»"></div>
       <div class="fg"><label>Город *</label><input type="text" id="ap-city" placeholder="Минск"></div>
       <div class="fg"><label>Контактное лицо *</label><input type="text" id="ap-contact" placeholder="Иван Иванов"></div>
       <div class="fgrow">
