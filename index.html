@@ -537,11 +537,12 @@ body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
   .serp-filters .sf-tag{flex-shrink:1}
   .sf-dropdown{position:absolute;left:0;right:auto;min-width:200px;max-width:calc(100vw - 32px);z-index:9999}
   .serp-cards-grid{grid-template-columns:1fr!important}
-  .serp-sortbar{flex-direction:column;align-items:stretch;gap:8px}
-  .serp-sort-wrap{display:flex;align-items:center;gap:8px;width:100%}
+  .serp-sortbar{flex-direction:column;align-items:stretch;gap:10px}
+  .serp-sort-wrap{display:flex;align-items:center;gap:10px;width:100%;flex-wrap:wrap}
   .serp-sort-wrap .sort-lbl{display:none}
+  .serp-sort-wrap .sf-clear{order:-1;flex-basis:100%;text-align:left;margin-bottom:2px}
   .serp-sort-wrap #serp-pmode{flex-shrink:0}
-  .serp-sort-wrap .serp-sort{flex:1;min-width:0}
+  .serp-sort-wrap .serp-sort{margin-left:auto;flex:0 0 auto;width:auto;max-width:56%;padding-top:9px;padding-bottom:9px}
 }
 @media(max-width:600px){
   .hero-title{white-space:nowrap;letter-spacing:-.3px!important;padding:0 8px}
@@ -1606,6 +1607,7 @@ function hpApplyDates(){
   dIn=_hpCal.din; dOut=_hpCal.dout;
   window._capState=window._capState||{}; window._capState.din=_hpCal.din; window._capState.dout=_hpCal.dout;
   window._hpDatesDirty=false;
+  try{ loadWeather(); }catch(_){}  // новые даты → пересчёт прогноза
   if(typeof updSum==='function')try{updSum();}catch(_){}
   // пересохраняем маршрут, чтобы новые даты пережили обновление страницы (F5)
   try{ if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id); }catch(_){}
@@ -1745,6 +1747,47 @@ function hpApplyGuests(e){
 }
 
 // «Что рядом» — тянет POI с карты по координатам объекта (мягко: нет данных → блок скрыт)
+// ── Погода на выбранные даты (Open-Meteo, бесплатно, без ключа). Иконка появляется ТОЛЬКО если прогноз реально есть. ──
+function wmoIcon(c){
+  if(c===0)return '☀️'; if(c>=1&&c<=2)return '🌤️'; if(c===3)return '☁️';
+  if(c>=45&&c<=48)return '🌫️'; if(c>=51&&c<=67)return '🌧️'; if(c>=71&&c<=77)return '❄️';
+  if(c>=80&&c<=82)return '🌦️'; if(c>=85&&c<=86)return '❄️'; if(c>=95)return '⛈️'; return '⛅';
+}
+function wmoHint(codes){
+  if(codes.some(function(c){return c>=71&&c<=77||c>=85&&c<=86;}))return 'будет снежно';
+  if(codes.some(function(c){return c>=51&&c<=67||c>=80&&c<=82||c>=95;}))return 'возьмите зонт';
+  return '';
+}
+async function loadWeather(){
+  var box=document.getElementById('hp-weather'); if(!box||!curHotel)return;
+  var lat=curHotel.latitude||curHotel.lat, lon=curHotel.longitude||curHotel.lng;
+  if(!lat||!lon){ box.style.display='none'; return; }
+  var ci=getIn(), co=getOut();
+  if(!ci||!co){ box.style.display='none'; return; }
+  // Прогноз есть максимум на ~16 дней вперёд; дальше — просто не показываем блок
+  var today=new Date(); today.setHours(0,0,0,0);
+  var din=new Date(ci+'T00:00:00');
+  var diff=(din-today)/86400000;
+  if(diff>15||diff< -1){ box.style.display='none'; return; }
+  var _tk=ci+'|'+co+'|'+lat+'|'+lon;
+  box._token=_tk;
+  try{
+    var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon
+      +'&daily=weather_code,temperature_2m_max&timezone=auto&start_date='+ci+'&end_date='+co;
+    var r=await fetch(url); var d=await r.json();
+    if(box._token!==_tk)return; // даты успели поменяться — игнорируем устаревший ответ
+    var days=(d&&d.daily&&d.daily.time)||[];
+    if(!days.length){ box.style.display='none'; return; }
+    var codes=d.daily.weather_code||[], temps=d.daily.temperature_2m_max||[];
+    var first=0, last=Math.max(0,codes.length-1);
+    var t1=Math.round(temps[first]), tN=Math.round(temps[last]);
+    var label=wmoIcon(codes[first])+' '+(t1>0?'+':'')+t1+'°';
+    if(last>first)label+=' <span style="color:var(--muted)">…</span> '+wmoIcon(codes[last])+' '+(tN>0?'+':'')+tN+'°';
+    var hint=wmoHint(codes);
+    box.innerHTML='<span>'+label+'</span>'+(hint?'<span style="color:var(--muted)">· '+hint+'</span>':'');
+    box.style.display='flex';
+  }catch(e){ box.style.display='none'; }
+}
 async function loadNearby(lat,lon){
   var box=document.getElementById('hp-nearby'); if(!box)return;
   box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">🚶 Смотрим, что рядом…</div>';
@@ -1832,6 +1875,7 @@ function openHotel(id){
             <div class="bk-field bk-datebtn" onclick="hpOpenCal(event)"><label>Заезд</label><div class="bk-dateval" id="hp-in-lbl">${hpFmtLbl(getIn())}</div><input type="hidden" id="hp-in" value="${getIn()}"></div>
             <div class="bk-field bk-datebtn" onclick="hpOpenCal(event)"><label>Выезд</label><div class="bk-dateval" id="hp-out-lbl">${hpFmtLbl(getOut())}</div><input type="hidden" id="hp-out" value="${getOut()}"></div>
           </div>
+          <div id="hp-weather" style="display:none;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2);margin:-2px 2px 10px;padding:6px 10px;background:var(--sand1,#f6f4ef);border-radius:10px"></div>
           <div class="cal-popup" id="hp-cal-pop"></div>
           <div class="bk-field bk-datebtn" style="margin-bottom:10px" onclick="hpOpenGuests(event)"><label>Гости</label>
             <div class="bk-dateval" id="hp-guests-lbl">${hpGuestsLabel()}</div>
@@ -1855,6 +1899,7 @@ function openHotel(id){
     </div>`;
   if(isOst)loadOstRates(h);
   if(h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude);
+  try{ loadWeather(); }catch(e){}
 }
 
 // ── Запоминание текущего экрана, чтобы при обновлении страницы не кидало на главную ──
@@ -1871,7 +1916,7 @@ function zbSaveRoute(view, hotelId){
           id:_src.id, name_ru:_src.name_ru, name_en:_src.name_en, address:_src.address,
           category:_src.category, price:_src.price, oldPrice:_src.oldPrice, stars:_src.stars,
           rating:_src.rating, reviews_count:_src.reviews_count, source:_src.source,
-          lat:_src.lat, lng:_src.lng, city_ru:_src.city_ru, checkin:_src.checkin, checkout:_src.checkout,
+          lat:_src.lat, lng:_src.lng, latitude:_src.latitude||_src.lat, longitude:_src.longitude||_src.lng, city_ru:_src.city_ru, checkin:_src.checkin, checkout:_src.checkout,
           description_ru:_src.description_ru, description:_src.description, phone:_src.phone,
           photos:(_src.photos||[]).slice(0,8),
           amenities:_src.amenities||[],
