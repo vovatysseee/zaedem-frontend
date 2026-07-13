@@ -2393,7 +2393,7 @@ function serpRender(){
 
   var meta=document.getElementById('serp-meta');
   if(meta){
-    if(!list.length&&(window._ostrovokLoading||window._catLoading))meta.textContent='Загружаем варианты…';
+    if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
     else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
     else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
@@ -2402,7 +2402,7 @@ function serpRender(){
   // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
   var cardsBox=document.getElementById('serp-cards');
   if(!list.length&&cardsBox){
-    if(window._ostrovokLoading||window._catLoading){
+    if(window._ostrovokLoading||window._catBooting){
       cardsBox.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--muted)">'
         +'<div class="zb-spin" style="width:34px;height:34px;border:3px solid var(--sand3);border-top-color:var(--green);border-radius:50%;margin:0 auto 14px;animation:zbspin .7s linear infinite"></div>'
         +'<div style="font-size:14px">Загружаем варианты…</div></div>';
@@ -3027,13 +3027,14 @@ async function serpLoadOstrovok(){
 
 // Клик по категории на главной → поиск со всей Беларусью + фильтр этой категории
 // ─── Каталог: все объекты категории по РБ (без дат), из базы /api/catalog ───
-window._catMode=null; window._catOffset=0; window._catTotal=0; window._catHasMore=false; window._catLoading=false;
+window._catMode=null; window._catOffset=0; window._catTotal=0; window._catHasMore=false; window._catLoading=false; window._catBooting=false;
 
 function catStart(cats){
   // cats: 'hotel' | 'hotel,apart' | массив
   var arr = Array.isArray(cats)?cats.slice():String(cats).split(',').filter(Boolean);
   if(!arr.length) arr=['hotel'];
-  window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=true;
+  window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
+  window._catBooting=true; // короткий флаг «категория открывается» — для спиннера до первого ответа
   document.body.classList.add('cat-mode');
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
@@ -3068,6 +3069,7 @@ async function catLoad(reset){
     }
   }catch(e){ console.error('catalog',e); if(reset&&meta)meta.textContent='Не удалось загрузить каталог'; }
   window._catLoading=false;
+  window._catBooting=false; // первый ответ пришёл — спиннер больше не нужен
 }
 
 function catShowEmpty(){
