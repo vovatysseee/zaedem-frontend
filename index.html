@@ -771,6 +771,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 <div class="overlay" id="auth-modal"><div class="modal" style="max-width:420px"><div class="modal-body" id="auth-body"></div></div></div>
 <div class="overlay" id="app-modal"><div class="modal" style="max-width:480px"><div class="modal-body" id="app-body"></div></div></div>
 <div class="overlay" id="cabinet-modal"><div class="modal" style="max-width:480px"><div class="modal-body" id="cabinet-body"></div></div></div>
+<div class="overlay" id="cancel-modal"><div class="modal" style="max-width:440px"><div class="modal-body" id="cancel-body"></div></div></div>
 <div class="gal-ov" id="gal-ov">
   <button class="g-close" onclick="closeGal()">✕</button>
   <div class="gal-wrap"><button class="g-btn g-prev" onclick="galNav(-1)">&#8249;</button><img id="g-img" src="" alt=""><button class="g-btn g-next" onclick="galNav(1)">&#8250;</button></div>
@@ -3512,20 +3513,14 @@ async function findBooking(){
   const btn=document.querySelector('[onclick="findBooking()"]');
   if(btn){btn.textContent='Ищем...';btn.disabled=true;}
   try{
-    // Новый эндпоинт /api/bookings/booking/:num
-    const r=await fetch(API+'/api/bookings/booking/'+encodeURIComponent(num));
+    // Эндпоинт /api/bookings/booking/:num с проверкой email на сервере
+    const r=await fetch(API+'/api/bookings/booking/'+encodeURIComponent(num)+'?email='+encodeURIComponent(email));
     const d=await r.json();
-    if(!r.ok||!d.booking){
-      if(btn){btn.textContent='Найти мою бронь →';btn.disabled=false;}
-      err.textContent='Бронь не найдена. Проверьте номер брони.';return;
-    }
-    // Проверяем email на фронте
-    if(d.booking.guest_email.toLowerCase()!==email.toLowerCase()){
-      if(btn){btn.textContent='Найти мою бронь →';btn.disabled=false;}
-      err.textContent='Email не совпадает с указанным при бронировании.';return;
-    }
     if(btn){btn.textContent='Найти мою бронь →';btn.disabled=false;}
+    if(r.status===403){ err.textContent='Email не совпадает с указанным при бронировании.'; return; }
+    if(!r.ok||!d.booking){ err.textContent='Бронь не найдена. Проверьте номер брони.'; return; }
     err.textContent='';
+    window._mngBooking=d.booking; window._mngEmail=email;
     document.getElementById('auth-modal').classList.remove('open');
     openCabinet([d.booking]);
   }catch(e){
@@ -3599,7 +3594,7 @@ function openCabinet(bookings){
               🖨 Распечатать ваучер
             </button>
             ${bk.status==='confirmed'&&new Date(bk.check_in)>new Date()?`
-            <button onclick="cancelBooking('${bk.booking_num}','${bk.guest_email}')" style="flex:1;min-width:120px;background:#fff0f0;border:1.5px solid #ffcccc;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#c00;display:flex;align-items:center;justify-content:center;gap:6px">
+            <button onclick="cancelBooking('${bk.booking_num}')" style="flex:1;min-width:120px;background:#fff0f0;border:1.5px solid #ffcccc;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#c00;display:flex;align-items:center;justify-content:center;gap:6px">
               ✕ Отменить бронь
             </button>`:''}
           </div>
@@ -3674,25 +3669,35 @@ function printBooking(bk){
   w.document.close();
 }
 
-async function cancelBooking(num, email){
-  if(!confirm('Вы уверены, что хотите отменить бронь '+num+'?\nЭто действие нельзя отменить.')) return;
+function cancelBooking(num){
+  var bk=(window._mngBooking&&window._mngBooking.booking_num===num)?window._mngBooking:null;
+  var rules=bk&&bk.cancel_rules?bk.cancel_rules:'';
+  var rulesHTML=rules
+    ? '<div style="font-size:13.5px;color:#333;line-height:1.7;white-space:pre-line;background:var(--sand);border:1px solid var(--sand3);border-radius:12px;padding:14px 16px">'+_esc(rules)+'</div>'
+    : '<div style="font-size:13px;color:var(--muted);background:var(--sand);border:1px solid var(--sand3);border-radius:12px;padding:14px 16px">Правила отмены для этого объекта не указаны. Возврат средств рассматривается индивидуально — при вопросах свяжитесь с нами.</div>';
+  document.getElementById('cancel-body').innerHTML=
+    '<button onclick="document.getElementById(\'cancel-modal\').classList.remove(\'open\')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>'
+    +'<div style="clear:both;font-family:\'Unbounded\',sans-serif;font-size:1rem;font-weight:800;margin-bottom:4px">Отмена брони '+_esc(num)+'</div>'
+    +'<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Ознакомьтесь с правилами отмены объекта</div>'
+    +rulesHTML
+    +'<button id="cxc-btn" onclick="confirmCancel(\''+_esc(num)+'\')" style="width:100%;margin-top:16px;background:#c0392b;color:#fff;border:none;border-radius:12px;padding:14px;font-family:\'Unbounded\',sans-serif;font-size:14px;font-weight:700;cursor:pointer">Отменить бронь</button>'
+    +'<button onclick="document.getElementById(\'cancel-modal\').classList.remove(\'open\')" style="width:100%;margin-top:6px;background:none;border:none;color:var(--muted);font-size:13.5px;cursor:pointer;text-decoration:underline">Оставить бронь</button>';
+  document.getElementById('cancel-modal').classList.add('open');
+}
+function _esc(s){return String(s==null?'':s).replace(/[<>&"]/g,function(c){return({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c];});}
+async function confirmCancel(num){
+  var btn=document.getElementById('cxc-btn'); if(btn){btn.disabled=true;btn.textContent='Отменяем…';}
+  var bk=(window._mngBooking&&window._mngBooking.booking_num===num)?window._mngBooking:null;
+  var body={ guest_email: window._mngEmail||'' };
+  if(bk&&bk.manage_token) body.token=bk.manage_token;
   try{
-    // Находим бронь и отменяем
     const r=await fetch(API+'/api/bookings/cancel/'+encodeURIComponent(num),{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({guest_email:email})
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
     });
     const d=await r.json();
-    if(!r.ok){
-      alert(d.error||'Не удалось отменить бронь. Обратитесь на zaedem.by');
-      return;
-    }
-    alert('Бронь '+num+' отменена. Подтверждение отправлено на email.');
-    document.getElementById('cabinet-modal').classList.remove('open');
-  }catch(e){
-    alert('Ошибка соединения. Попробуйте позже или свяжитесь с нами.');
-  }
+    if(!r.ok){ if(btn){btn.disabled=false;btn.textContent='Отменить бронь';} alert(d.error||'Не удалось отменить бронь. Обратитесь на zaedem.by'); return; }
+    document.getElementById('cancel-body').innerHTML='<div style="text-align:center;padding:30px 10px"><div style="font-size:2.4rem;margin-bottom:12px">✅</div><div style="font-family:\'Unbounded\',sans-serif;font-weight:800;margin-bottom:8px">Бронь отменена</div><div style="color:var(--muted);font-size:13.5px">Возврат средств — по правилам объекта. Подтверждение отправлено на email.</div><button onclick="document.getElementById(\'cancel-modal\').classList.remove(\'open\');document.getElementById(\'cabinet-modal\').classList.remove(\'open\')" style="margin-top:18px;background:var(--green);color:#fff;border:none;border-radius:11px;padding:12px 28px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Готово</button></div>';
+  }catch(e){ if(btn){btn.disabled=false;btn.textContent='Отменить бронь';} alert('Ошибка соединения. Попробуйте позже или свяжитесь с нами.'); }
 }
 
 function openHotelApp(){
@@ -3803,7 +3808,7 @@ document.addEventListener('keydown',e=>{if(!document.getElementById('gal-ov').cl
 })();
 
 
-['bk-modal','auth-modal','app-modal','cabinet-modal'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
+['bk-modal','auth-modal','app-modal','cabinet-modal','cancel-modal'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')})});
 
 // Гости
 var gAdults=2, gKids=0;
