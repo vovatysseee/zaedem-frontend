@@ -869,7 +869,7 @@ function closeAll(e){
   if(e){const t=e.target;if(t.closest('.cal-popup')||t.closest('.gpop')||t.closest('#sf-in')||t.closest('#sf-out')||t.closest('#sf-guests')||t.closest('#sf-dest')||t.closest('#city-drop'))return;}
   ['pop-in','pop-out'].forEach(id=>document.getElementById(id).classList.remove('open'));
   var _hpc=document.getElementById('hp-cal-pop'); if(_hpc&&e&&!e.target.closest('.bk-datebtn')){var _wasCalOpen=_hpc.classList.contains('open');_hpc.classList.remove('open');if(_wasCalOpen&&window._hpDatesDirty)hpApplyDates();}
-  var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop')){var _wasOpen=_hpg.classList.contains('open');_hpg.classList.remove('open');if(_wasOpen&&window._hpGuestsDirty){window._hpGuestsDirty=false;var _lbl=document.getElementById('hp-guests-lbl');if(_lbl&&typeof hpGuestsLabel==='function')_lbl.textContent=hpGuestsLabel();if(typeof updSum==='function')try{updSum();}catch(_){}if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);try{if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id);}catch(_){}}}
+  var _hpg=document.getElementById('hp-guests-pop'); if(_hpg&&e&&!e.target.closest('.bk-datebtn')&&!e.target.closest('#hp-guests-pop')){var _wasOpen=_hpg.classList.contains('open');_hpg.classList.remove('open');if(_wasOpen&&window._hpGuestsDirty){window._hpGuestsDirty=false;var _lbl=document.getElementById('hp-guests-lbl');if(_lbl&&typeof hpGuestsLabel==='function')_lbl.textContent=hpGuestsLabel();if(typeof updSum==='function')try{updSum();}catch(_){}if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);if(curHotel&&(curHotel.source==='direct'||curHotel.is_api)&&typeof loadDirectRooms==='function')loadDirectRooms(curHotel);try{if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id);}catch(_){}}}
   var _pg=document.getElementById('pop-guests'); if(_pg)_pg.style.display='none';
   curPop=null;
 }
@@ -1614,7 +1614,7 @@ function hpApplyDates(){
   if(typeof updSum==='function')try{updSum();}catch(_){}
   // пересохраняем маршрут, чтобы новые даты пережили обновление страницы (F5)
   try{ if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id); }catch(_){}
-  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);if(curHotel&&(curHotel.source==='direct'||curHotel.is_api)&&typeof loadDirectRooms==='function')loadDirectRooms(curHotel);
 }
 function hpConfirmDates(e){
   if(e)e.stopPropagation();
@@ -1744,7 +1744,7 @@ function hpApplyGuests(e){
   var lbl=document.getElementById('hp-guests-lbl');
   if(lbl)lbl.textContent=hpGuestsLabel();
   // пересчёт тарифов под новое число гостей
-  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);
+  if(curHotel&&curHotel.source==='ostrovok'&&typeof loadOstRates==='function')loadOstRates(curHotel);if(curHotel&&(curHotel.source==='direct'||curHotel.is_api)&&typeof loadDirectRooms==='function')loadDirectRooms(curHotel);
   if(typeof updSum==='function')try{updSum();}catch(_){}
   try{ if(curHotel&&typeof zbSaveRoute==='function')zbSaveRoute('hotel',curHotel.id); }catch(_){}
 }
@@ -1901,6 +1901,7 @@ function openHotel(id){
       </div>
     </div>`;
   if(isOst)loadOstRates(h);
+  else if(h.source==='direct'||h.is_api)loadDirectRooms(h);
   if(h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude);
   try{ loadWeather(); }catch(e){}
 }
@@ -3465,7 +3466,7 @@ async function confirmBook(total){
   const _kids=(window._capState&&window._capState.kids)||0;
   const _totalGuests=gCnt+_kids;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):'',guest_citizenship:bkCollectGuests().citizenship,guest_list:JSON.stringify(bkCollectGuests().guests)})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,room_type_id:(room&&room.room_type_id)||undefined,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):'',guest_citizenship:bkCollectGuests().citizenship,guest_list:JSON.stringify(bkCollectGuests().guests)})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -4649,6 +4650,44 @@ function hpSetDesc(el,text){
   a.onclick=function(e){e.preventDefault();short.style.display='none';a.style.display='none';full.style.display='inline';};
   el.appendChild(short);el.appendChild(a);el.appendChild(full);
 }
+// Реальные номера НАШЕГО объекта на выбранные даты (цена/доступность из кабинета).
+async function loadDirectRooms(h){
+  try{
+    var guests=(gCnt||1)+((window._capState&&window._capState.kids)||0);
+    var url=API+'/api/hotels/'+encodeURIComponent(h.id)+'/availability?checkin='+encodeURIComponent(getIn())+'&checkout='+encodeURIComponent(getOut())+'&guests='+guests;
+    var r=await fetch(url); var d=await r.json();
+    var nights=getNights()||1;
+    var list=(d.available_rooms||[]).map(function(rm){
+      var perNight=rm.total_price?Math.round(rm.total_price/nights):Math.round(rm.price||0);
+      return {id:rm.id, room_type_id:rm.id, name:rm.name_ru, price:perNight, total_price:Math.round(rm.total_price||perNight*nights), cap:rm.capacity||2, beds:rm.beds||1, desc:'', avail:rm.rooms_left||1};
+    });
+    if(curHotel&&curHotel.id===h.id){ curHotel.rooms=list; curHotel._directLoaded=true; renderDirectRooms(list); }
+  }catch(e){ /* при ошибке оставляем что было */ }
+}
+function renderDirectRooms(list){
+  var box=document.querySelector('.hp-rooms');
+  if(box){
+    if(!list.length){
+      box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:16px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте другие даты.</div>';
+    } else {
+      box.innerHTML=list.map(function(r,i){
+        return '<div class="room hp-room-row" data-ridx="'+i+'" onclick="selRoomPick('+i+')" style="cursor:pointer">'
+          +'<div><div class="rname">'+_esc(r.name)+'</div><div class="rmeta">👥 до '+r.cap+' · 🛏 '+r.beds+' кров.</div></div>'
+          +'<div style="text-align:right;flex-shrink:0"><div class="rprice">'+r.price+' BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>'
+          +(r.avail<=2?'<div style="font-size:11px;color:#d03;font-weight:700">Осталось '+r.avail+'!</div>':'')
+          +'<button class="btn-select" onclick="event.stopPropagation();selRoomBook('+i+')">Выбрать</button></div></div>';
+      }).join('');
+    }
+  }
+  var sel=document.getElementById('hp-room');
+  if(sel){
+    sel.innerHTML=list.length
+      ? list.map(function(r,i){return '<option value="'+i+'" data-price="'+r.price+'">'+_esc(r.name)+' — '+r.price+' BYN/ночь</option>';}).join('')
+      : '<option value="0" data-price="0">Нет свободных номеров</option>';
+    try{ updSum(); }catch(e){}
+  }
+}
+
 async function loadOstRates(h){
   var box=document.getElementById('ost-rates');
   if(!box)return;
