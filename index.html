@@ -902,6 +902,9 @@ function openPop(which,e){
   posBelow(pid,anc[which]);
   document.getElementById(pid).classList.add('open');
   curPop=which;
+  // календарь открывается на месяце УЖЕ выбранной даты (был баг: даты в августе — открывался текущий месяц)
+  if(which==='in'&&dIn)navIn=new Date(dIn.getFullYear(),dIn.getMonth(),1);
+  if(which==='out'){var _nb=dOut||dIn;if(_nb)navOut=new Date(_nb.getFullYear(),_nb.getMonth(),1);}
   if(which==='in')buildCal('in',navIn);
   if(which==='out')buildCal('out',navOut);
 }
@@ -2290,6 +2293,14 @@ function srNightsLabel(){
 })();
 // AI-бейдж «подходит ли вам»: сверяет потребности из запроса гостя с удобствами объекта
 var AI_MATCH_SYN={'животн':['животн','питомц','собак','кошк','pet'],'парковк':['парковк','стоянк','parking','машин'],'wi-fi':['wi-fi','wifi','интернет','inet'],'интернет':['интернет','wi-fi','wifi'],'бан':['бан','саун','sauna'],'саун':['саун','бан'],'бассейн':['бассейн','pool'],'кухн':['кухн','kitchen'],'завтрак':['завтрак','breakfast'],'кондиц':['кондиц','air cond','ac'],'камин':['камин'],'мангал':['мангал','барбекю','bbq','гриль'],'озер':['озер','вода','пляж','река'],'дет':['дет','ребён','ребен','семейн','крроват','кроват']};
+// Склонение «объект/объекта/объектов» по правилам русского (1 объект, 2 объекта, 0/5 объектов, 21 объект)
+function zbObjWord(n){
+  n=Math.abs(parseInt(n)||0);
+  var d10=n%10, d100=n%100;
+  if(d10===1&&d100!==11)return 'объект';
+  if(d10>=2&&d10<=4&&(d100<10||d100>=20))return 'объекта';
+  return 'объектов';
+}
 // Расстояние между точками, км (хаверсин) — для «рядом с районом/улицей/метро»
 function zbDistKm(lat1,lng1,lat2,lng2){
   var R=6371,toR=Math.PI/180;
@@ -2460,7 +2471,7 @@ function serpRender(){
         if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
         return true;
       });
-      if(relaxed.length&&(wantExcl||wantFree)){ list=relaxed; window._aiRelaxed='tags'; }
+      if(relaxed.length&&(wantExcl||wantFree)){ list=relaxed; window._aiRelaxed=wantExcl?'excl':'free'; }
       else {
         // 3) последний рубеж — оставляем только город (снимаем всё)
         relaxed=baseList.slice();
@@ -2500,9 +2511,10 @@ function serpRender(){
   if(meta){
     if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
     else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
-    else if(window._aiRelaxed==='tags')meta.textContent='Под теги («Эксклюзив»/«Бесплатная отмена») точных нет — показали похожие ('+list.length+'). Снимите тег';
+    else if(window._aiRelaxed==='excl')meta.textContent='Эксклюзив — это наши собственные объекты, в этом городе их пока нет. Показали все варианты ('+list.length+')';
+    else if(window._aiRelaxed==='free')meta.textContent='С бесплатной отменой точных нет — показали похожие ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
-    else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
+    else meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length);
   }
   // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
   // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
@@ -2648,7 +2660,8 @@ function serpClearFilters(){
   // ГЛАВНОЕ: снимаем и ИИ-фильтры (цена/категория/удобства/«без …»). Раньше они оставались
   // висеть после клика → выдача так и была пустой → кнопка выглядела «некликабельной».
   window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
-  try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; zbPersistPills(); } }catch(e){}
+  window._aiArea=null; window._aiName=null;
+  try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; _R.area=null; _R.name=null; zbPersistPills(); } }catch(e){}
   window._serpReset=true;serpRender();
 }
 
@@ -2951,7 +2964,8 @@ function serpEditSearch(){
   _serpSD.adults=parseInt(cs.adults)||2;
   _serpSD.kids=parseInt(cs.kids)||0;
   _serpSD.childAges=(cs.childAges||[]).slice();
-  _serpSD.nav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  _serpSD.nav=_serpSD.din?new Date(_serpSD.din.getFullYear(),_serpSD.din.getMonth(),1)
+             :new Date(new Date().getFullYear(),new Date().getMonth(),1); // календарь на месяце выбранного заезда
   // Позиция под pill
   var pill=document.querySelector('.serp-sticky-pill');
   if(!pill)return;
@@ -4275,13 +4289,18 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var cal=document.getElementById('cap-dd-cal');
     if(!cal)return;
     if(dd)dd.style.display='none';
-    ddcDin=null;ddcDout=null;
-    var hint=document.getElementById('ddc-hint');if(hint)hint.textContent='Выберите дату заезда';
+    // ПРАВКА ПОИСКА: подхватываем уже выбранные даты (раньше стирались) и открываем их месяц
+    var _pcs=window._capState||{};
+    ddcDin=_pcs.din?new Date(_pcs.din):null;
+    ddcDout=_pcs.dout?new Date(_pcs.dout):null;
+    var hint=document.getElementById('ddc-hint');
     var sbtn=document.getElementById('ddc-search');if(sbtn)sbtn.style.display='none';
     var gs=document.getElementById('ddc-guests-section');if(gs)gs.style.display='none';
     var cs=document.getElementById('ddc-cal-section');if(cs)cs.style.display='block';
-    var nbr=document.getElementById('ddc-next-btn');if(nbr)nbr.style.display='none';
-    ddcNav=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+    var nbr=document.getElementById('ddc-next-btn');
+    if(ddcDin&&ddcDout){ if(hint)hint.textContent=ddcFmt(ddcDin)+' — '+ddcFmt(ddcDout); if(nbr)nbr.style.display='block'; }
+    else { ddcDin=null;ddcDout=null; if(hint)hint.textContent='Выберите дату заезда'; if(nbr)nbr.style.display='none'; }
+    ddcNav=ddcDin?new Date(ddcDin.getFullYear(),ddcDin.getMonth(),1):new Date(new Date().getFullYear(),new Date().getMonth(),1);
     ddcBuild();
     posUnderCenter(cal,300);
     cal.style.display='block';
@@ -4354,6 +4373,17 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   window.capSheetOpen=function(startStep){
     var sheet=document.getElementById('cap-sheet');
     if(!sheet)return;
+    // Синхронизируем шит с ТЕКУЩИМ поиском (правка с выдачи): раньше показывал старые/пустые
+    // даты, а календарь открывался на текущем месяце вместо месяца заезда.
+    try{
+      var _cs=window._capState||{};
+      if(_cs.city)csCity=_cs.city;
+      if(_cs.din)csDin=new Date(_cs.din);
+      if(_cs.dout)csDout=new Date(_cs.dout);
+      if(_cs.adults)csAdults=parseInt(_cs.adults)||csAdults;
+      if(_cs.kids!=null)csKids=parseInt(_cs.kids)||0;
+      if(csDin)csNav=new Date(csDin.getFullYear(),csDin.getMonth(),1);
+    }catch(e){}
     sheet.style.display='flex';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
     csStep(startStep||1);
