@@ -694,7 +694,6 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-type-dd" onclick="event.stopPropagation()">
             <label class="sf-chk"><input type="checkbox" id="flt-hotel" checked onchange="serpFilterChange('cat')"> Отели и концепты</label>
-            <label class="sf-chk"><input type="checkbox" id="flt-hostel" checked onchange="serpFilterChange('cat')"> Хостелы</label>
             <label class="sf-chk"><input type="checkbox" id="flt-apart" checked onchange="serpFilterChange('cat')"> Городские апартаменты</label>
             <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange('cat')"> Агроусадьбы / шале</label>
           </div>
@@ -1269,7 +1268,7 @@ function aiParse(t){
   while((ma=re.exec(s))){ var age=parseInt(ma[1]); if(age>=0&&age<=17)ages.push(age); }
   if(ages.length){ r.childAges=ages; if(!r.kids||r.kids<ages.length)r.kids=ages.length; }
   // ТИП
-  if(/хостел/.test(s))r.category='hostel';
+  if(/хостел/.test(s))r.category='hotel'; // хостелы показываем среди отелей
   else if(/апартамент|квартир|студи|однушк|двушк|трешк/.test(s))r.category='apart';
   else if(/усадьб|агроусадьб|коттедж|шале|дача|дачу|загородн|\sдом(ик)?[\s,]/.test(s))r.category='guest';
   else if(/отел|гостиниц/.test(s))r.category='hotel';
@@ -1423,7 +1422,9 @@ function aiReplayLast(){
   window._aiPriceMax=R.priceMax||0;
   window._aiAmenities=R.amenities||[];
   window._aiAvoid=R.avoid||[];
-  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
+  window._aiArea=R.area||null;   // район/улица/метро с координатами — сортировка «что рядом»
+  window._aiName=R.name||null;   // упомянутое название объекта — поднимаем его наверх
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 async function aiSearch(){
@@ -1447,6 +1448,14 @@ async function aiSearch(){
       if(Array.isArray(a.avoid)&&a.avoid.length)p.avoid=a.avoid;
       if(a.din)p._din=new Date(a.din+'T00:00:00');
       if(a.dout)p._dout=new Date(a.dout+'T00:00:00');
+      // ЛОКАЦИЯ ВНУТРИ ГОРОДА: район/улица/метро/ориентир. Бэк геокодирует (areaGeo с lat/lng);
+      // без координат чип всё равно покажем, но сортировки по близости не будет.
+      if(a.area&&String(a.area).trim()&&!/^(null|undefined|none|нет|-+)$/i.test(String(a.area).trim())){
+        p.area={label:String(a.area).trim(),
+                lat:(a.areaGeo&&a.areaGeo.lat!=null)?parseFloat(a.areaGeo.lat):null,
+                lng:(a.areaGeo&&a.areaGeo.lng!=null)?parseFloat(a.areaGeo.lng):null};
+      }
+      if(a.name&&String(a.name).trim()&&!/^(null|undefined|none|нет|-+)$/i.test(String(a.name).trim()))p.name=String(a.name).trim();
     }
   }catch(e){}
   // Санитизация: строки «null/undefined/-» от ИИ = города нет (и никаких null на экране)
@@ -1499,11 +1508,13 @@ async function aiSearch(){
   window._aiAmenities=p.amenities||[];
   window._aiCategory=p.category||null;
   // синхронизируем галочки категорий с выбором ИИ (чтобы UI отражал)
-  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
   window._aiAvoid=p.avoid||[];
+  window._aiArea=p.area||null;
+  window._aiName=p.name||null;
   // СНИМОК разбора ИИ — чтобы повтор по плашке шёл ИЗ ПАМЯТИ, без нового запроса к ИИ (без токенов)
   window._lastAiResult={ city:p.city, category:p.category||null, priceMax:p.priceMax||0,
-    amenities:p.amenities||[], avoid:p.avoid||[],
+    amenities:p.amenities||[], avoid:p.avoid||[], area:p.area||null, name:p.name||null,
     din:din?din.getTime():null, dout:dout?dout.getTime():null,
     adults:parseInt(p.adults)||parseInt(window._capState.adults)||2, kids:parseInt(p.kids)||0,
     childAges:(window._capState.childAges||[]).slice(),
@@ -1511,7 +1522,7 @@ async function aiSearch(){
   try{ window._lastAiResult.label=zbPillLabel(window._lastAiResult.city,din,dout,window._lastAiResult.adults,window._lastAiResult.kids); }catch(e){}
   try{ zbPersistPills(); }catch(e){} // происхождение + снимок ИИ переживают F5 сразу, не дожидаясь возврата домой
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
-  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':p.category==='hostel'?'Хостел':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
+  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); if(p.area)parts.push('📍 рядом: '+p.area.label); if(p.name)parts.push('🔎 '+p.name); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
     if(p.city){ el.style.cursor='pointer'; el.title='Повторить поиск (из памяти, без ИИ)'; el.onclick=function(){ aiReplayLast(); }; } else { el.style.cursor='default'; el.onclick=null; } }
   if(!p.city)return;
@@ -1943,7 +1954,6 @@ function zbSaveRoute(view, hotelId){
       },
       filters: {
         hotel: !!(document.getElementById('flt-hotel')||{}).checked,
-        hostel: !!(document.getElementById('flt-hostel')||{}).checked,
         guest: !!(document.getElementById('flt-guest')||{}).checked,
         apart: !!(document.getElementById('flt-apart')||{}).checked,
         sort:  (document.getElementById('serp-sort')||{}).value || ''
@@ -2117,9 +2127,8 @@ function zbRestoreRoute(){
   try{ serpOpen(); }catch(e){ reveal(); return; }
   if(r.filters){
     var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
-        fa=document.getElementById('flt-apart'), fx=document.getElementById('flt-hostel'), ss=document.getElementById('serp-sort');
+        fa=document.getElementById('flt-apart'), ss=document.getElementById('serp-sort');
     if(fh) fh.checked=r.filters.hotel; if(fg) fg.checked=r.filters.guest; if(fa) fa.checked=r.filters.apart;
-    if(fx) fx.checked=(r.filters.hostel!==false);
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
@@ -2216,7 +2225,6 @@ function serpCatLabel(h){
   var city = parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
   var tail = city ? ' • '+city : '';
   if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель')+tail;
-  if(h.category==='hostel') return 'Хостел'+tail;
   if(h.category==='guest') return 'Агроусадьба / шале'+tail;
   if(h.category==='apart') return 'Дизайнерские апартаменты'+tail;
   return String(h.address||'');
@@ -2282,9 +2290,25 @@ function srNightsLabel(){
 })();
 // AI-бейдж «подходит ли вам»: сверяет потребности из запроса гостя с удобствами объекта
 var AI_MATCH_SYN={'животн':['животн','питомц','собак','кошк','pet'],'парковк':['парковк','стоянк','parking','машин'],'wi-fi':['wi-fi','wifi','интернет','inet'],'интернет':['интернет','wi-fi','wifi'],'бан':['бан','саун','sauna'],'саун':['саун','бан'],'бассейн':['бассейн','pool'],'кухн':['кухн','kitchen'],'завтрак':['завтрак','breakfast'],'кондиц':['кондиц','air cond','ac'],'камин':['камин'],'мангал':['мангал','барбекю','bbq','гриль'],'озер':['озер','вода','пляж','река'],'дет':['дет','ребён','ребен','семейн','крроват','кроват']};
+// Расстояние между точками, км (хаверсин) — для «рядом с районом/улицей/метро»
+function zbDistKm(lat1,lng1,lat2,lng2){
+  var R=6371,toR=Math.PI/180;
+  var dLat=(lat2-lat1)*toR, dLng=(lng2-lng1)*toR;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function zbDistLabel(km){
+  if(km==null)return '';
+  if(km<1)return Math.max(50,Math.round(km*1000/50)*50)+' м';
+  return (Math.round(km*10)/10)+' км';
+}
 function aiMatchBadge(h){
   var needs=(window._aiAmenities||[]);
-  if(!needs.length) return '';
+  var distChip='';
+  if(window._aiArea&&window._aiArea.lat!=null&&h._dist!=null){
+    distChip='<span style="display:inline-block;background:#e7f0fb;color:#1b4d7a;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin:3px 3px 0 0">📍 '+zbDistLabel(h._dist)+' от «'+String(window._aiArea.label)+'»</span>';
+  }
+  if(!needs.length) return distChip?('<div style="margin:2px 0 0">'+distChip+'</div>'):'';
   var hay=(h.amenities||[]).map(function(a){return amenName(a).toLowerCase()+' '+String(a&&a.key||'').toLowerCase();}).join(' | ')+' '+String(h.name_ru||'').toLowerCase();
   var chips=[], seen={};
   needs.forEach(function(n){
@@ -2293,6 +2317,7 @@ function aiMatchBadge(h){
     if(!hit){ for(var k in AI_MATCH_SYN){ if(nl.indexOf(k)>=0){ if(AI_MATCH_SYN[k].some(function(s){return hay.indexOf(s)>=0;})){hit=true;break;} } } }
     if(hit) chips.push('<span style="display:inline-block;background:#eaf3de;color:#27500a;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin:3px 3px 0 0">✓ '+n+'</span>');
   });
+  if(distChip)chips.unshift(distChip);
   if(!chips.length) return '';
   return '<div style="margin:2px 0 0">'+chips.join('')+'</div>';
 }
@@ -2305,10 +2330,12 @@ function serpRenderAiChips(){
     return '<button onclick="'+onclk+'" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid '+(neg?'#e8b4b4':'var(--sand3)')+';background:'+(neg?'#fdf3f3':'#fff')+';border-radius:50px;padding:6px 12px;font-size:12px;font-weight:600;color:'+(neg?'#a33':'var(--ink)')+';font-family:inherit;cursor:pointer">'+label+' <span style="color:#bbb;font-size:13px;line-height:1">×</span></button>';
   };
   if(window._aiCategory){
-    var cl=window._aiCategory==='apart'?'Апартаменты':window._aiCategory==='guest'?'Усадьбы':window._aiCategory==='hostel'?'Хостелы':'Отели';
+    var cl=window._aiCategory==='apart'?'Апартаменты':window._aiCategory==='guest'?'Усадьбы':'Отели';
     chips.push(chip('🏠 '+cl,'aiChipRemove(\'cat\')'));
   }
   if(window._aiPriceMax>0)chips.push(chip('💰 до '+window._aiPriceMax+' BYN','aiChipRemove(\'price\')'));
+  if(window._aiArea&&window._aiArea.label)chips.push(chip('📍 рядом: '+window._aiArea.label,'aiChipRemove(\'area\')'));
+  if(window._aiName)chips.push(chip('🔎 '+window._aiName,'aiChipRemove(\'name\')'));
   (window._aiAmenities||[]).forEach(function(a,i){chips.push(chip('✓ '+a,'aiChipRemove(\'amen\','+i+')'));});
   (window._aiAvoid||[]).forEach(function(a,i){chips.push(chip('✕ без: '+a,'aiChipRemove(\'avoid\','+i+')',true));});
   if(chips.length){ box.innerHTML=chips.join(''); box.style.display='flex'; }
@@ -2317,9 +2344,11 @@ function serpRenderAiChips(){
 function aiChipRemove(type,idx){
   if(type==='cat'){
     window._aiCategory=null;
-    ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=true;});
+    ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=true;});
   }
   else if(type==='price'){ window._aiPriceMax=0; }
+  else if(type==='area'){ window._aiArea=null; }
+  else if(type==='name'){ window._aiName=null; }
   else if(type==='amen'&&window._aiAmenities){ window._aiAmenities.splice(idx,1); }
   else if(type==='avoid'&&window._aiAvoid){ window._aiAvoid.splice(idx,1); }
   // синхронизируем память ИИ: «назад» и плашка покажут актуальные фильтры без снятых
@@ -2330,6 +2359,8 @@ function aiChipRemove(type,idx){
       R.priceMax=window._aiPriceMax||0;
       R.amenities=(window._aiAmenities||[]).slice();
       R.avoid=(window._aiAvoid||[]).slice();
+      R.area=window._aiArea||null;
+      R.name=window._aiName||null;
       zbPersistPills();
     }
   }catch(e){}
@@ -2340,7 +2371,6 @@ function serpRender(){
   // фильтры
   var cats=[];
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
-  if(document.getElementById('flt-hostel')&&document.getElementById('flt-hostel').checked)cats.push('hostel');
   if(document.getElementById('flt-guest')&&document.getElementById('flt-guest').checked)cats.push('guest');
   if(document.getElementById('flt-apart')&&document.getElementById('flt-apart').checked)cats.push('apart');
   if(window._aiCategory)cats=[window._aiCategory]; // AI: тип из фразы (апартаменты/усадьба/отель)
@@ -2381,6 +2411,25 @@ function serpRender(){
       h._aiScore=_am.reduce(function(n,a){return n+(hay.indexOf(a)>=0?1:0);},0);
     });
   } else { list.forEach(function(h){ h._aiScore=0; }); }
+  // ИИ: упомянутое НАЗВАНИЕ объекта («отель Президент») — совпавшие взлетают наверх
+  if(window._aiName){
+    var _nm=String(window._aiName).toLowerCase();
+    list.forEach(function(h){
+      var hn=String(h.name_ru||h.name_en||'').toLowerCase();
+      if(hn&&(hn.indexOf(_nm)>=0||_nm.indexOf(hn)>=0))h._aiScore=(h._aiScore||0)+100;
+    });
+  }
+  // ИИ: ЛОКАЦИЯ (район/улица/метро) — считаем расстояние до неё. НИКОГДА не фильтруем
+  // (поиск всегда даёт результат) — просто сортируем ближайшие первыми и показываем км.
+  if(window._aiArea&&window._aiArea.lat!=null&&window._aiArea.lng!=null){
+    list.forEach(function(h){
+      var la=(h.latitude!=null?h.latitude:h.lat), ln=(h.longitude!=null?h.longitude:h.lng);
+      h._dist=(la!=null&&ln!=null)?zbDistKm(window._aiArea.lat,window._aiArea.lng,parseFloat(la),parseFloat(ln)):null;
+    });
+    // адрес содержит текст локации («улица Кирова») — это точнее координат, буст
+    var _al=String(window._aiArea.label).toLowerCase();
+    list.forEach(function(h){ if(String(h.address||'').toLowerCase().indexOf(_al)>=0)h._aiScore=(h._aiScore||0)+3; });
+  } else { list.forEach(function(h){ h._dist=null; }); }
   // AI: «без X» — исключаем только если у объекта ЯВНО есть это удобство (данные есть)
   if(window._aiAvoid&&window._aiAvoid.length){
     var _av=window._aiAvoid.map(function(a){return String(a).toLowerCase();});
@@ -2394,8 +2443,8 @@ function serpRender(){
   // оставили ноль → ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой «снимите фильтр».
   // Поиск никогда не «умирает» из-за фильтров.
   window._aiRelaxed=null;
-  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0)){
-    // 1) отпускаем цену (и ИИ, и ручную) — оставляем категорию/звёзды
+  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0||wantExcl||wantFree)){
+    // 1) отпускаем цену (и ИИ, и ручную) — оставляем категорию/звёзды/теги
     var relaxed=baseList.filter(function(h){
       if(cats.length&&!cats.includes(h.category))return false;
       if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
@@ -2405,15 +2454,24 @@ function serpRender(){
     });
     if(relaxed.length&&(window._aiPriceMax>0||priceMax>0)){ list=relaxed; window._aiRelaxed='price'; }
     else {
-      // 2) последний рубеж — оставляем только город (снимаем категорию/звёзды/цену)
-      relaxed=baseList.slice();
-      if(relaxed.length){ list=relaxed; window._aiRelaxed='cat'; }
+      // 2) отпускаем теги «Эксклюзив»/«Бесплатная отмена» — они дают ноль чаще всего
+      relaxed=baseList.filter(function(h){
+        if(cats.length&&!cats.includes(h.category))return false;
+        if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
+        return true;
+      });
+      if(relaxed.length&&(wantExcl||wantFree)){ list=relaxed; window._aiRelaxed='tags'; }
+      else {
+        // 3) последний рубеж — оставляем только город (снимаем всё)
+        relaxed=baseList.slice();
+        if(relaxed.length){ list=relaxed; window._aiRelaxed='cat'; }
+      }
     }
     if(window._aiRelaxed)list.forEach(function(h){ if(h._aiScore==null)h._aiScore=0; });
   }
 
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<4||priceMax>0||starsMin>0||wantExcl||wantFree;
+  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree;
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -2425,6 +2483,11 @@ function serpRender(){
     if(sortMode==='rating_desc')return (b.rating||0)-(a.rating||0);
     // при AI-поиске — сначала объекты, что лучше подходят под пожелания (очки совпадения)
     if((b._aiScore||0)!==(a._aiScore||0))return (b._aiScore||0)-(a._aiScore||0);
+    // локация из ИИ-запроса: ближе — выше (объекты без координат в конец)
+    if(window._aiArea&&window._aiArea.lat!=null){
+      var _da=(a._dist==null?1e9:a._dist), _db=(b._dist==null?1e9:b._dist);
+      if(Math.abs(_da-_db)>0.05)return _da-_db;
+    }
     // recommended: отели первые, потом рейтинг
     var oa=a.category==='hotel'?0:a.category==='guest'?1:2;
     var ob=b.category==='hotel'?0:b.category==='guest'?1:2;
@@ -2437,6 +2500,7 @@ function serpRender(){
   if(meta){
     if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
     else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
+    else if(window._aiRelaxed==='tags')meta.textContent='Под теги («Эксклюзив»/«Бесплатная отмена») точных нет — показали похожие ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
     else meta.textContent='Найдено: '+list.length+' '+(list.length===1?'объект':list.length<5?'объекта':'объектов');
   }
@@ -2444,6 +2508,7 @@ function serpRender(){
   // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
   var cardsBox=document.getElementById('serp-cards');
   if(!list.length&&cardsBox){
+    var _oldMore=document.getElementById('serp-more'); if(_oldMore)_oldMore.remove(); // кнопка прошлого рендера не залипает
     if(window._ostrovokLoading||window._catBooting){
       cardsBox.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--muted)">'
         +'<div class="zb-spin" style="width:34px;height:34px;border:3px solid var(--sand3);border-top-color:var(--green);border-radius:50%;margin:0 auto 14px;animation:zbspin .7s linear infinite"></div>'
@@ -2576,7 +2641,7 @@ function serpRender(){
 }
 var PAGE_SIZE=15;
 function serpClearFilters(){
-  ['flt-hotel','flt-hostel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
+  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
   var pr=document.querySelector('input[name="price-r"][value="0"]');if(pr)pr.checked=true;
   var sr=document.querySelector('input[name="stars-r"][value="0"]');if(sr)sr.checked=true;
   ['sft-bfast','sft-free','sft-excl'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
@@ -3088,7 +3153,7 @@ function catStart(cats){
   window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
   window._catBooting=true; // короткий флаг «категория открывается» — для спиннера до первого ответа
   document.body.classList.add('cat-mode');
-  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
   window._capState.city='';
   var sd=document.getElementById('s-dest'); if(sd)sd.value='';
@@ -3127,7 +3192,7 @@ async function catLoad(reset){
 function catShowEmpty(){
   window._catMode='guest';
   document.body.classList.add('cat-mode');
-  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
   HOTELS=[];
   window._serpReset=true; serpOpen();
   var cards=document.getElementById('serp-cards');
@@ -3150,7 +3215,7 @@ function openCategory(cat){
 function catShowExcl(){
   window._catMode='excl'; window._catHasMore=false;
   document.body.classList.add('cat-mode');
-  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=false;});
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=false;});
   var ex=document.getElementById('sft-excl'); if(ex)ex.classList.add('active');
   HOTELS=[];
   window._serpReset=true; serpOpen();
@@ -4652,12 +4717,19 @@ var OST_ROOM_AMEN_RU={
 };
 function ostAmenRU(a){
   var s=String(a||'').trim(); if(!s)return '';
-  var key=s.toLowerCase();
-  if(OST_ROOM_AMEN_RU[key])return OST_ROOM_AMEN_RU[key];
-  if(typeof AMEN_RU!=='undefined'&&AMEN_RU[key])return AMEN_RU[key]; // запасной большой словарь
   if(/[а-я]/i.test(s))return s.charAt(0).toUpperCase()+s.slice(1); // уже по-русски — оставляем
-  s=s.replace(/[-_]+/g,' ').trim();
-  return s.charAt(0).toUpperCase()+s.slice(1);
+  // нормализуем ключ: регистр, дефисы/подчёркивания/слэши → пробел, лишние пробелы
+  var key=s.toLowerCase().replace(/[-_\/]+/g,' ').replace(/\s+/g,' ').trim();
+  var hit=OST_ROOM_AMEN_RU[key]||(typeof AMEN_RU!=='undefined'?AMEN_RU[key]:'');
+  if(hit)return hit;
+  // множественное число: "blackout blindss"/"addon services" → пробуем без хвостового s
+  if(key.slice(-1)==='s'){
+    var k1=key.slice(0,-1);
+    hit=OST_ROOM_AMEN_RU[k1]||(typeof AMEN_RU!=='undefined'?AMEN_RU[k1]:'');
+    if(hit)return hit;
+  }
+  // перевод не нашли → НЕ показываем английский текст гостю (вернём пусто, чип скроется)
+  return '';
 }
 function ostAmenList(arr,max){
   var out=(arr||[]).map(ostAmenRU).filter(Boolean);
