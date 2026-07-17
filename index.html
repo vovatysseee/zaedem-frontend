@@ -693,9 +693,10 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           Тип жилья
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-type-dd" onclick="event.stopPropagation()">
-            <label class="sf-chk"><input type="checkbox" id="flt-hotel" checked onchange="serpFilterChange()"> Отели и концепты</label>
-            <label class="sf-chk"><input type="checkbox" id="flt-apart" checked onchange="serpFilterChange()"> Городские апартаменты</label>
-            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange()"> Агроусадьбы / шале</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-hotel" checked onchange="serpFilterChange('cat')"> Отели и концепты</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-hostel" checked onchange="serpFilterChange('cat')"> Хостелы</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-apart" checked onchange="serpFilterChange('cat')"> Городские апартаменты</label>
+            <label class="sf-chk"><input type="checkbox" id="flt-guest" checked onchange="serpFilterChange('cat')"> Агроусадьбы / шале</label>
           </div>
         </div>
         <!-- Цена -->
@@ -704,10 +705,10 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-price-dd" onclick="event.stopPropagation()">
             <div style="font-size:11px;color:#999;padding:4px 6px 8px;font-weight:600">Цена за ночь</div>
-            <label class="sf-chk"><input type="radio" name="price-r" value="0" checked onchange="serpFilterChange()"> Любая</label>
-            <label class="sf-chk"><input type="radio" name="price-r" value="100" onchange="serpFilterChange()"> До 100 BYN</label>
-            <label class="sf-chk"><input type="radio" name="price-r" value="500" onchange="serpFilterChange()"> До 500 BYN</label>
-            <label class="sf-chk"><input type="radio" name="price-r" value="1000" onchange="serpFilterChange()"> До 1000 BYN</label>
+            <label class="sf-chk"><input type="radio" name="price-r" value="0" checked onchange="serpFilterChange('price')"> Любая</label>
+            <label class="sf-chk"><input type="radio" name="price-r" value="100" onchange="serpFilterChange('price')"> До 100 BYN</label>
+            <label class="sf-chk"><input type="radio" name="price-r" value="500" onchange="serpFilterChange('price')"> До 500 BYN</label>
+            <label class="sf-chk"><input type="radio" name="price-r" value="1000" onchange="serpFilterChange('price')"> До 1000 BYN</label>
           </div>
         </div>
         <!-- Звёзды -->
@@ -715,10 +716,10 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
           Звёзды
           <svg viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div class="sf-dropdown" id="sft-stars-dd" onclick="event.stopPropagation()">
-            <label class="sf-chk"><input type="radio" name="stars-r" value="0" checked onchange="serpFilterChange()"> Любые</label>
-            <label class="sf-chk"><input type="radio" name="stars-r" value="3" onchange="serpFilterChange()"> 3★ и выше</label>
-            <label class="sf-chk"><input type="radio" name="stars-r" value="4" onchange="serpFilterChange()"> 4★ и выше</label>
-            <label class="sf-chk"><input type="radio" name="stars-r" value="5" onchange="serpFilterChange()"> Только 5★</label>
+            <label class="sf-chk"><input type="radio" name="stars-r" value="0" checked onchange="serpFilterChange('stars')"> Любые</label>
+            <label class="sf-chk"><input type="radio" name="stars-r" value="3" onchange="serpFilterChange('stars')"> 3★ и выше</label>
+            <label class="sf-chk"><input type="radio" name="stars-r" value="4" onchange="serpFilterChange('stars')"> 4★ и выше</label>
+            <label class="sf-chk"><input type="radio" name="stars-r" value="5" onchange="serpFilterChange('stars')"> Только 5★</label>
           </div>
         </div>
         <div class="sf-tag sf-tag-excl" id="sft-excl" onclick="serpToggleTag('sft-excl')">✨ Эксклюзив</div>
@@ -735,7 +736,7 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
             <button id="pm-night" onclick="serpPriceMode('night')" style="border:none;padding:6px 11px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:var(--muted);white-space:nowrap">За ночь</button>
           </div>
           <label for="serp-sort" class="sort-lbl">Сортировка:</label>
-          <select class="serp-sort" id="serp-sort" onchange="serpFilterChange()">
+          <select class="serp-sort" id="serp-sort" onchange="serpFilterChange('sort')">
             <option value="recommended">Рекомендуемые</option>
             <option value="price_asc">Сначала дешёвые</option>
             <option value="price_desc">Сначала дорогие</option>
@@ -1268,7 +1269,8 @@ function aiParse(t){
   while((ma=re.exec(s))){ var age=parseInt(ma[1]); if(age>=0&&age<=17)ages.push(age); }
   if(ages.length){ r.childAges=ages; if(!r.kids||r.kids<ages.length)r.kids=ages.length; }
   // ТИП
-  if(/апартамент|квартир|студи|однушк|двушк|трешк/.test(s))r.category='apart';
+  if(/хостел/.test(s))r.category='hostel';
+  else if(/апартамент|квартир|студи|однушк|двушк|трешк/.test(s))r.category='apart';
   else if(/усадьб|агроусадьб|коттедж|шале|дача|дачу|загородн|\sдом(ик)?[\s,]/.test(s))r.category='guest';
   else if(/отел|гостиниц/.test(s))r.category='hotel';
   // УДОБСТВА + ОТРИЦАНИЯ («без парковки», «не нужен интернет»)
@@ -1421,7 +1423,7 @@ function aiReplayLast(){
   window._aiPriceMax=R.priceMax||0;
   window._aiAmenities=R.amenities||[];
   window._aiAvoid=R.avoid||[];
-  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
+  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
 async function aiSearch(){
@@ -1497,7 +1499,7 @@ async function aiSearch(){
   window._aiAmenities=p.amenities||[];
   window._aiCategory=p.category||null;
   // синхронизируем галочки категорий с выбором ИИ (чтобы UI отражал)
-  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
+  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
   window._aiAvoid=p.avoid||[];
   // СНИМОК разбора ИИ — чтобы повтор по плашке шёл ИЗ ПАМЯТИ, без нового запроса к ИИ (без токенов)
   window._lastAiResult={ city:p.city, category:p.category||null, priceMax:p.priceMax||0,
@@ -1509,7 +1511,7 @@ async function aiSearch(){
   try{ window._lastAiResult.label=zbPillLabel(window._lastAiResult.city,din,dout,window._lastAiResult.adults,window._lastAiResult.kids); }catch(e){}
   try{ zbPersistPills(); }catch(e){} // происхождение + снимок ИИ переживают F5 сразу, не дожидаясь возврата домой
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
-  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
+  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':p.category==='hostel'?'Хостел':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
     if(p.city){ el.style.cursor='pointer'; el.title='Повторить поиск (из памяти, без ИИ)'; el.onclick=function(){ aiReplayLast(); }; } else { el.style.cursor='default'; el.onclick=null; } }
   if(!p.city)return;
@@ -1893,7 +1895,6 @@ function openHotel(id){
           <div class="bk-sum" id="bk-sum">
             <div class="bk-row"><span>Цена за ночь</span><span id="bk-pn">${pricePerNight} BYN</span></div>
             <div class="bk-row"><span>Ночей</span><span id="bk-nights">${n}</span></div>
-            <div class="bk-free"><span>Комиссия гостю</span><span>0%</span></div>
             <div class="bk-total"><span>Итого</span><span id="bk-tot">${pricePerNight*n} BYN</span></div>
           </div>
           <button class="btn-pay" onclick="hpModuleBook()">Выбрать</button>
@@ -1919,7 +1920,7 @@ function zbSaveRoute(view, hotelId){
         hObj = {
           id:_src.id, name_ru:_src.name_ru, name_en:_src.name_en, address:_src.address,
           category:_src.category, price:_src.price, oldPrice:_src.oldPrice, stars:_src.stars,
-          rating:_src.rating, reviews_count:_src.reviews_count, source:_src.source,
+          rating:_src.rating, reviews_count:_src.reviews_count, source:_src.source, city_ru:_src.city_ru,
           lat:_src.lat, lng:_src.lng, latitude:_src.latitude||_src.lat, longitude:_src.longitude||_src.lng, city_ru:_src.city_ru, checkin:_src.checkin, checkout:_src.checkout,
           description_ru:_src.description_ru, description:_src.description, phone:_src.phone,
           photos:(_src.photos||[]).slice(0,8),
@@ -1942,6 +1943,7 @@ function zbSaveRoute(view, hotelId){
       },
       filters: {
         hotel: !!(document.getElementById('flt-hotel')||{}).checked,
+        hostel: !!(document.getElementById('flt-hostel')||{}).checked,
         guest: !!(document.getElementById('flt-guest')||{}).checked,
         apart: !!(document.getElementById('flt-apart')||{}).checked,
         sort:  (document.getElementById('serp-sort')||{}).value || ''
@@ -1961,11 +1963,26 @@ function zbWriteHash(view, hotelId){
     var cs=window._capState||{};
     var f=function(d){ if(!d)return ''; var x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
     var h='';
-    if(window._catMode){ h='#c='+encodeURIComponent(window._catMode); }
+    if(view==='hotel'&&hotelId!=null){
+      // ОТЕЛЬ ВСЕГДА ПРИОРИТЕТЕН: раньше при открытом каталоге hash оставался «#c=…» и
+      // получатель ссылки попадал в каталог/на главную вместо отеля.
+      // Город: из поиска, иначе из самого объекта (city_ru отдаёт бэк) — без города
+      // получатель ссылки раньше упирался в проверку и улетал на главную.
+      var _hcity=cs.city||'';
+      if(!_hcity){
+        try{
+          var _hh=(typeof curHotel!=='undefined'&&curHotel&&String(curHotel.id)===String(hotelId))?curHotel
+                :(((typeof HOTELS!=='undefined'&&HOTELS)||[]).find(function(x){return String(x.id)===String(hotelId);})||null);
+          _hcity=(_hh&&(_hh.city_ru||''))||'';
+        }catch(e){}
+      }
+      var segH=[encodeURIComponent(_hcity),f(cs.din),f(cs.dout),parseInt(cs.adults)||2,parseInt(cs.kids)||0,(cs.childAges||[]).join(',')].join('|');
+      h='#h='+encodeURIComponent(String(hotelId))+'|'+segH;
+    }
+    else if(window._catMode){ h='#c='+encodeURIComponent(window._catMode); }
     else{
       var seg=[encodeURIComponent(cs.city||''),f(cs.din),f(cs.dout),parseInt(cs.adults)||2,parseInt(cs.kids)||0,(cs.childAges||[]).join(',')].join('|');
-      if(view==='hotel'&&hotelId!=null) h='#h='+encodeURIComponent(String(hotelId))+'|'+seg;
-      else if(cs.city) h='#s='+seg;
+      if(cs.city) h='#s='+seg;
     }
     if(h){
       // pushState при СМЕНЕ экрана (новый шаг истории → браузерный Назад работает),
@@ -2004,11 +2021,26 @@ function zbOpenFromHash(){
   var parts=val.split('|'), hotelId=null;
   if(kind==='h'){ hotelId=decodeURIComponent(parts.shift()||''); if(!hotelId)return false; }
   var city=decodeURIComponent(parts[0]||'');
+  // Отель, который уже есть в пуле (свой/из базы) — открываем сразу, город не обязателен.
+  // Раньше ссылка без города всегда падала на главную, даже если отель можно открыть.
+  if(kind==='h'&&!city){
+    try{
+      var _loc0=(HOTELS||[]).find(function(x){return String(x.id)===String(hotelId);});
+      if(_loc0){ openHotel(_loc0.id); return true; }
+    }catch(e){}
+    return false; // отель Островка без города не восстановить — уходим в обычный сценарий
+  }
   if(!city)return false;
   var din=zbNotPast(parts[1]?new Date(parts[1]+'T00:00:00'):null);
   var dout=zbNotPast(parts[2]?new Date(parts[2]+'T00:00:00'):null);
   if(din&&dout&&dout<=din){din=null;dout=null;}
   if(!din||!dout){din=null;dout=null;}
+  // Ссылка на ОТЕЛЬ без дат (или с протухшими): подставляем завтра + 2 ночи —
+  // иначе поиск города не стартует и отель у получателя никогда не откроется.
+  if(kind==='h'&&(!din||!dout)){
+    var _b0=new Date(Date.now()+86400000); _b0.setHours(0,0,0,0);
+    din=new Date(_b0); dout=new Date(_b0.getTime()+2*86400000);
+  }
   var ad=Math.max(1,Math.min(10,parseInt(parts[3])||2));
   var kd=Math.max(0,Math.min(6,parseInt(parts[4])||0));
   var ages=(parts[5]||'').split(',').filter(function(x){return x!=='';}).map(function(x){return Math.max(0,Math.min(17,parseInt(x)||7));}).slice(0,kd);
@@ -2085,8 +2117,9 @@ function zbRestoreRoute(){
   try{ serpOpen(); }catch(e){ reveal(); return; }
   if(r.filters){
     var fh=document.getElementById('flt-hotel'), fg=document.getElementById('flt-guest'),
-        fa=document.getElementById('flt-apart'), ss=document.getElementById('serp-sort');
+        fa=document.getElementById('flt-apart'), fx=document.getElementById('flt-hostel'), ss=document.getElementById('serp-sort');
     if(fh) fh.checked=r.filters.hotel; if(fg) fg.checked=r.filters.guest; if(fa) fa.checked=r.filters.apart;
+    if(fx) fx.checked=(r.filters.hostel!==false);
     if(ss && r.filters.sort) ss.value=r.filters.sort;
     try{ if(typeof serpFilterChange==='function') serpFilterChange(); }catch(e){}
   }
@@ -2183,6 +2216,7 @@ function serpCatLabel(h){
   var city = parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
   var tail = city ? ' • '+city : '';
   if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель')+tail;
+  if(h.category==='hostel') return 'Хостел'+tail;
   if(h.category==='guest') return 'Агроусадьба / шале'+tail;
   if(h.category==='apart') return 'Дизайнерские апартаменты'+tail;
   return String(h.address||'');
@@ -2271,7 +2305,7 @@ function serpRenderAiChips(){
     return '<button onclick="'+onclk+'" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid '+(neg?'#e8b4b4':'var(--sand3)')+';background:'+(neg?'#fdf3f3':'#fff')+';border-radius:50px;padding:6px 12px;font-size:12px;font-weight:600;color:'+(neg?'#a33':'var(--ink)')+';font-family:inherit;cursor:pointer">'+label+' <span style="color:#bbb;font-size:13px;line-height:1">×</span></button>';
   };
   if(window._aiCategory){
-    var cl=window._aiCategory==='apart'?'Апартаменты':window._aiCategory==='guest'?'Усадьбы':'Отели';
+    var cl=window._aiCategory==='apart'?'Апартаменты':window._aiCategory==='guest'?'Усадьбы':window._aiCategory==='hostel'?'Хостелы':'Отели';
     chips.push(chip('🏠 '+cl,'aiChipRemove(\'cat\')'));
   }
   if(window._aiPriceMax>0)chips.push(chip('💰 до '+window._aiPriceMax+' BYN','aiChipRemove(\'price\')'));
@@ -2283,7 +2317,7 @@ function serpRenderAiChips(){
 function aiChipRemove(type,idx){
   if(type==='cat'){
     window._aiCategory=null;
-    ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=true;});
+    ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=true;});
   }
   else if(type==='price'){ window._aiPriceMax=0; }
   else if(type==='amen'&&window._aiAmenities){ window._aiAmenities.splice(idx,1); }
@@ -2306,6 +2340,7 @@ function serpRender(){
   // фильтры
   var cats=[];
   if(document.getElementById('flt-hotel')&&document.getElementById('flt-hotel').checked)cats.push('hotel');
+  if(document.getElementById('flt-hostel')&&document.getElementById('flt-hostel').checked)cats.push('hostel');
   if(document.getElementById('flt-guest')&&document.getElementById('flt-guest').checked)cats.push('guest');
   if(document.getElementById('flt-apart')&&document.getElementById('flt-apart').checked)cats.push('apart');
   if(window._aiCategory)cats=[window._aiCategory]; // AI: тип из фразы (апартаменты/усадьба/отель)
@@ -2378,7 +2413,7 @@ function serpRender(){
   }
 
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree;
+  var anyFilter=cats.length<4||priceMax>0||starsMin>0||wantExcl||wantFree;
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -2417,8 +2452,8 @@ function serpRender(){
     }
     cardsBox.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
       +'<div style="font-size:40px;margin-bottom:12px">🔍</div>'
-      +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">По этим фильтрам ничего нет</div>'
-      +'<div style="font-size:13px;margin-bottom:16px">Попробуйте поднять цену или снять часть фильтров</div>'
+      +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">По вашему запросу ничего не найдено</div>'
+      +'<div style="font-size:13px;margin-bottom:16px">Попробуйте изменить запрос или снять часть фильтров — ниже покажем, что есть рядом</div>'
       +'<button onclick="serpClearFilters()" style="border:none;background:var(--green);color:#fff;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Сбросить фильтры</button>'
       +'</div>';
     return;
@@ -2541,10 +2576,14 @@ function serpRender(){
 }
 var PAGE_SIZE=15;
 function serpClearFilters(){
-  ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
+  ['flt-hotel','flt-hostel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
   var pr=document.querySelector('input[name="price-r"][value="0"]');if(pr)pr.checked=true;
   var sr=document.querySelector('input[name="stars-r"][value="0"]');if(sr)sr.checked=true;
-  ['sft-bfast','sft-free'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  ['sft-bfast','sft-free','sft-excl'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  // ГЛАВНОЕ: снимаем и ИИ-фильтры (цена/категория/удобства/«без …»). Раньше они оставались
+  // висеть после клика → выдача так и была пустой → кнопка выглядела «некликабельной».
+  window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
+  try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; zbPersistPills(); } }catch(e){}
   window._serpReset=true;serpRender();
 }
 
@@ -2655,9 +2694,15 @@ function serpToggleTag(tagId){
   var el=document.getElementById(tagId);
   if(el){el.classList.toggle('active');window._serpReset=true;serpRender();}
 }
-function serpFilterChange(){
-  // Ручное изменение фильтра → сбрасываем AI-фильтры (иначе они «залипают» поверх ручных)
-  window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
+function serpFilterChange(kind){
+  // ТОЧЕЧНЫЙ сброс ИИ-фильтров: ручная правка снимает ТОЛЬКО пересекающийся ИИ-фильтр
+  // (галочки категорий ↔ ИИ-категория, радио цены ↔ ИИ-цена). Остальные чипы ИИ
+  // (удобства, «без …») живут дальше. Раньше стирались ВСЕ разом при любом изменении —
+  // выглядело как «фильтры сбрасываются при смене соседних параметров».
+  if(kind==='cat'){ window._aiCategory=null; }
+  else if(kind==='price'){ window._aiPriceMax=0; }
+  // синхронизируем снимок ИИ, чтобы «Назад»/плашка не воскрешали снятое
+  try{ var _R=window._lastAiResult; if(_R){ _R.category=window._aiCategory||null; _R.priceMax=window._aiPriceMax||0; zbPersistPills(); } }catch(e){}
   if(window._catMode){
     var checked=[];
     ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e&&e.checked)checked.push(c);});
@@ -3043,7 +3088,7 @@ function catStart(cats){
   window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
   window._catBooting=true; // короткий флаг «категория открывается» — для спиннера до первого ответа
   document.body.classList.add('cat-mode');
-  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
+  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
   window._capState.city='';
   var sd=document.getElementById('s-dest'); if(sd)sd.value='';
@@ -3082,7 +3127,7 @@ async function catLoad(reset){
 function catShowEmpty(){
   window._catMode='guest';
   document.body.classList.add('cat-mode');
-  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
+  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
   HOTELS=[];
   window._serpReset=true; serpOpen();
   var cards=document.getElementById('serp-cards');
@@ -3105,7 +3150,7 @@ function openCategory(cat){
 function catShowExcl(){
   window._catMode='excl'; window._catHasMore=false;
   document.body.classList.add('cat-mode');
-  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=false;});
+  ['hotel','hostel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=false;});
   var ex=document.getElementById('sft-excl'); if(ex)ex.classList.add('active');
   HOTELS=[];
   window._serpReset=true; serpOpen();
@@ -4709,7 +4754,7 @@ async function loadOstRates(h){
       // читает пустое описание (на экране текст есть, а в объекте его не было)
       try{
         if(data.hotel.description){ h.description=data.hotel.description; if(curHotel&&curHotel.id===h.id)curHotel.description=data.hotel.description; }
-        if(data.hotel.amenities&&data.hotel.amenities.length){ h.amenities=data.hotel.amenities.map(function(a){return {n:String(a)};}); if(curHotel&&curHotel.id===h.id)curHotel.amenities=h.amenities; }
+        if(data.hotel.amenities&&data.hotel.amenities.length){ h.amenities=ostAmenList(data.hotel.amenities).map(function(a){return {n:a};}); if(curHotel&&curHotel.id===h.id)curHotel.amenities=h.amenities; }
         if(data.hotel.check_in){ h.check_in=data.hotel.check_in; if(curHotel&&curHotel.id===h.id)curHotel.check_in=data.hotel.check_in; }
         if(data.hotel.check_out){ h.check_out=data.hotel.check_out; if(curHotel&&curHotel.id===h.id)curHotel.check_out=data.hotel.check_out; }
       }catch(_){}
@@ -4721,7 +4766,8 @@ async function loadOstRates(h){
       }
       if(hpc&&data.hotel.amenities&&data.hotel.amenities.length){
         var ag=hpc.querySelector('.hp-amenities');
-        if(ag)ag.innerHTML=data.hotel.amenities.slice(0,12).map(function(a){return '<div class="amen"><span class="ai">✓</span>'+a+'</div>';}).join('');
+        // перевод + дедуп: Островок местами отдаёт английские коды и повторы
+        if(ag)ag.innerHTML=ostAmenList(data.hotel.amenities,12).map(function(a){return '<div class="amen"><span class="ai">✓</span>'+a+'</div>';}).join('');
       }
       if(hpc&&(data.hotel.check_in||data.hotel.check_out)){
         var ht=hpc.querySelector('.hp-times');
