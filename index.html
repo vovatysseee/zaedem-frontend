@@ -19,6 +19,12 @@
 
 <!-- Favicon (временный, из буквы — заменим на логотип позже) -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2D1D'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='38' font-weight='900' fill='%23c9f135' text-anchor='middle'%3E3%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0F2D1D">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Заедем.by">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800;900&family=Golos+Text:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -264,6 +270,25 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .ostc-price small{display:block;font-size:10px;color:var(--hint);font-weight:400;margin-top:2px}
 .ost-rate-row.ostc.picked{border:2px solid var(--green)!important}
 .hp-times{font-size:13px;color:var(--muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px}
+.hp-rev{margin:1.6rem 0 1rem}
+.hp-rev-head{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.hp-rev-score{background:var(--green);color:#fff;font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;border-radius:14px;padding:11px 14px;line-height:1}
+.hp-rev-stars{color:#e0a800;font-size:14px;letter-spacing:1.5px}
+.hp-rev-cnt{color:var(--muted);font-size:12.5px;margin-top:2px}
+.hp-asp{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px 20px;margin:4px 0 16px}
+.hp-asp-row{font-size:11.5px;color:var(--ink2)}
+.hp-asp-row b{float:right}
+.hp-asp-bar{height:5px;background:var(--sand2);border-radius:4px;margin-top:4px;overflow:hidden}
+.hp-asp-fill{height:100%;background:var(--green);border-radius:4px}
+.rev-card{background:var(--sand);border:1px solid var(--sand3);border-radius:14px;padding:13px 16px;margin-bottom:10px}
+.rev-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}
+.rev-a{font-weight:700;font-size:13px}
+.rev-meta{color:var(--muted);font-size:11px;margin-bottom:7px}
+.rev-p{font-size:13px;line-height:1.6;margin:3px 0}
+.rev-p b{color:var(--green);margin-right:2px}
+.rev-m b{color:#b3432b}
+.rev-more{display:block;width:100%;background:none;border:1.5px solid var(--sand3);border-radius:12px;padding:11px;font-size:13px;font-weight:700;font-family:inherit;color:var(--green);cursor:pointer;margin-top:4px}
+.rev-more:hover{border-color:var(--green)}
 .ostc-cap{font-size:12.5px;color:var(--ink2);font-weight:600;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:10px}
 .ost-loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 20px;color:var(--muted);font-size:13px}
 .ost-spin{width:30px;height:30px;border:3px solid var(--sand3);border-top-color:var(--green);border-radius:50%;animation:ostspin .8s linear infinite}
@@ -4955,7 +4980,69 @@ function renderDirectRooms(list){
   }
 }
 
+// ═ ОТЗЫВЫ ГОСТЕЙ (Ostrovok Content API) ═ грузятся параллельно с номерами,
+// кэш на бэке 24ч; если отзывов нет — блок просто не появляется (не перегружаем).
+var _revState=null;
+function revBox(){
+  var hpc=document.getElementById('hp-content'); if(!hpc)return null;
+  var b=document.getElementById('hp-reviews');
+  if(!b){
+    b=document.createElement('div'); b.id='hp-reviews'; b.className='hp-rev';
+    var anchor=hpc.querySelector('.hp-times')||hpc.querySelector('.hp-amenities')||hpc.querySelector('.hp-desc');
+    if(anchor)anchor.insertAdjacentElement('afterend',b); else hpc.appendChild(b);
+  }
+  return b;
+}
+function revStars(n){
+  n=Math.max(0,Math.min(5,Math.round(n||0)));
+  return '★'.repeat(n)+'<span style="color:var(--sand3)">'+'★'.repeat(5-n)+'</span>';
+}
+function revWord(n){n=Math.abs(n||0);var a=n%10,b=n%100;if(a===1&&b!==11)return'отзыв';if(a>=2&&a<=4&&(b<10||b>=20))return'отзыва';return'отзывов';}
+function revDate(s){try{var d=new Date(s);if(isNaN(d))return'';return d.toLocaleDateString('ru',{month:'long',year:'numeric'});}catch(e){return'';}}
+function revCard(v){
+  var meta=[revDate(v.created),v.room,(v.nights?v.nights+' ноч.':''),v.traveller,v.trip].filter(Boolean).join(' · ');
+  return '<div class="rev-card">'
+    +'<div class="rev-top"><span class="rev-a">'+_esc(v.author)+'</span>'
+    +(v.rating?'<span class="hp-rev-stars" style="font-size:12px">'+revStars(v.rating)+'</span>':'')+'</div>'
+    +(meta?'<div class="rev-meta">'+_esc(meta)+'</div>':'')
+    +(v.plus?'<div class="rev-p"><b>+</b>'+_esc(v.plus)+'</div>':'')
+    +(v.minus?'<div class="rev-p rev-m"><b>−</b>'+_esc(v.minus)+'</div>':'')
+    +'</div>';
+}
+function revRender(){
+  var st=_revState, box=revBox(); if(!box)return;
+  if(!st||st.empty||!st.data||!st.data.reviews.length){box.innerHTML='';return;}
+  var d=st.data;
+  var h='<h3 style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Отзывы гостей</h3>';
+  h+='<div class="hp-rev-head">'
+    +(d.avg?'<div class="hp-rev-score">'+String(d.avg).replace('.',',')+'</div>':'')
+    +'<div><div class="hp-rev-stars">'+revStars(d.avg)+'</div>'
+    +'<div class="hp-rev-cnt">'+d.count+' '+revWord(d.count)+' · гости Ostrovok.ru</div></div></div>';
+  if(d.aspects&&d.aspects.length){
+    h+='<div class="hp-asp">'+d.aspects.map(function(a){
+      return '<div class="hp-asp-row">'+_esc(a.label)+' <b>'+String(a.value).replace('.',',')+'</b>'
+        +'<div class="hp-asp-bar"><div class="hp-asp-fill" style="width:'+Math.min(100,a.value*10)+'%"></div></div></div>';
+    }).join('')+'</div>';
+  }
+  h+=d.reviews.slice(0,st.shown).map(revCard).join('');
+  if(d.reviews.length>st.shown)
+    h+='<button class="rev-more" onclick="_revState.shown+=5;revRender()">Показать ещё отзывы ('+(d.reviews.length-st.shown)+')</button>';
+  box.innerHTML=h;
+}
+async function loadOstReviews(h){
+  try{
+    var hid=h&&(h.hid||h.ostId); if(!hid)return;
+    if(_revState&&_revState.hid===hid&&_revState.data){revRender();return;}
+    _revState=null;
+    var r=await fetch(API+'/api/ostrovok/reviews?hid='+encodeURIComponent(hid));
+    var d=await r.json();
+    if(!d||!d.reviews||!d.reviews.length){_revState={hid:hid,empty:true};revRender();return;}
+    _revState={hid:hid,data:d,shown:3};
+    revRender();
+  }catch(e){}
+}
 async function loadOstRates(h){
+  try{ loadOstReviews(h); }catch(e){} // отзывы едут параллельно, страницу не тормозят
   var box=document.getElementById('ost-rates');
   if(!box)return;
   _ostRates=[];_ostSel=null;
@@ -5374,5 +5461,77 @@ function ostFail(e){
 
 
 
+<style>
+#pwa-toast{position:fixed;left:12px;right:12px;bottom:-120px;z-index:9999;background:#0F2D1D;color:#fff;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);transition:bottom .35s ease;max-width:480px;margin:0 auto}
+#pwa-toast.show{bottom:16px}
+#pwa-toast .pt-ico{width:40px;height:40px;border-radius:11px;flex-shrink:0}
+#pwa-toast .pt-t{font-size:13px;font-weight:700;line-height:1.3}
+#pwa-toast .pt-s{font-size:11.5px;color:#bfd8c9;margin-top:2px}
+#pwa-toast button{font-family:inherit;border:none;cursor:pointer;border-radius:10px;padding:9px 13px;font-size:12.5px;font-weight:700}
+#pwa-inst{background:var(--lime,#c9f135);color:#0F2D1D}
+#pwa-dism{background:none;color:#bfd8c9;padding:9px 6px}
+</style>
+<script>
+// ═ PWA ═ регистрация сервис-воркера + мягкое предложение установки
+(function(){
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    });
+  }
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){
+    e.preventDefault(); deferred=e;
+    try{
+      if(localStorage.getItem('zb_pwa_dismissed'))return;           // отказался — не пристаём
+      var visits=parseInt(localStorage.getItem('zb_visits')||'0');  // предлагаем со 2-го визита
+      if(visits<1)return;
+      setTimeout(showToast,12000); // не сразу, а когда человек осмотрелся
+    }catch(_){}
+  });
+  try{ localStorage.setItem('zb_visits',String((parseInt(localStorage.getItem('zb_visits')||'0'))+1)); }catch(_){}
+  // iOS Safari не даёт кнопку установки (ограничение Apple) — показываем подсказку жестом
+  try{
+    var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    var standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+    if(isIOS&&!standalone&&!localStorage.getItem('zb_pwa_dismissed')){
+      var v=parseInt(localStorage.getItem('zb_visits')||'0');
+      if(v>=2)setTimeout(showIosToast,12000);
+    }
+  }catch(_){}
+  function showIosToast(){
+    if(document.getElementById('pwa-toast'))return;
+    var t=document.createElement('div'); t.id='pwa-toast';
+    t.innerHTML='<img class="pt-ico" src="/icon-192.png" alt="">'
+      +'<div style="flex:1"><div class="pt-t">Заедем.by — как приложение</div>'
+      +'<div class="pt-s">Нажмите <b>Поделиться</b> \u2192 «На экран \u201cДомой\u201d»</div></div>'
+      +'<button id="pwa-dism">\u2715</button>';
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    document.getElementById('pwa-dism').onclick=function(){
+      t.classList.remove('show'); setTimeout(function(){t.remove();},400);
+      try{ localStorage.setItem('zb_pwa_dismissed','1'); }catch(_){}
+    };
+  }
+  function showToast(){
+    if(!deferred||document.getElementById('pwa-toast'))return;
+    var t=document.createElement('div'); t.id='pwa-toast';
+    t.innerHTML='<img class="pt-ico" src="/icon-192.png" alt="">'
+      +'<div style="flex:1"><div class="pt-t">Заедем.by — как приложение</div>'
+      +'<div class="pt-s">Быстрый доступ с главного экрана</div></div>'
+      +'<button id="pwa-inst">Установить</button><button id="pwa-dism">\u2715</button>';
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    document.getElementById('pwa-inst').onclick=function(){
+      t.classList.remove('show'); setTimeout(function(){t.remove();},400);
+      if(deferred){ deferred.prompt(); deferred=null; }
+    };
+    document.getElementById('pwa-dism').onclick=function(){
+      t.classList.remove('show'); setTimeout(function(){t.remove();},400);
+      try{ localStorage.setItem('zb_pwa_dismissed','1'); }catch(_){}
+    };
+  }
+})();
+</script>
 </body>
 </html>
