@@ -1,0 +1,17 @@
+{
+  "name": "Заедем.by — бронирование жилья по Беларуси",
+  "short_name": "Заедем.by",
+  "description": "Отели, квартиры и усадьбы по всей Беларуси. Умный ИИ-поиск, бронь за 3 клика.",
+  "lang": "ru",
+  "start_url": "/?src=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0F2D1D",
+  "theme_color": "#0F2D1D",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
