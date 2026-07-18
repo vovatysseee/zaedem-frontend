@@ -1430,17 +1430,82 @@ function aiReplayLast(){
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
+// Быстрые уточнения БЕЗ похода в GPT: «а подешевле», «с парковкой», «без завтрака».
+// Экономия токенов на самых частых фразах диалога — обрабатываем мгновенно на месте.
+// Возвращает true, если фраза обработана (GPT не нужен).
+function aiQuickRefine(q,el){
+  var R=window._lastAiResult;
+  var cs=window._capState||{};
+  if(!R||!R.city||!cs.city)return false; // уточнять нечего — контекста нет
+  var t=String(q).toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
+  if(t.length>40)return false; // длинная фраза — пусть думает GPT
+  var done=false;
+  var m;
+  if(/^а?\s*(по)?дешевле!?$/.test(t)){
+    if(window._aiPriceMax>0){ window._aiPriceMax=Math.max(10,Math.round(window._aiPriceMax*0.8)); }
+    else { var ss=document.getElementById('serp-sort'); if(ss){ss.value='price-asc';} }
+    done=true;
+  }
+  else if(/^а?\s*(по)?дороже!?$/.test(t)){
+    if(window._aiPriceMax>0){ window._aiPriceMax=Math.round(window._aiPriceMax*1.3); }
+    else { var ss2=document.getElementById('serp-sort'); if(ss2){ss2.value='price-desc';} }
+    done=true;
+  }
+  else if((m=t.match(/^а?\s*(?:и\s+)?без\s+([а-я0-9\- ]{3,25})$/))){
+    window._aiAvoid=(window._aiAvoid||[]).concat([m[1].trim()]);
+    done=true;
+  }
+  else if((m=t.match(/^а?\s*(?:и\s+)?(?:с|со|плюс|добавь|нужн[аоы]?)\s+([а-я0-9\- ]{3,25})$/))){
+    window._aiAmenities=(window._aiAmenities||[]).concat([m[1].trim()]);
+    done=true;
+  }
+  if(!done)return false;
+  try{ R.priceMax=window._aiPriceMax||0; R.amenities=(window._aiAmenities||[]).slice(); R.avoid=(window._aiAvoid||[]).slice(); zbPersistPills(); }catch(e){}
+  if(el){ el.style.display='block'; el.innerHTML='🧠 Уточнил: '+q; }
+  window._serpReset=true;
+  try{ if(document.getElementById('serp')&&document.getElementById('serp').style.display!=='none'){serpRender();} else {serpOpen();} }catch(e){}
+  return true;
+}
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
   window._fromAI=true; window._lastAiQuery=q; window._searchOrigin='ai';
   var p=aiParse(q), el=document.getElementById('ai-understood');
+  if(aiQuickRefine(q,el))return; // частое уточнение обработали сами — токены целы
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
-  // Пробуем настоящий ИИ (Yandex GPT). Не ответил — остаёмся на локальном разборе.
+  // КОНТЕКСТ ДИАЛОГА: если новый запрос не называет другой город — шлём GPT предыдущий
+  // разбор, и «а подешевле», «на неделю позже» уточняют прошлый поиск, а не начинают с нуля.
+  var _prevCtx=null;
   try{
-    var _r=await fetch(API+'/api/ai/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q})});
-    var _d=await _r.json();
+    var _R0=window._lastAiResult;
+    if(_R0&&_R0.city){ // контекст есть — шлём всегда: «а в бресте» сменит город, сохранив даты/гостей;
+                       // явно новый самостоятельный запрос GPT разберёт с нуля (так велит промпт)
+      var _cs0=window._capState||{};
+      var _f0=function(d){d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+      _prevCtx={ city:_R0.city, category:_R0.category||null, priceMax:_R0.priceMax||null,
+        adults:parseInt(_cs0.adults)||null, kids:parseInt(_cs0.kids)||null,
+        din:_cs0.din?_f0(_cs0.din):null, dout:_cs0.dout?_f0(_cs0.dout):null,
+        area:(_R0.area&&_R0.area.label)||null, name:_R0.name||null,
+        amenities:(_R0.amenities||[]).slice(0,10), avoid:(_R0.avoid||[]).slice(0,10) };
+    }
+  }catch(e){}
+  // GPT стартует СРАЗУ (промис), локальный разбор — мгновенно. Если локального хватает
+  // для старта (город+даты+гости) — поиск Островка поедет параллельно с GPT.
+  var _aiFetch=fetch(API+'/api/ai/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_prevCtx?{q:q,prev:_prevCtx}:{q:q})}).then(function(r){return r.json();}).catch(function(){return null;});
+  var _localReady=false;
+  try{
+    var _lc=p.city&&!/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim());
+    var _lq=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
+    var _ld=zbNotPast(p._din), _lo=zbNotPast(p._dout);
+    var _ldok=!!((_ld&&_lo&&_lo>_ld)||aiDates(_lq,p.nights)||p.weekend||p.nights);
+    _localReady=!!(_lc&&_ldok&&(parseInt(p.adults)||0)>0);
+  }catch(e){}
+  if(_localReady){ try{ aiApplyAndGo(p,q,el); }catch(e){ _localReady=false; } }
+  // Ждём GPT: его разбор точнее — домердживаем (и перезапускаем поиск, если город другой)
+  try{
+    var _d=await _aiFetch;
     if(_d&&_d.parsed){ var a=_d.parsed;
+      var _prevCity=_localReady?String(p.city||''):null;
       if(a.city)p.city=a.city;
       if(a.category)p.category=a.category;
       if(a.adults)p.adults=parseInt(a.adults)||p.adults;
@@ -1459,8 +1524,18 @@ async function aiSearch(){
                 lng:(a.areaGeo&&a.areaGeo.lng!=null)?parseFloat(a.areaGeo.lng):null};
       }
       if(a.name&&String(a.name).trim()&&!/^(null|undefined|none|нет|-+)$/i.test(String(a.name).trim()))p.name=String(a.name).trim();
-    }
-  }catch(e){}
+      if(_localReady){
+        // выдача уже открыта локальным разбором — применяем уточнения GPT «наживую»
+        if(a.city&&String(a.city)!==_prevCity){ aiApplyAndGo(p,q,el); return; } // город другой — честный перезапуск
+        aiApplyRefinements(p,el); return;
+      }
+    } else if(_localReady){ return; } // GPT промолчал — работаем на локальном разборе
+  }catch(e){ if(_localReady)return; }
+  aiApplyAndGo(p,q,el);
+}
+// Применяет разбор (локальный или GPT) и запускает поиск. Вынесено из aiSearch,
+// чтобы параллельный старт мог вызвать это дважды (локально сразу, GPT — если город другой).
+function aiApplyAndGo(p,q,el){
   // Санитизация: строки «null/undefined/-» от ИИ = города нет (и никаких null на экране)
   if(p.city&&/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim()))p.city=null;
   if(p.city)p.city=String(p.city).trim();
@@ -1531,6 +1606,42 @@ async function aiSearch(){
   if(!p.city)return;
   window._catMode=null;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
+}
+// Уточнения GPT «наживую» в уже открытую выдачу: без нового поиска города —
+// обновляем ИИ-фильтры/чипы/снимок и пересортировываем то, что уже на экране.
+function aiApplyRefinements(p,el){
+  window._aiCategory=p.category||null;
+  window._aiPriceMax=p.priceMax||0;
+  window._aiAmenities=p.amenities||[];
+  window._aiAvoid=p.avoid||[];
+  window._aiArea=p.area||null;
+  window._aiName=p.name||null;
+  ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
+  try{
+    var R=window._lastAiResult;
+    if(R){ R.category=window._aiCategory; R.priceMax=window._aiPriceMax; R.amenities=(p.amenities||[]).slice();
+      R.avoid=(p.avoid||[]).slice(); R.area=p.area||null; R.name=p.name||null; zbPersistPills(); }
+  }catch(e){}
+  // плашка разбора перестраивается ЦЕЛИКОМ (дописывание дублировало то, что нашёл и локальный разбор)
+  try{
+    if(el&&el.style.display!=='none'&&p.city){
+      var _cs=window._capState||{};
+      var _fd2=function(d){d=new Date(d);return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
+      var parts=['📍 '+p.city];
+      if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель'));
+      if(_cs.adults)parts.push('👥 '+_cs.adults);
+      if(_cs.kids)parts.push('🧒 '+_cs.kids);
+      if(_cs.din&&_cs.dout){var _nn2=Math.max(1,Math.round((new Date(_cs.dout)-new Date(_cs.din))/86400000));parts.push('📅 '+_fd2(_cs.din)+'→'+_fd2(_cs.dout)+' ('+_nn2+' ноч.)');}
+      if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN');
+      if(p.area)parts.push('📍 рядом: '+p.area.label);
+      if(p.name)parts.push('🔎 '+p.name);
+      (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);});
+      (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
+      el.innerHTML='Понял: '+parts.join(' · ');
+    }
+  }catch(e){}
+  window._serpReset=true;
+  try{ serpRender(); }catch(e){}
 }
 function scrollToHotels(){document.getElementById('hotels-section').scrollIntoView({behavior:'smooth'})}
 function getNights(){const a=new Date(document.getElementById('hp-in')?.value||getIn()),b=new Date(document.getElementById('hp-out')?.value||getOut());return Math.max(1,Math.round((b-a)/86400000))}
@@ -2301,6 +2412,13 @@ function zbObjWord(n){
   if(d10>=2&&d10<=4&&(d100<10||d100>=20))return 'объекта';
   return 'объектов';
 }
+// Теги удобств из БД (нормализует бэк при дозагрузке) → русские слова для ИИ-матчинга
+var ZB_TAG_RU={parking:'парковка стоянка',wifi:'wi-fi вайфай интернет',pool:'бассейн',sauna:'сауна баня',
+  fitness:'фитнес тренажерный зал спортзал',breakfast:'завтрак',restaurant:'ресторан',bar:'бар',
+  pets:'животные питомцы собака кошка',kitchen:'кухня',ac:'кондиционер',spa:'спа',transfer:'трансфер',
+  laundry:'стиральная машина прачечная',balcony:'балкон терраса',elevator:'лифт',family:'детская семейный дети',
+  smoke_free:'для некурящих',disabled:'для маломобильных',safe:'сейф'};
+function zbTagsHay(h){ return (h&&h.tags||[]).map(function(t){return ZB_TAG_RU[t]||t;}).join(' '); }
 // Расстояние между точками, км (хаверсин) — для «рядом с районом/улицей/метро»
 function zbDistKm(lat1,lng1,lat2,lng2){
   var R=6371,toR=Math.PI/180;
@@ -2320,7 +2438,7 @@ function aiMatchBadge(h){
     distChip='<span style="display:inline-block;background:#e7f0fb;color:#1b4d7a;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin:3px 3px 0 0">📍 '+zbDistLabel(h._dist)+' от «'+String(window._aiArea.label)+'»</span>';
   }
   if(!needs.length) return distChip?('<div style="margin:2px 0 0">'+distChip+'</div>'):'';
-  var hay=(h.amenities||[]).map(function(a){return amenName(a).toLowerCase()+' '+String(a&&a.key||'').toLowerCase();}).join(' | ')+' '+String(h.name_ru||'').toLowerCase();
+  var hay=(h.amenities||[]).map(function(a){return amenName(a).toLowerCase()+' '+String(a&&a.key||'').toLowerCase();}).join(' | ')+' '+zbTagsHay(h).toLowerCase()+' '+String(h.name_ru||'').toLowerCase();
   var chips=[], seen={};
   needs.forEach(function(n){
     var nl=String(n).toLowerCase().trim(); if(!nl||seen[nl])return; seen[nl]=1;
@@ -2418,6 +2536,7 @@ function serpRender(){
     var _am=window._aiAmenities.map(function(a){return String(a).toLowerCase();});
     list.forEach(function(h){
       var hay=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ')
+              +' '+zbTagsHay(h).toLowerCase()
               +' '+String(h.name_ru||'').toLowerCase()+' '+String(h.address||'').toLowerCase()+' '+String(h.description_ru||'').toLowerCase();
       h._aiScore=_am.reduce(function(n,a){return n+(hay.indexOf(a)>=0?1:0);},0);
     });
@@ -2555,6 +2674,7 @@ function serpRender(){
     var typeLbl=serpCatLabel(h);
     var rn=parseFloat(h.rating||0);var ratLbl=rn>=5?'5 звёзд':rn>=4?'4 звезды':rn>=3?'3 звезды':rn>=2?'2 звезды':'';
     var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+(amenIcon(a)||'')+' '+amenName(a)+'</span>';}).join('');
+    if(h.metro&&h.metro.name&&h.metro.km!=null&&h.metro.km<=2){ tags='<span class="sr-tag">🚇 '+h.metro.name+' · '+zbDistLabel(h.metro.km)+'</span>'+tags; }
     var dots=photos.length>1?photos.map(function(_,i){return '<div class="sr-dot'+(i===0?' on':'')+'"></div>';}).join(''):'';
 
 
