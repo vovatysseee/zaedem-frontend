@@ -2020,6 +2020,9 @@ async function loadNearby(lat,lon){
 function openHotel(id){
   curHotel=HOTELS.find(h=>h.id===id);
   if(!curHotel)return;
+  // Происхождение перехода: из избранного? (маркер выставляет openItem). Потребляем его здесь —
+  // для обычных открытий из карточек маркера нет → _fromFav=false, «Назад» работает как раньше.
+  window._fromFav = !!window._openFromFav; window._openFromFav=false;
   const h=curHotel,n=getNights();
   // Защита для Ostrovok отелей — у них нет rooms/revs/phone
   const rooms=h.rooms||[];
@@ -2374,6 +2377,16 @@ function goBack(){
   // НАЗАД ИЗ ОТЕЛЯ — вернуться туда, откуда пришли
   if(hp && hp.classList.contains('open')){
     hp.classList.remove('open'); document.body.classList.remove('on-hotel');
+    // ПРИШЛИ ИЗ ИЗБРАННОГО → возвращаемся в избранное (не на поиск и не на главную)
+    if(window._fromFav){
+      window._fromFav=false;
+      var _spF=document.getElementById('serp-page'); if(_spF){_spF.classList.remove('open');document.body.classList.remove('on-serp');} // закрыть выдачу, что грузилась под спиннером
+      var _mpF=document.getElementById('main-page'); if(_mpF)_mpF.style.display='block';
+      var _nvF=document.querySelector('nav'); if(_nvF)_nvF.style.display='';
+      window._catMode=null; window._fromSerp=false;
+      try{ if(typeof zbFavOpen==='function')zbFavOpen(); }catch(e){}
+      window.scrollTo(0,0); return;
+    }
     if(window._catMode){
       try{ if(window._catMode==='excl'){ catShowExcl(); } else { catStart(window._catMode); } }catch(e){ try{serpOpen();}catch(_){} }
       if(nav)nav.style.display='none';
@@ -3395,11 +3408,21 @@ async function serpLoadOstrovok(){
       var _ph=HOTELS.find(function(x){return String(x.id)===String(_pid);});
       var _wasLink=!!window._zbLinkHotelPending; window._zbLinkHotelPending=false;
       var _rmSpin=function(){ try{ var _d=document.documentElement; _d.classList.remove('zb-restoring'); _d.classList.remove('zb-restoring-hotel'); }catch(e){} };
-      if(_ph){ try{ openHotel(_ph.id); }catch(e){} _rmSpin(); } // отель открыт → снимаем спиннер
+      if(_ph){ try{ openHotel(_ph.id); }catch(e){} _rmSpin(); } // отель открыт → снимаем спиннер (openHotel потребил _openFromFav)
       else if(_wasLink){
-        // отель по ссылке недоступен → выдача города УЖЕ открыта за спиннером, просто показываем её
         _rmSpin();
-        if(typeof bkToast==='function')bkToast('Этот объект сейчас недоступен — показали город');
+        if(window._openFromFav){
+          // пришли из ИЗБРАННОГО, но отель не поднялся → возвращаемся в избранное, не в чужой поиск
+          window._openFromFav=false;
+          var _spB=document.getElementById('serp-page'); if(_spB){_spB.classList.remove('open');document.body.classList.remove('on-serp');}
+          var _mpB=document.getElementById('main-page'); if(_mpB)_mpB.style.display='block';
+          var _nvB=document.querySelector('nav'); if(_nvB)_nvB.style.display='';
+          try{ if(typeof zbFavOpen==='function')zbFavOpen(); }catch(e){}
+          if(typeof bkToast==='function')bkToast('Этот объект сейчас недоступен');
+        } else {
+          // шеринг-ссылка: выдача города уже открыта за спиннером — показываем её
+          if(typeof bkToast==='function')bkToast('Этот объект сейчас недоступен — показали город');
+        }
       }
       else if(typeof bkToast==='function'){ bkToast('Этот объект сейчас недоступен — показали город'); }
     }
@@ -5808,10 +5831,11 @@ function ostFail(e){
   // что и шеринг-ссылка: serpOpen() под спиннером + _pendingOpenHotel.
   function openItem(id){
     close();
+    window._openFromFav=true; // «Назад» из этого отеля должно вернуть в избранное
     var loc=findHotel(id);
     if(loc&&typeof openHotel==='function'){ try{ openHotel(loc.id); return; }catch(e){} }
     var s=load().find(function(x){return String(x.id)===String(id);});
-    if(!s||!s.city){ if(typeof bkToast==='function')bkToast('Не удалось открыть объект'); return; }
+    if(!s||!s.city){ window._openFromFav=false; if(typeof bkToast==='function')bkToast('Не удалось открыть объект'); zbFavOpen(); return; }
     window._capState=window._capState||{};
     window._capState.city=s.city;
     if(!window._capState.din||!window._capState.dout){
@@ -5825,7 +5849,7 @@ function ostFail(e){
       setTimeout(function(){ try{ de.classList.remove('zb-restoring'); de.classList.remove('zb-restoring-hotel'); }catch(_){} window._zbLinkHotelPending=false; },15000);
     }catch(e){}
     try{ if(typeof serpOpen==='function')serpOpen(); }
-    catch(e){ window._zbLinkHotelPending=false; try{ var d2=document.documentElement; d2.classList.remove('zb-restoring'); d2.classList.remove('zb-restoring-hotel'); }catch(_){} }
+    catch(e){ window._openFromFav=false; window._zbLinkHotelPending=false; try{ var d2=document.documentElement; d2.classList.remove('zb-restoring'); d2.classList.remove('zb-restoring-hotel'); }catch(_){} }
   }
 
   // экспорт в глобал (вызываются из карточек/шапки/openHotel)
