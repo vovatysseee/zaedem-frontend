@@ -5694,6 +5694,8 @@ function ostFail(e){
   .fav-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
   .fav-name{font-weight:700;font-size:14.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fav-sub{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fav-dates{font-size:11.5px;color:var(--green);font-weight:600;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fav-dates.past{color:#b6742a}
   .fav-rm{width:36px;height:36px;border-radius:50%;border:none;background:var(--sand1,#f3f0e7);color:#ff5a5f;cursor:pointer;flex:0 0 auto;align-self:center;font-size:15px;display:flex;align-items:center;justify-content:center}
   .fav-rm:hover{background:#ffe9ea}
   .fav-empty{text-align:center;padding:70px 24px;color:var(--muted)}
@@ -5707,6 +5709,23 @@ function ostFail(e){
 (function(){
   window.ZB_FAV_ENABLED = true;   // ← ОТКАТ: поставь false — избранное полностью отключается, ничего больше не меняется.
   var KEY='zb_fav_v1';
+  var _MN=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  function _fmtISO(d){ if(!d)return null; d=new Date(d); if(isNaN(d))return null; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function _parseISO(s){ if(!s)return null; var d=new Date(String(s)+'T00:00:00'); return isNaN(d)?null:d; }
+  function _todayMid(){ var t=new Date(); t.setHours(0,0,0,0); return t; }
+  function _nights(a,b){ return Math.max(1,Math.round((b-a)/86400000)); }
+  function _fmtRange(dinS,doutS){ var a=_parseISO(dinS),b=_parseISO(doutS); if(!a||!b)return ''; return a.getMonth()===b.getMonth()? (a.getDate()+'\u2013'+b.getDate()+' '+_MN[a.getMonth()]) : (a.getDate()+' '+_MN[a.getMonth()]+' \u2013 '+b.getDate()+' '+_MN[b.getMonth()]); }
+  // Даты для открытия объекта из избранного: актуальны → как сохраняли; прошли → завтра + столько же ночей; нет → завтра+2
+  function _resolveDates(x){
+    var din=_parseISO(x&&x.din), dout=_parseISO(x&&x.dout);
+    var t=new Date(_todayMid().getTime()+86400000);
+    if(din&&dout&&dout>din){
+      if(din>=_todayMid())return { din:din, dout:dout, past:false };
+      var n=_nights(din,dout);
+      return { din:t, dout:new Date(t.getTime()+n*86400000), past:true };
+    }
+    return { din:t, dout:new Date(t.getTime()+2*86400000), past:false };
+  }
 
   function load(){ try{ var a=JSON.parse(localStorage.getItem(KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
   function save(a){ try{ localStorage.setItem(KEY, JSON.stringify(a.slice(0,300))); }catch(e){} }
@@ -5731,9 +5750,11 @@ function ostFail(e){
     var ph=(h.photos||[]);
     var t=ph[0]||'';
     if(t&&typeof srNormPhoto==='function')t=srNormPhoto(t);
+    var cs=window._capState||{};
     return { id:h.id, name:h.name_ru||h.name_en||'Объект', city:cityOf(h),
              thumb:t, addr:(typeof cleanAddr==='function'?cleanAddr(h.address):(h.address||'')),
-             rating:parseFloat(h.rating||0)||0, cat:h.category||'' };
+             rating:parseFloat(h.rating||0)||0, cat:h.category||'',
+             din:_fmtISO(cs.din), dout:_fmtISO(cs.dout) }; // даты поиска на момент сохранения (может не быть)
   }
 
   function count(){ return load().length; }
@@ -5810,9 +5831,14 @@ function ostFail(e){
       html+='<div class="fav-city">'+esc(c)+'</div>';
       groups[c].forEach(function(x){
         var sub=[]; if(x.rating>0)sub.push('\u2B50 '+x.rating.toFixed(0)); if(x.addr)sub.push(esc(x.addr));
+        var _din=_parseISO(x.din), _dout=_parseISO(x.dout), dateHtml='';
+        if(_din&&_dout){
+          if(_din>=_todayMid())dateHtml='<div class="fav-dates">\uD83D\uDCC5 '+_fmtRange(x.din,x.dout)+'</div>';
+          else dateHtml='<div class="fav-dates past">\uD83D\uDCC5 '+_fmtRange(x.din,x.dout)+' \u00b7 откроется на ближайшие</div>';
+        }
         html+='<div class="fav-card" data-open="'+esc(String(x.id))+'">'
           +(x.thumb?'<img class="fav-thumb" src="'+esc(x.thumb)+'" alt="" onerror="this.style.visibility=\'hidden\'">':'<div class="fav-thumb"></div>')
-          +'<div class="fav-info"><div class="fav-name">'+esc(x.name)+'</div><div class="fav-sub">'+sub.join(' \u00b7 ')+'</div></div>'
+          +'<div class="fav-info"><div class="fav-name">'+esc(x.name)+'</div><div class="fav-sub">'+sub.join(' \u00b7 ')+'</div>'+dateHtml+'</div>'
           +'<button class="fav-rm" data-rm="'+esc(String(x.id))+'" aria-label="Убрать">\u2715</button>'
           +'</div>';
       });
@@ -5832,17 +5858,19 @@ function ostFail(e){
   function openItem(id){
     close();
     window._openFromFav=true; // «Назад» из этого отеля должно вернуть в избранное
+    var s=load().find(function(x){return String(x.id)===String(id);});
+    // Даты: сохранённые (если ещё актуальны) или ближайшие (завтра + столько же ночей). Ставим И в capState, И в глобальные.
+    if(s){
+      var dts=_resolveDates(s);
+      window._capState=window._capState||{};
+      window._capState.din=dts.din; window._capState.dout=dts.dout;
+      if(!window._capState.adults)window._capState.adults=2;
+      try{ dIn=dts.din; dOut=dts.dout; }catch(e){}
+    }
     var loc=findHotel(id);
     if(loc&&typeof openHotel==='function'){ try{ openHotel(loc.id); return; }catch(e){} }
-    var s=load().find(function(x){return String(x.id)===String(id);});
     if(!s||!s.city){ window._openFromFav=false; if(typeof bkToast==='function')bkToast('Не удалось открыть объект'); zbFavOpen(); return; }
-    window._capState=window._capState||{};
     window._capState.city=s.city;
-    if(!window._capState.din||!window._capState.dout){
-      var din=new Date(); din.setHours(0,0,0,0); din.setDate(din.getDate()+1);
-      window._capState.din=din; window._capState.dout=new Date(din.getTime()+2*86400000);
-    }
-    if(!window._capState.adults)window._capState.adults=2;
     window._pendingOpenHotel=id;
     try{
       var de=document.documentElement; de.classList.add('zb-restoring'); de.classList.add('zb-restoring-hotel'); window._zbLinkHotelPending=true;
