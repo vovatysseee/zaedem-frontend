@@ -5649,11 +5649,12 @@ function ostFail(e){
   .hc-fav.on{color:inherit}
   #fav-page{display:none;position:fixed;inset:0;z-index:300;background:var(--sand);overflow-y:auto;-webkit-overflow-scrolling:touch}
   #fav-page.open{display:block}
-  .fav-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(10,45,22,.96);backdrop-filter:blur(16px);border-bottom:1px solid rgba(201,241,53,.12)}
+  .fav-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;height:62px;padding:0 2.5rem;background:rgba(10,45,22,.96);backdrop-filter:blur(16px);border-bottom:1px solid rgba(201,241,53,.12)}
+  @media(max-width:600px){.fav-top{padding:0 1.25rem}}
   .fav-back{width:38px;height:38px;border-radius:50%;border:1.5px solid rgba(201,241,53,.4);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex:0 0 auto}
   .fav-back:hover{background:rgba(201,241,53,.12)}
   .fav-title{font-family:'Unbounded',sans-serif;font-weight:800;font-size:1.05rem;color:#fff}
-  .fav-logo{margin-left:auto;font-family:'Unbounded',sans-serif;font-weight:900;font-size:1.05rem;color:var(--lime);letter-spacing:-1px;cursor:pointer;transition:transform .12s;flex:0 0 auto}
+  .fav-logo{margin-left:auto;font-family:'Unbounded',sans-serif;font-weight:900;font-size:1.1rem;color:var(--lime);letter-spacing:-1px;cursor:pointer;transition:transform .12s;flex:0 0 auto}
   .fav-logo em{font-style:normal;color:rgba(255,255,255,.85)}
   .fav-logo:active{transform:translateY(1px)}
   .fav-body{max-width:860px;margin:0 auto;padding:18px}
