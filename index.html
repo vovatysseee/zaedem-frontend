@@ -806,7 +806,8 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
     <button class="fav-back" onclick="zbFavClose()" aria-label="Назад">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
-    <div class="fav-title">Избранное</div>
+    <div class="fav-title" onclick="try{var p=document.getElementById('fav-page');if(p&&p.scrollTo)p.scrollTo({top:0,behavior:'smooth'});else if(p)p.scrollTop=0;}catch(e){}" style="cursor:pointer">Избранное</div>
+    <div class="fav-logo" onclick="try{zbFavClose();}catch(e){}try{goHomeReset();}catch(e){}window.scrollTo(0,0);">Заедем<em>.by</em></div>
   </div>
   <div class="fav-body" id="fav-body"></div>
 </div>
@@ -5639,19 +5640,22 @@ function ostFail(e){
   .nav-fav:hover{border-color:var(--lime);background:rgba(201,241,53,.12)}
   .nav-fav-heart{font-size:18px;line-height:1}
   .nav-fav-badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#ff5a5f;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center}
-  /* Сердечко на карточке выдачи: крупный эмодзи на мягкой подложке, тап-зона 36px */
-  .sr-fav{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.28);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:18px;cursor:pointer;transition:transform .12s;user-select:none;-webkit-user-select:none}
-  .sr-fav:hover{background:rgba(0,0,0,.45)}
+  /* Сердечко на карточке выдачи: просто эмодзи, без подложки и тени. Тап-зона 40px. */
+  .sr-fav{position:absolute;top:6px;right:6px;background:transparent;border:none;box-shadow:none;width:40px;height:40px;display:flex;align-items:center;justify-content:center;z-index:2;font-size:22px;line-height:1;cursor:pointer;transition:transform .12s;user-select:none;-webkit-user-select:none}
   .sr-fav:active{transform:scale(1.25)}
   /* Сердечко на карточке карусели главной */
-  .hc-fav{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.28);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:17px;cursor:pointer;transition:transform .12s;user-select:none;-webkit-user-select:none}
+  .hc-fav{position:absolute;top:6px;right:6px;background:transparent;border:none;box-shadow:none;width:40px;height:40px;display:flex;align-items:center;justify-content:center;z-index:2;font-size:21px;line-height:1;cursor:pointer;transition:transform .12s;user-select:none;-webkit-user-select:none;color:inherit}
   .hc-fav:active{transform:scale(1.25)}
-  #fav-page{display:none;position:fixed;inset:0;z-index:120;background:var(--sand);overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .hc-fav.on{color:inherit}
+  #fav-page{display:none;position:fixed;inset:0;z-index:300;background:var(--sand);overflow-y:auto;-webkit-overflow-scrolling:touch}
   #fav-page.open{display:block}
   .fav-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--sand2)}
   .fav-back{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--sand3);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);flex:0 0 auto}
   .fav-back:hover{background:var(--sand1,#faf8f4)}
   .fav-title{font-family:'Unbounded',sans-serif;font-weight:800;font-size:1.05rem;color:var(--ink)}
+  .fav-logo{margin-left:auto;font-family:'Unbounded',sans-serif;font-weight:900;font-size:1.05rem;color:var(--green);letter-spacing:-1px;cursor:pointer;transition:transform .12s;flex:0 0 auto}
+  .fav-logo em{font-style:normal;color:var(--green3,#3b6b4d)}
+  .fav-logo:active{transform:translateY(1px)}
   .fav-body{max-width:860px;margin:0 auto;padding:18px}
   .fav-city{font-family:'Unbounded',sans-serif;font-weight:700;font-size:.9rem;color:var(--green);margin:20px 4px 12px}
   .fav-city:first-child{margin-top:4px}
@@ -5666,7 +5670,8 @@ function ostFail(e){
   .fav-empty{text-align:center;padding:70px 24px;color:var(--muted)}
   .fav-empty-heart{font-size:46px;margin-bottom:14px;line-height:1}
   /* Сердечко на странице объекта: эмодзи рядом с названием */
-  .hp-fav{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--sand3);background:#fff;cursor:pointer;vertical-align:middle;margin-left:10px;transition:transform .12s;font-size:20px;padding:0;user-select:none;-webkit-user-select:none}
+  /* Сердечко на странице объекта: эмодзи рядом с названием, без рамки и тени */
+  .hp-fav{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:transparent;box-shadow:none;cursor:pointer;vertical-align:middle;margin-left:6px;transition:transform .12s;font-size:24px;line-height:1;padding:0;user-select:none;-webkit-user-select:none}
   .hp-fav:active{transform:scale(1.2)}
 </style>
 <script>
