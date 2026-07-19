@@ -1262,8 +1262,13 @@ function aiDates(s, nightsHint){
     if(dout<=din)dout=mk(din.getFullYear()+1,mon,d2);
     return {din:din,dout:dout};
   }
-  var m2=s.match(/(\d{1,2})\s*(?:числа|того|го)?\s*([а-я]+)/);
-  if(m2){ for(var k2 in AI_MONTHS){ if(m2[2].indexOf(k2)===0){ var mo=AI_MONTHS[k2],dn=yearFor(mo,+m2[1]),n=nightsHint||1; return {din:dn,dout:new Date(dn.getTime()+n*86400000)}; } } }
+  // «20 августа»: перебираем ВСЕ пары «число+слово». Раньше брали ТОЛЬКО первую —
+  // «на 3 ночи с 20 августа» спотыкался о «3 ночи», даты молча терялись и подставлялось «завтра».
+  var s2=s.replace(/на\s+\d+\s*(ноч|сут|дня|дней|день)\S*/g,' ');
+  var re2=/(\d{1,2})\s*(?:числа|того|го)?\s*([а-я]+)/g, m2;
+  while((m2=re2.exec(s2))){
+    for(var k2 in AI_MONTHS){ if(m2[2].indexOf(k2)===0){ var mo=AI_MONTHS[k2],dn=yearFor(mo,+m2[1]),n=nightsHint||2; return {din:dn,dout:new Date(dn.getTime()+n*86400000)}; } }
+  }
   if(/послезавтра/.test(s)){ var d=new Date(now.getTime()+2*864e5); return {din:d,dout:new Date(d.getTime()+(nightsHint||1)*864e5)}; }
   if(/завтра/.test(s)){ var d=new Date(now.getTime()+864e5); return {din:d,dout:new Date(d.getTime()+(nightsHint||1)*864e5)}; }
   if(/сегодня/.test(s)){ return {din:now,dout:new Date(now.getTime()+(nightsHint||1)*864e5)}; }
@@ -1464,6 +1469,9 @@ function aiQuickRefine(q,el){
   if(!R||!R.city||!cs.city)return false; // уточнять нечего — контекста нет
   var t=String(q).toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim();
   if(t.length>40)return false; // длинная фраза — пусть думает GPT
+  // Гости/дети/даты/числа — НЕ быстрые уточнения. Раньше «с ребёнком 5 лет» или «с 20 августа»
+  // проглатывались шаблоном «с …» как УДОБСТВО и до GPT не доходили → дети и даты терялись.
+  if(/\d|ребен|ребят|дет|взросл|гост|человек|персон|ноч|сут|недел|выходн|завтра(?!к)|сегодня|январ|феврал|март|апрел|мая|май|июн|июл|август|сентябр|октябр|ноябр|декабр|лет\b|год\b|года\b|годик/.test(t))return false;
   var done=false;
   var m;
   if(/^а?\s*(по)?дешевле!?$/.test(t)){
@@ -1522,8 +1530,16 @@ async function aiSearch(){
     var _lc=p.city&&!/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim());
     var _lq=' '+String(q).toLowerCase().replace(/ё/g,'е')+' ';
     var _ld=zbNotPast(p._din), _lo=zbNotPast(p._dout);
-    var _ldok=!!((_ld&&_lo&&_lo>_ld)||aiDates(_lq,p.nights)||p.weekend||p.nights);
-    _localReady=!!(_lc&&_ldok&&(parseInt(p.adults)||0)>0);
+    var _dd0=aiDates(_lq,p.nights);
+    var _ldok=!!((_ld&&_lo&&_lo>_ld)||_dd0||p.weekend||p.nights);
+    // Месяц НАЗВАН, а конкретные даты локально не разобрались → не стартуем с «завтра», ждём GPT.
+    // Раньше поиск улетал с дефолтными датами, а верные даты GPT потом не применялись.
+    var _monthSaid=/январ|феврал|март|апрел|мая|май|мае|июн|июл|август|сентябр|октябр|ноябр|декабр/.test(_lq);
+    if(_monthSaid&&!_dd0&&!(_ld&&_lo&&_lo>_ld))_ldok=false;
+    // Про детей СКАЗАНО, а локальный разбор детей не понял («ребёнок пяти лет» словами) → решает GPT
+    var _kidsSaid=/ребен|ребят|дет(и|ей|ьми|ям|ск)|малыш/.test(_lq);
+    var _kidsOk=!_kidsSaid||(parseInt(p.kids)||0)>0;
+    _localReady=!!(_lc&&_ldok&&_kidsOk&&(parseInt(p.adults)||0)>0);
   }catch(e){}
   if(_localReady){ try{ aiApplyAndGo(p,q,el); }catch(e){ _localReady=false; } }
   // Ждём GPT: его разбор точнее — домердживаем (и перезапускаем поиск, если город другой)
@@ -1534,8 +1550,9 @@ async function aiSearch(){
       if(a.city)p.city=a.city;
       if(a.category)p.category=a.category;
       if(a.adults)p.adults=parseInt(a.adults)||p.adults;
-      if(a.kids!=null)p.kids=parseInt(a.kids)||0;
+      if(a.kids!=null){ var _gk=parseInt(a.kids)||0; if(_gk>0||!(parseInt(p.kids)>0))p.kids=_gk; } // ноль от GPT не стирает найденных локально детей
       if(Array.isArray(a.childAges)&&a.childAges.length)p.childAges=a.childAges;
+      if(Array.isArray(p.childAges)&&p.childAges.length>(parseInt(p.kids)||0))p.kids=p.childAges.length; // возрастов больше, чем детей → детей столько, сколько возрастов
       if(a.priceMax)p.priceMax=a.priceMax;
       if(Array.isArray(a.amenities)&&a.amenities.length)p.amenities=a.amenities;
       if(Array.isArray(a.avoid)&&a.avoid.length)p.avoid=a.avoid;
@@ -1550,8 +1567,20 @@ async function aiSearch(){
       }
       if(a.name&&String(a.name).trim()&&!/^(null|undefined|none|нет|-+)$/i.test(String(a.name).trim()))p.name=String(a.name).trim();
       if(_localReady){
-        // выдача уже открыта локальным разбором — применяем уточнения GPT «наживую»
-        if(a.city&&String(a.city)!==_prevCity){ aiApplyAndGo(p,q,el); return; } // город другой — честный перезапуск
+        // Выдача уже открыта локальным разбором. GPT — АВТОРИТЕТ: если он понял ЖЁСТКИЕ параметры
+        // (город/даты/взрослые/дети/возрасты) иначе — честный перезапуск поиска с его разбором.
+        // Раньше «наживую» применялись только мягкие фильтры (цена/удобства), а неверные локальные
+        // даты и дети оставались навсегда — «печатает верно, а ищет не то».
+        var _csH=window._capState||{};
+        var _fH=function(d){ if(!d)return ''; d=new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+        var _diff=false;
+        if(a.city&&String(a.city)!==_prevCity)_diff=true;
+        if(a.din&&a.din!==_fH(_csH.din))_diff=true;
+        if(a.dout&&a.dout!==_fH(_csH.dout))_diff=true;
+        if(a.adults&&(parseInt(a.adults)||0)!==(parseInt(_csH.adults)||0))_diff=true;
+        if((parseInt(a.kids)||0)>0&&(parseInt(a.kids)||0)!==(parseInt(_csH.kids)||0))_diff=true;
+        if(Array.isArray(a.childAges)&&a.childAges.length&&a.childAges.join(',')!==(_csH.childAges||[]).join(','))_diff=true;
+        if(_diff){ aiApplyAndGo(p,q,el); return; } // перезапуск дешёвый: SWR-кэш выдачи города уже тёплый
         aiApplyRefinements(p,el); return;
       }
     } else if(_localReady){ return; } // GPT промолчал — работаем на локальном разборе
@@ -1607,6 +1636,7 @@ function aiApplyAndGo(p,q,el){
   var nn=Math.max(1,Math.round((dout-din)/86400000));
   window._capState.din=din; window._capState.dout=dout;
   try{ dIn=din; dOut=dout; }catch(e){}
+  try{ if(typeof gCnt!=='undefined')gCnt=parseInt(window._capState.adults)||2; }catch(e){} // страница отеля читает gCnt — иначе там старое число гостей
   window._aiPriceMax=p.priceMax||0;
   window._aiAmenities=p.amenities||[];
   window._aiCategory=p.category||null;
@@ -2122,8 +2152,8 @@ function zbWriteHash(view, hotelId){
         try{
           var _hh=(typeof curHotel!=='undefined'&&curHotel&&String(curHotel.id)===String(hotelId))?curHotel
                 :(((typeof HOTELS!=='undefined'&&HOTELS)||[]).find(function(x){return String(x.id)===String(hotelId);})||null);
-          _hcity=(_hh&&(_hh.city_ru||''))||'';
-          if(!_hcity&&_hh)_hcity=zbCityFromAddress(_hh.address); // каталог/витрина: город из адреса
+          _hcity=(_hh&&(_hh.city_ru||_hh.city||''))||'';
+          if(!_hcity&&_hh)_hcity=zbCityFromAddress(_hh.address); // каталог/витрина: город из адреса (кириллица И латиница)
         }catch(e){}
       }
       var segH=[encodeURIComponent(_hcity),f(cs.din),f(cs.dout),parseInt(cs.adults)||2,parseInt(cs.kids)||0,(cs.childAges||[]).join(',')].join('|');
@@ -2452,6 +2482,12 @@ function zbCityFromAddress(addr){
   addr=String(addr||'');
   for(var i=0;i<ZB_CITY_LIST.length;i++){
     if(new RegExp('(^|[^А-Яа-яЁё])'+ZB_CITY_LIST[i]+'([^А-Яа-яЁё]|$)','i').test(addr))return ZB_CITY_LIST[i];
+  }
+  // Адреса Островка часто латиницей («Minsk, Nezavisimosti Ave») → город не находился,
+  // hash шаринг-ссылки уходил БЕЗ города, и получатель падал на главную.
+  var LAT={'Minsk':'Минск','Brest':'Брест','Grodno':'Гродно','Hrodna':'Гродно','Vitebsk':'Витебск','Gomel':'Гомель','Homel':'Гомель','Mogilev':'Могилёв','Mogilyov':'Могилёв','Mahilyow':'Могилёв','Pinsk':'Пинск','Nesvizh':'Несвиж','Naroch':'Нарочь','Braslav':'Браслав','Bobruisk':'Бобруйск','Babruysk':'Бобруйск','Baranovichi':'Барановичи','Baranavichy':'Барановичи','Borisov':'Борисов','Barysaw':'Борисов','Orsha':'Орша','Mozyr':'Мозырь','Soligorsk':'Солигорск','Salihorsk':'Солигорск','Novopolotsk':'Новополоцк','Molodechno':'Молодечно','Maladzyechna':'Молодечно','Lida':'Лида','Polotsk':'Полоцк','Polatsk':'Полоцк','Zhlobin':'Жлобин','Rechitsa':'Речица','Slutsk':'Слуцк'};
+  for(var lk in LAT){
+    if(new RegExp('(^|[^A-Za-z])'+lk+'([^A-Za-z]|$)','i').test(addr))return LAT[lk];
   }
   return '';
 }
