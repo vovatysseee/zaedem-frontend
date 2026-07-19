@@ -585,10 +585,15 @@ body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
 html.zb-restoring{background:#fff}
 html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid #e7e2d8;border-top-color:#0F2D1D;border-radius:50%;animation:zbspin .8s linear infinite;z-index:99998}
 @keyframes zbspin{to{transform:rotate(360deg)}}
+/* F5 на экране избранного: прячем главную с ПЕРВОГО кадра, чтобы она не мелькала до переоткрытия */
+.zb-fav-booting #main-page,.zb-fav-booting footer,.zb-fav-booting nav,.zb-fav-booting #serp-page,.zb-fav-booting #hotel-page{display:none!important}
+html.zb-fav-booting{background:var(--sand,#faf8f4)}
 </style>
 </head>
 <body>
 <script>try{var _de=document.documentElement;var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');
+// F5 на избранном: прячем главную сразу, снимет класс модуль избранного при переоткрытии (или таймер-подстраховка).
+if(sessionStorage.getItem('zb_fav_open')==='1'){_de.classList.add('zb-fav-booting');setTimeout(function(){_de.classList.remove('zb-fav-booting');},4000);}
 // Открытие по ССЫЛКЕ на отель (#h=…): спиннер с первого кадра, чтобы получатель НЕ видел ни главную, ни выдачу города.
 if((location.hash||'').indexOf('#h=')===0){_de.classList.add('zb-restoring');_de.classList.add('zb-restoring-hotel');window._zbLinkHotelPending=true;setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');window._zbLinkHotelPending=false;},15000);}
 else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
@@ -807,7 +812,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
     <div class="fav-title" onclick="try{var p=document.getElementById('fav-page');if(p&&p.scrollTo)p.scrollTo({top:0,behavior:'smooth'});else if(p)p.scrollTop=0;}catch(e){}" style="cursor:pointer">Избранное</div>
-    <div class="fav-logo" onclick="try{zbFavClose();}catch(e){}try{goHomeReset();}catch(e){}window.scrollTo(0,0);">Заедем<em>.by</em></div>
+    <div class="fav-logo" onclick="try{var p=document.getElementById('fav-page');if(p&&p.scrollTo)p.scrollTo({top:0,behavior:'smooth'});else if(p)p.scrollTop=0;}catch(e){}">Заедем<em>.by</em></div>
   </div>
   <div class="fav-body" id="fav-body"></div>
 </div>
@@ -5848,13 +5853,13 @@ function ostFail(e){
       return;
     }
     updateHeader(); try{ markCards(); }catch(e){}
-    // Обновление страницы на экране избранного — переоткрываем его, а не кидаем на главную.
-    // Ждём, пока восстановится главная/выдача под низом, и открываем оверлер поверх.
+    // Обновление страницы на экране избранного — переоткрываем его сразу, без мелькания главной.
     try{
       if(sessionStorage.getItem('zb_fav_open')==='1'){
-        setTimeout(function(){ try{ open(); }catch(e){} }, 60);
-      }
-    }catch(e){}
+        try{ open(); }catch(e){}
+        try{ document.documentElement.classList.remove('zb-fav-booting'); }catch(e){}
+      } else { try{ document.documentElement.classList.remove('zb-fav-booting'); }catch(e){} }
+    }catch(e){ try{ document.documentElement.classList.remove('zb-fav-booting'); }catch(_){} }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
