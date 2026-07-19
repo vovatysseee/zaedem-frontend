@@ -588,10 +588,18 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 </style>
 </head>
 <body>
-<script>try{var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){var _de=document.documentElement;_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
+<script>try{var _de=document.documentElement;var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');
+// Открытие по ССЫЛКЕ на отель (#h=…): спиннер с первого кадра, чтобы получатель НЕ видел ни главную, ни выдачу города.
+if((location.hash||'').indexOf('#h=')===0){_de.classList.add('zb-restoring');_de.classList.add('zb-restoring-hotel');window._zbLinkHotelPending=true;setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');window._zbLinkHotelPending=false;},8000);}
+else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-restoring');if(_zr.view==='hotel')_de.classList.add('zb-restoring-hotel');setTimeout(function(){_de.classList.remove('zb-restoring');_de.classList.remove('zb-restoring-hotel');},8000);}}catch(e){}</script>
 <nav>
   <div class="logo" onclick="goBack()">Заедем<em>.by</em></div>
-  <div><button class="nav-acct" onclick="openAuth()" aria-label="Войти">
+  <div style="display:flex;align-items:center;gap:10px">
+    <button class="nav-fav" id="nav-fav" onclick="zbFavOpen()" aria-label="Избранное" title="Избранное" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-5-9.3-9.2A5 5 0 0112 6a5 5 0 019.3 5.8C19 16 12 21 12 21z"/></svg>
+      <span class="nav-fav-badge" id="nav-fav-badge" style="display:none">0</span>
+    </button>
+    <button class="nav-acct" onclick="openAuth()" aria-label="Войти">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>
     <span>Войти</span>
   </button></div>
@@ -791,6 +799,16 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 
 </div>
 <div id="hotel-page" class="hotel-page"><div class="wrap" style="padding-top:1.75rem"><button class="back-btn" onclick="goBack()">← Назад</button><div id="hp-content"></div></div>
+</div>
+<!-- ===== ИЗБРАННОЕ ===== -->
+<div id="fav-page">
+  <div class="fav-top">
+    <button class="fav-back" onclick="zbFavClose()" aria-label="Назад">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="fav-title">Избранное</div>
+  </div>
+  <div class="fav-body" id="fav-body"></div>
 </div>
 <div class="overlay" id="bk-modal"><div class="modal"><div class="modal-img" id="bm-img"><button class="modal-close" onclick="closeBK()">✕</button></div><div class="modal-body" id="bm-body"></div></div></div>
 <div class="overlay" id="auth-modal"><div class="modal" style="max-width:420px"><div class="modal-body" id="auth-body"></div></div></div>
@@ -2085,6 +2103,7 @@ function openHotel(id){
   else if(h.source==='direct'||h.is_api)loadDirectRooms(h);
   if(h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude);
   try{ loadWeather(); }catch(e){}
+  try{ if(window.ZB_FAV_ENABLED&&typeof zbFavInjectHotel==='function')zbFavInjectHotel(h); }catch(e){}
 }
 
 // ── Запоминание текущего экрана, чтобы при обновлении страницы не кидало на главную ──
@@ -2206,9 +2225,11 @@ function zbOpenFromHash(){
   if(kind==='h'&&!city){
     try{
       var _loc0=(HOTELS||[]).find(function(x){return String(x.id)===String(hotelId);});
-      if(_loc0){ openHotel(_loc0.id); return true; }
+      if(_loc0){ openHotel(_loc0.id); window._zbLinkHotelPending=false; return true; }
     }catch(e){}
-    return false; // отель Островка без города не восстановить — уходим в обычный сценарий
+    // без города отель Островка не поднять → уходим в обычный сценарий; спиннер ссылки снимаем, иначе повиснет до таймаута
+    try{ window._zbLinkHotelPending=false; var _dz=document.documentElement; _dz.classList.remove('zb-restoring'); _dz.classList.remove('zb-restoring-hotel'); }catch(e){}
+    return false;
   }
   if(!city)return false;
   var din=zbNotPast(parts[1]?new Date(parts[1]+'T00:00:00'):null);
@@ -2232,10 +2253,20 @@ function zbOpenFromHash(){
   var sd=document.getElementById('s-dest'); if(sd)sd.value=city;
   try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
   if(kind==='h'){
-    // Отель уже в пуле (свой/черновик/из базы) → открываем сразу; иначе грузим выдачу города и авто-откроем
+    // Отель уже в пуле (свой/черновик/из базы) → открываем сразу; иначе грузим ТОЛЬКО его.
     var loc=HOTELS.find(function(x){return String(x.id)===String(hotelId);});
-    if(loc){ try{ openHotel(loc.id); return true; }catch(e){} }
+    if(loc){ try{ openHotel(loc.id); window._zbLinkHotelPending=false; return true; }catch(e){} } // открылся сразу → бут снимет спиннер
+    // Отель Островка по ссылке: грузим выдачу города В ФОНЕ под спиннером и открываем отель,
+    // как только он приедет. Экран выдачи НЕ показываем — получатель видит спиннер → сразу отель.
+    // (Раньше здесь был serpOpen() — он показывал весь список, пока грузился отель.)
     window._pendingOpenHotel=hotelId;
+    try{
+      var _deH=document.documentElement;
+      _deH.classList.add('zb-restoring'); _deH.classList.add('zb-restoring-hotel');
+      window._zbLinkHotelPending=true;
+      serpLoadOstrovok(); // фон: заполнит HOTELS и в своём finally сам откроет отель (или мягко упадёт в город)
+    }catch(e){ window._zbLinkHotelPending=false; try{ serpOpen(); }catch(_){ return false; } }
+    return true;
   }
   try{ serpOpen(); }catch(e){ return false; }
   return true;
@@ -2698,6 +2729,17 @@ function serpRender(){
   });
   }
 
+  // ИЗБРАННОЕ: в режиме «рекомендуем» сохранённые объекты этого города поднимаем наверх (только те,
+  // что реально есть в выдаче и доступны на даты). Явную сортировку по цене/рейтингу НЕ трогаем.
+  try{
+    if(window.ZB_FAV_ENABLED&&typeof zbFavHas==='function'&&(sortMode==='recommended'||!sortMode)){
+      var _ff=[],_rr=[];
+      list.forEach(function(h){ (zbFavHas(h.id)?_ff:_rr).push(h); });
+      if(_ff.length){ list=_ff.concat(_rr); }
+      window._serpFavFloated=_ff.length;
+    } else window._serpFavFloated=0;
+  }catch(e){ window._serpFavFloated=0; }
+
   var meta=document.getElementById('serp-meta');
   if(meta){
     if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
@@ -2815,13 +2857,14 @@ function serpRender(){
      // Один простой клик на всю карточку
      c.addEventListener('click',function(e){
        if(e.target.dataset.dir)return;
-       if(e.target.dataset.fav){e.stopPropagation();e.target.innerHTML=e.target.innerHTML==='♥'?'&#9825;':'&#9829;';e.target.style.color=e.target.innerHTML==='♥'?'#ff5a5f':'#fff';return;}
+       if(e.target.dataset.fav){e.stopPropagation();try{ if(window.ZB_FAV_ENABLED&&typeof zbFavToggle==='function')zbFavToggle(this.dataset.hid,e.target); }catch(_){}return;}
        openHotel(this.dataset.hid);
      });
      cardEls.push(c);
   });
   cards.innerHTML='';
   cardEls.forEach(function(c){cards.appendChild(c);});
+  try{ if(window.ZB_FAV_ENABLED&&typeof zbFavMarkCards==='function')zbFavMarkCards(); }catch(e){}
 
   // Кнопка «Показать ещё»
   var existMore=document.getElementById('serp-more');
@@ -3342,7 +3385,15 @@ async function serpLoadOstrovok(){
     if(window._pendingOpenHotel){
       var _pid=window._pendingOpenHotel; window._pendingOpenHotel=null;
       var _ph=HOTELS.find(function(x){return String(x.id)===String(_pid);});
-      if(_ph){ try{ openHotel(_ph.id); }catch(e){} }
+      var _wasLink=!!window._zbLinkHotelPending; window._zbLinkHotelPending=false;
+      var _rmSpin=function(){ try{ var _d=document.documentElement; _d.classList.remove('zb-restoring'); _d.classList.remove('zb-restoring-hotel'); }catch(e){} };
+      if(_ph){ try{ openHotel(_ph.id); }catch(e){} _rmSpin(); } // отель открыт → снимаем спиннер
+      else if(_wasLink){
+        // отель по ссылке недоступен (нет в выдаче/протухла статика) → мягко показываем город, спиннер снимаем
+        _rmSpin();
+        try{ serpOpen(); }catch(e){}
+        if(typeof bkToast==='function')bkToast('Этот объект сейчас недоступен — показали город');
+      }
       else if(typeof bkToast==='function'){ bkToast('Этот объект сейчас недоступен — показали город'); }
     }
   }
@@ -4874,7 +4925,7 @@ loadHotels().then(function(){
   var _byLink=false;
   try{ _byLink=zbOpenFromHash(); }catch(e){}
   if(!_byLink){ if(typeof zbRestoreRoute==='function') try{zbRestoreRoute();}catch(e){} }
-  else{ try{ document.documentElement.classList.remove('zb-restoring'); document.documentElement.classList.remove('zb-restoring-hotel'); }catch(e){} }
+  else{ if(!window._zbLinkHotelPending){ try{ document.documentElement.classList.remove('zb-restoring'); document.documentElement.classList.remove('zb-restoring-hotel'); }catch(e){} } } // при открытии отеля по ссылке спиннер снимет serpLoadOstrovok, когда отель приедет
   // F5 ГЛАВНОЙ = полный сброс: плашки, таб, память — чистый лист.
   // Память (zb_pills: происхождение таба и снимки) живёт только пока открыт
   // поиск/отель — чтобы F5 и «назад» там не теряли маршрут и исходный таб.
@@ -5578,6 +5629,196 @@ function ostFail(e){
       try{ localStorage.setItem('zb_pwa_dismissed','1'); }catch(_){}
     };
   }
+})();
+</script>
+
+<!-- ===== ИЗБРАННОЕ (localStorage, без бэкенда). Откат: ZB_FAV_ENABLED=false ниже отключает всё. ===== -->
+<style>
+  .nav-fav{position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:transparent;border:1.5px solid rgba(201,241,53,.55);cursor:pointer;color:#fff;transition:.15s}
+  .nav-fav:hover{border-color:var(--lime);background:rgba(201,241,53,.12)}
+  .nav-fav svg{width:19px;height:19px}
+  .nav-fav-badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#ff5a5f;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif}
+  .sr-fav.on{background:rgba(0,0,0,.5);color:#ff5a5f}
+  #fav-page{display:none;position:fixed;inset:0;z-index:120;background:var(--sand);overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #fav-page.open{display:block}
+  .fav-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:14px 18px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--sand2)}
+  .fav-back{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--sand3);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);flex:0 0 auto}
+  .fav-back:hover{background:var(--sand1,#faf8f4)}
+  .fav-title{font-family:'Unbounded',sans-serif;font-weight:800;font-size:1.05rem;color:var(--ink)}
+  .fav-body{max-width:860px;margin:0 auto;padding:18px}
+  .fav-city{font-family:'Unbounded',sans-serif;font-weight:700;font-size:.9rem;color:var(--green);margin:20px 4px 12px}
+  .fav-city:first-child{margin-top:4px}
+  .fav-card{display:flex;gap:14px;background:#fff;border:1px solid var(--sand2);border-radius:16px;padding:10px;margin-bottom:12px;cursor:pointer;transition:.15s}
+  .fav-card:hover{box-shadow:0 8px 26px rgba(0,0,0,.09)}
+  .fav-thumb{width:104px;height:82px;border-radius:12px;object-fit:cover;background:var(--sand2);flex:0 0 auto}
+  .fav-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .fav-name{font-weight:700;font-size:14.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fav-sub{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fav-rm{width:34px;height:34px;border-radius:50%;border:none;background:var(--sand1,#f3f0e7);color:#ff5a5f;cursor:pointer;flex:0 0 auto;align-self:center;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .fav-rm:hover{background:#ffe9ea}
+  .fav-empty{text-align:center;padding:70px 24px;color:var(--muted)}
+  .fav-empty svg{width:46px;height:46px;color:var(--sand3);margin-bottom:14px}
+  .hp-fav{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:1.5px solid var(--sand3);background:#fff;color:#8a8a8a;cursor:pointer;vertical-align:middle;margin-left:10px;transition:.15s}
+  .hp-fav.on{color:#ff5a5f;border-color:#ffc9cb}
+  .hp-fav svg{width:20px;height:20px}
+</style>
+<script>
+(function(){
+  window.ZB_FAV_ENABLED = true;   // ← ОТКАТ: поставь false — избранное полностью отключается, ничего больше не меняется.
+  var KEY='zb_fav_v1';
+
+  function load(){ try{ var a=JSON.parse(localStorage.getItem(KEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function save(a){ try{ localStorage.setItem(KEY, JSON.stringify(a.slice(0,300))); }catch(e){} }
+  function has(id){ id=String(id); return load().some(function(x){return String(x.id)===id;}); }
+  function findHotel(id){ try{ return ((window.HOTELS)||[]).find(function(x){return String(x.id)===String(id);})||null; }catch(e){ return null; } }
+  function cityOf(h){
+    var c=h.city_ru||'';
+    if(!c&&typeof zbCityFromAddress==='function')c=zbCityFromAddress(h.address);
+    if(!c&&window._capState&&window._capState.city)c=window._capState.city;
+    return c||'';
+  }
+  function snap(h){
+    var ph=(h.photos||[]);
+    var t=ph[0]||'';
+    if(t&&typeof srNormPhoto==='function')t=srNormPhoto(t);
+    return { id:h.id, name:h.name_ru||h.name_en||'Объект', city:cityOf(h),
+             thumb:t, addr:(typeof cleanAddr==='function'?cleanAddr(h.address):(h.address||'')),
+             rating:parseFloat(h.rating||0)||0, cat:h.category||'' };
+  }
+
+  function count(){ return load().length; }
+  function updateHeader(){
+    var btn=document.getElementById('nav-fav'), badge=document.getElementById('nav-fav-badge');
+    if(!btn)return;
+    var n=window.ZB_FAV_ENABLED?count():0;
+    btn.style.display=n>0?'flex':'none';
+    if(badge){ badge.textContent=n; badge.style.display=n>0?'flex':'none'; }
+  }
+
+  function markCards(){
+    if(!window.ZB_FAV_ENABLED)return;
+    document.querySelectorAll('.sr-card').forEach(function(card){
+      var id=card.dataset.hid, el=card.querySelector('.sr-fav');
+      if(!el)return;
+      if(has(id)){ el.classList.add('on'); el.innerHTML='&#9829;'; }
+      else{ el.classList.remove('on'); el.innerHTML='&#9825;'; }
+    });
+  }
+
+  // Переключить по клику на сердечко карточки/страницы
+  function toggle(id, el){
+    if(!window.ZB_FAV_ENABLED)return;
+    id=String(id);
+    var arr=load(), i=arr.findIndex(function(x){return String(x.id)===id;});
+    if(i>=0){ arr.splice(i,1); save(arr); if(typeof bkToast==='function')bkToast('Убрано из избранного'); }
+    else{
+      var h=findHotel(id);
+      if(!h){ if(typeof bkToast==='function')bkToast('Не удалось сохранить'); return; }
+      arr.push(snap(h)); save(arr); if(typeof bkToast==='function')bkToast('Добавлено в избранное ♥');
+    }
+    // подсветить конкретный элемент, если передан
+    if(el){ var on=has(id); if(el.classList.contains('sr-fav')){ el.classList.toggle('on',on); el.innerHTML=on?'&#9829;':'&#9825;'; }
+            else if(el.classList.contains('hp-fav')){ el.classList.toggle('on',on); } }
+    markCards(); updateHeader();
+    var fp=document.getElementById('fav-page'); if(fp&&fp.classList.contains('open'))render();
+  }
+
+  // Сердечко на странице объекта
+  function injectHotel(h){
+    if(!window.ZB_FAV_ENABLED||!h)return;
+    var title=document.querySelector('#hp-content .hp-title');
+    if(!title||title.querySelector('.hp-fav'))return;
+    var b=document.createElement('button');
+    b.className='hp-fav'+(has(h.id)?' on':'');
+    b.setAttribute('aria-label','В избранное');
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21s-7-5-9.3-9.2A5 5 0 0112 6a5 5 0 019.3 5.8C19 16 12 21 12 21z"/></svg>';
+    b.onclick=function(e){ e.stopPropagation();
+      // на странице объекта заполняем сердечко закрашенным при активном
+      var wasOn=has(h.id); toggle(h.id, b);
+      var nowOn=has(h.id); b.querySelector('svg').setAttribute('fill', nowOn?'currentColor':'none');
+    };
+    if(has(h.id))b.querySelector('svg').setAttribute('fill','currentColor');
+    title.appendChild(b);
+  }
+
+  function open(){ if(!window.ZB_FAV_ENABLED)return; render(); var p=document.getElementById('fav-page'); if(p){ p.classList.add('open'); document.body.style.overflow='hidden'; } }
+  function close(){ var p=document.getElementById('fav-page'); if(p){ p.classList.remove('open'); document.body.style.overflow=''; } }
+
+  function render(){
+    var body=document.getElementById('fav-body'); if(!body)return;
+    var arr=load();
+    if(!arr.length){
+      body.innerHTML='<div class="fav-empty">'
+        +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 21s-7-5-9.3-9.2A5 5 0 0112 6a5 5 0 019.3 5.8C19 16 12 21 12 21z"/></svg>'
+        +'<div style="font-weight:700;color:var(--ink);font-size:15px;margin-bottom:6px">Пока пусто</div>'
+        +'<div style="font-size:13px">Нажимайте ♥ на объектах — они сохранятся здесь, из любых городов.</div></div>';
+      return;
+    }
+    // группируем по городу
+    var groups={}, order=[];
+    arr.forEach(function(x){ var c=x.city||'Другие'; if(!groups[c]){groups[c]=[];order.push(c);} groups[c].push(x); });
+    var html='';
+    order.forEach(function(c){
+      html+='<div class="fav-city">'+esc(c)+'</div>';
+      groups[c].forEach(function(x){
+        var sub=[]; if(x.rating>0)sub.push('★ '+x.rating.toFixed(0)); if(x.addr)sub.push(esc(x.addr));
+        html+='<div class="fav-card" data-open="'+esc(String(x.id))+'">'
+          +(x.thumb?'<img class="fav-thumb" src="'+esc(x.thumb)+'" alt="" onerror="this.style.visibility=\'hidden\'">':'<div class="fav-thumb"></div>')
+          +'<div class="fav-info"><div class="fav-name">'+esc(x.name)+'</div><div class="fav-sub">'+sub.join(' · ')+'</div></div>'
+          +'<button class="fav-rm" data-rm="'+esc(String(x.id))+'" aria-label="Убрать">✕</button>'
+          +'</div>';
+      });
+    });
+    body.innerHTML=html;
+    body.querySelectorAll('.fav-card').forEach(function(card){
+      card.addEventListener('click',function(e){ if(e.target.dataset.rm)return; openItem(card.dataset.open); });
+    });
+    body.querySelectorAll('.fav-rm').forEach(function(btn){
+      btn.addEventListener('click',function(e){ e.stopPropagation(); toggle(this.dataset.rm); });
+    });
+  }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  // Открыть избранный объект: в пуле — сразу; Островок не в пуле — фоном под спиннером (как шеринг-ссылка)
+  function openItem(id){
+    close();
+    var loc=findHotel(id);
+    if(loc){ try{ openHotel(loc.id); }catch(e){} return; }
+    var s=load().find(function(x){return String(x.id)===String(id);});
+    if(!s||!s.city){ if(typeof bkToast==='function')bkToast('Не удалось открыть объект'); return; }
+    window._capState=window._capState||{};
+    window._capState.city=s.city;
+    if(!window._capState.din||!window._capState.dout){
+      var din=new Date(); din.setHours(0,0,0,0); din.setDate(din.getDate()+1);
+      window._capState.din=din; window._capState.dout=new Date(din.getTime()+2*86400000);
+    }
+    if(!window._capState.adults)window._capState.adults=2;
+    window._pendingOpenHotel=id;
+    try{
+      var de=document.documentElement; de.classList.add('zb-restoring'); de.classList.add('zb-restoring-hotel'); window._zbLinkHotelPending=true;
+      if(typeof serpLoadOstrovok==='function')serpLoadOstrovok();
+      else { window._zbLinkHotelPending=false; }
+    }catch(e){ window._zbLinkHotelPending=false; }
+  }
+
+  // экспорт в глобал (вызываются из карточек/шапки/openHotel)
+  window.zbFavToggle=toggle;
+  window.zbFavHas=has;
+  window.zbFavMarkCards=markCards;
+  window.zbFavInjectHotel=injectHotel;
+  window.zbFavOpen=open;
+  window.zbFavClose=close;
+  window.zbFavUpdateHeader=updateHeader;
+
+  // если откат включён (flag=false) — гарантированно прячем всю UI
+  function boot(){
+    if(!window.ZB_FAV_ENABLED){
+      var nf=document.getElementById('nav-fav'); if(nf)nf.style.display='none';
+      return;
+    }
+    updateHeader();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
 </body>
