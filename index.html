@@ -2220,6 +2220,9 @@ function zbOpenFromHash(){
   window._zbLastHash = raw.slice(0, raw.indexOf('=')+1) ? raw : window._zbLastHash;
   var m=raw.match(/^#(s|h|c)=(.+)$/); if(!m)return false;
   var kind=m[1], val=m[2];
+  // Safari/Telegram кодируют разделитель "|" как %7C — из-за этого split('|') не срабатывал,
+  // id становился всей строкой, город пустел, и получатель ссылки улетал на главную. Возвращаем "|".
+  val=val.replace(/%7[Cc]/g,'|');
   // Своя вкладка (F5): если sessionStorage-маршрут совпадает с hash — пусть работает быстрое
   // восстановление с полным объектом отеля. Hash нужен ПОЛУЧАТЕЛЮ ссылки (у него маршрута нет).
   try{
