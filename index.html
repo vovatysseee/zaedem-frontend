@@ -5082,7 +5082,7 @@ function cleanRoomName(name){
 }
 // Короткое описание по умолчанию + «Показать полностью» (без воды на экране)
 function hpSetDesc(el,text){
-  text=String(text||'').trim(); if(!text){el.textContent='';return;}
+  text=(typeof cleanText==='function'?cleanText(String(text||'')):String(text||'')).trim(); if(!text){el.textContent='';return;} // чистим теги/сущности (<em> и пр.)
   var LIMIT=260;
   if(text.length<=LIMIT){el.textContent=text;return;}
   var cut=text.slice(0,LIMIT),sp=cut.lastIndexOf(' ');if(sp>150)cut=cut.slice(0,sp);
