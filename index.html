@@ -5732,6 +5732,9 @@ function ostFail(e){
 <script>
 (function(){
   window.ZB_FAV_ENABLED = true;   // ← ОТКАТ: поставь false — избранное полностью отключается, ничего больше не меняется.
+  // Даты избранного — ОДНОРАЗОВЫЕ: нужны только чтобы открыть объект, в память поиска не попадают.
+  // Вернулись на главную из избранного → капсула пустая, плашка-памятка = та, что была ДО захода в избранное.
+  window.ZB_FAV_RESTORE = true;   // ← ОТКАТ ТОЛЬКО ЭТОЙ ПРАВКИ: false — поведение как раньше, избранное живёт.
   var KEY='zb_fav_v1';
   var _MN=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
   function _fmtISO(d){ if(!d)return null; d=new Date(d); if(isNaN(d))return null; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -5836,7 +5839,23 @@ function ostFail(e){
   }
 
   function open(){ if(!window.ZB_FAV_ENABLED)return; render(); var p=document.getElementById('fav-page'); if(p){ p.classList.add('open'); document.body.style.overflow='hidden'; } try{ sessionStorage.setItem('zb_fav_open','1'); }catch(e){} }
-  function close(){ var p=document.getElementById('fav-page'); if(p){ p.classList.remove('open'); document.body.style.overflow=''; } try{ sessionStorage.removeItem('zb_fav_open'); }catch(e){} }
+  function close(){ var p=document.getElementById('fav-page'); if(p){ p.classList.remove('open'); document.body.style.overflow=''; } try{ sessionStorage.removeItem('zb_fav_open'); }catch(e){} restoreAfterFav(); }
+
+  // Возврат на главную после детура в избранное: капсула пустая, плашки — те, что были ДО детура.
+  // Даты избранного могли быть неактуальны — в память поиска они не попадают вообще.
+  function restoreAfterFav(){
+    if(!window.ZB_FAV_RESTORE)return;
+    var p=window._zbFavPrev;
+    if(!window._zbFavNav||!p)return;
+    window._zbFavNav=false; window._zbFavPrev=null;
+    window._lastReg=p.reg||null;
+    window._lastAiResult=p.ai||null;
+    window._searchOrigin=p.origin||'normal';
+    try{ if(typeof zbResetCapsule==='function')zbResetCapsule(); }catch(e){}
+    try{ if(typeof zbPersistPills==='function')zbPersistPills(); }catch(e){}
+    try{ if(typeof zbRenderLast==='function')zbRenderLast(); }catch(e){}
+    try{ if(typeof zbRenderAiLast==='function')zbRenderAiLast(); }catch(e){}
+  }
 
   function render(){
     var body=document.getElementById('fav-body'); if(!body)return;
@@ -5881,6 +5900,11 @@ function ostFail(e){
   // что и шеринг-ссылка: serpOpen() под спиннером + _pendingOpenHotel.
   function openItem(id){
     close();
+    // Снимок состояния ДО детура в избранное — вернём его при возврате на главную.
+    if(window.ZB_FAV_RESTORE){
+      window._zbFavPrev={ reg:window._lastReg||null, ai:window._lastAiResult||null, origin:window._searchOrigin||'normal' };
+      window._zbFavNav=true;
+    }
     window._openFromFav=true; // «Назад» из этого отеля должно вернуть в избранное
     var s=load().find(function(x){return String(x.id)===String(id);});
     // Даты: сохранённые (если ещё актуальны) или ближайшие (завтра + столько же ночей). Ставим И в capState, И в глобальные.
@@ -5919,6 +5943,19 @@ function ostFail(e){
     if(typeof window.renderHotels==='function'){
       var _rh0=window.renderHotels;
       window.renderHotels=function(){ var r=_rh0.apply(this,arguments); try{ markCards(); }catch(e){} return r; };
+    }
+  }catch(e){}
+
+  // goHomeReset снимает плашку с ТЕКУЩЕГО _capState — а после избранного там одноразовые даты.
+  // Даём ему отработать штатно, затем возвращаем плашки к состоянию ДО детура.
+  try{
+    if(typeof window.goHomeReset==='function'){
+      var _ghr0=window.goHomeReset;
+      window.goHomeReset=function(){
+        var r=_ghr0.apply(this,arguments);
+        try{ restoreAfterFav(); }catch(e){}
+        return r;
+      };
     }
   }catch(e){}
 
