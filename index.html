@@ -2073,6 +2073,7 @@ function openHotel(id){
         <div id="ost-rates"><div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">⏳ Загружаем актуальные тарифы и цены…</div></div>`:``}
         ${rooms.length?`
         <h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера</h3>
+        ${(!isOst && h.booking_enabled===false)?`<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование откроется совсем скоро. Можно выбрать номер и посмотреть детали.</div>`:``}
         <div class="hp-rooms">${rooms.map((r,i)=>`
           <div class="room hp-room-row" data-ridx="${i}" onclick="selRoomPick(${i})" style="cursor:pointer">
             <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров.${r.desc?" · "+cleanText(r.desc):""}</div></div>
