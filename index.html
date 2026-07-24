@@ -1140,7 +1140,7 @@ function renderHotels(){
       +(img?'<img src="'+thumb+'" data-full="'+img+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
       +'<span class="hc-fav" data-hcfav="'+h.id+'" onclick="event.stopPropagation();try{if(window.ZB_FAV_ENABLED&&window.zbFavToggle)zbFavToggle(this.dataset.hcfav,this)}catch(e){}">🤍</span>'
       +'<div style="position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.72))">'
-        +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+h.name_ru+'</div>'
+        +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+zbEsc(h.name_ru)+'</div>'
         +(loc?'<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">'+loc+'</div>':'')
       +'</div>'
       +'</div>'
@@ -2052,7 +2052,7 @@ function openHotel(id){
     </div>
     <div class="hp-layout">
       <div>
-        <h1 class="hp-title">${h.name_ru}</h1>
+        <h1 class="hp-title">${zbEsc(h.name_ru)}</h1>
         <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${cleanAddr(h.address)}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         <div style="margin:0 0 1.5rem">
@@ -2453,6 +2453,18 @@ function cleanText(t){
   return s;
 }
 // Чистка адреса: убираем дубли города и мусорные скобки/пустые части
+// ═ ЗАЩИТА ОТ XSS ═ Название и адрес объекта задают ПАРТНЁРЫ (правят в кабинете)
+// и приходят из каталога Островка. Раньше они вставлялись в разметку как есть.
+// Партнёр мог пройти модерацию с нормальным названием, а потом отредактировать его
+// на строку с тегом — и скрипт выполнялся бы у КАЖДОГО посетителя страницы объекта,
+// прямо над формой бронирования. Теперь всё пользовательское проходит через zbEsc.
+// (esc внутри модуля избранного — локальная, снаружи недоступна, поэтому своя.)
+function zbEsc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
 function cleanAddr(addr){
   if(!addr) return '';
   var parts=String(addr).split(',').map(function(s){return s.trim();})
@@ -2463,7 +2475,7 @@ function cleanAddr(addr){
   var out=[]; parts.forEach(function(s){ if(!out.length||out[out.length-1].toLowerCase()!==s.toLowerCase())out.push(s); });
   // убрать любые повторы одного и того же значения (не только подряд)
   var seen={}; out=out.filter(function(s){ var l=s.toLowerCase(); if(seen[l])return false; seen[l]=1; return true; });
-  return out.join(', ');
+  return zbEsc(out.join(', ')); // результат вставляется в разметку — отдаём безопасным
 }
 function serpCatLabel(h){
   var parts=cleanAddr(h.address).split(',').map(function(s){return s.trim();}).filter(Boolean);
@@ -3666,8 +3678,8 @@ function openBookModal(){
   const n=getNights(),total=pricePerNight*n;
   document.getElementById('bm-img').innerHTML=`${(h.photos||[])[0]?`<img src="${(h.photos||[])[0]}" alt="">`:''}<button class="modal-close" onclick="closeBK()">✕</button>`;
   document.getElementById('bm-body').innerHTML=`
-    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">${h.name_ru}</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${h.address||''}${room?' · '+room.name:''}</div>
+    <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">${zbEsc(h.name_ru)}</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${zbEsc(h.address||'')}${room?' · '+zbEsc(room.name):''}</div>
     <div class="fg"><label>Гражданство гостей</label>
       <select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">
         <option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option>
@@ -3891,7 +3903,7 @@ async function confirmBook(total){
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
-    document.getElementById('bm-body').innerHTML=`<div class="success"><div class="s-ico">🎉</div><div class="conf">${conf}</div><h3 style="font-family:'Unbounded',sans-serif;font-size:1.1rem;margin-bottom:12px">Готово!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">${h.name_ru}</strong>!<br>✉️ Ваучер отправлен на ${em.value.trim()}<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
+    document.getElementById('bm-body').innerHTML=`<div class="success"><div class="s-ico">🎉</div><div class="conf">${conf}</div><h3 style="font-family:'Unbounded',sans-serif;font-size:1.1rem;margin-bottom:12px">Готово!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">${zbEsc(h.name_ru)}</strong>!<br>✉️ Ваучер отправлен на ${em.value.trim()}<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
   }catch(err){
     document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Ошибка</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Что-то пошло не так. Попробуйте ещё раз или напишите нам.</div><button onclick="openBookModal()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Повторить</button></div>`;
   }
