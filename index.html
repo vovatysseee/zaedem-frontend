@@ -592,6 +592,15 @@ html.zb-restoring::after{content:"";position:fixed;top:50%;left:50%;width:34px;h
 /* F5 на экране избранного: прячем главную с ПЕРВОГО кадра, чтобы она не мелькала до переоткрытия */
 .zb-fav-booting #main-page,.zb-fav-booting footer,.zb-fav-booting nav,.zb-fav-booting #serp-page,.zb-fav-booting #hotel-page{display:none!important}
 html.zb-fav-booting{background:var(--sand,#faf8f4)}
+/* ═ ФИКС МЕРЦАНИЯ ═ Разметка #fav-page стоит в строке ~813, а её правило display:none
+   объявлено почти на 5000 строк ниже (в блоке стилей избранного). Браузер парсит документ
+   сверху вниз: до нижнего блока он рисует #fav-page как обычный видимый div. На главной это
+   не заметно — блок уезжает под экран следом за #main-page. А при обновлении на поиске или
+   отеле класс .zb-restoring прячет #main-page, footer и nav, экран пустеет, и неоформленное
+   избранное всплывает наверх — те самые «Избранное» и «Заедем.by» на секунду.
+   Состояние по умолчанию объявляем ЗДЕСЬ, до появления элемента в разметке. Правило ниже
+   (#fav-page.open{display:block}) продолжает работать: у него выше специфичность. */
+#fav-page{display:none}
 </style>
 </head>
 <body>
