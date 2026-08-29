@@ -1092,7 +1092,14 @@ async function loadHotels(){
     const r=await fetch(API+'/api/hotels?limit=20');
     const data=await r.json();
     if(data.hotels&&data.hotels.length>0){
-      const api=data.hotels.map(h=>({...h,name_ru:h.name_ru||h.name,rating:h.rating||8.0,reviews_count:h.reviews_count||20,price:h.price||60,category:h.category||'hotel',photos:h.photos||['https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80'],amenities:[{i:'📶',n:'Wi-Fi'},{i:'🍽️',n:'Ресторан'}],rooms:[{id:1,name:'Стандарт',desc:'TV, Wi-Fi, душ',cap:2,beds:1,price:h.price||60,avail:5}],revs:[],phone:h.phone||'',checkin:'14:00',checkout:'12:00',is_api:true}));
+      const api=data.hotels.map(h=>({...h,name_ru:h.name_ru||h.name,
+        // Карта (serpRenderPins) отбирает объекты по latitude/longitude,
+        // а бэкенд отдаёт lat/lng — имена не совпадали, и прямые объекты
+        // на карту не попадали вообще. Координаты, которые хозяин вводит
+        // в кабинете, сохранялись, но гость их не видел.
+        latitude:(h.latitude!=null?h.latitude:h.lat),
+        longitude:(h.longitude!=null?h.longitude:h.lng),
+        rating:h.rating||8.0,reviews_count:h.reviews_count||20,price:h.price||60,category:h.category||'hotel',photos:h.photos||['https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80'],amenities:[{i:'📶',n:'Wi-Fi'},{i:'🍽️',n:'Ресторан'}],rooms:[{id:1,name:'Стандарт',desc:'TV, Wi-Fi, душ',cap:2,beds:1,price:h.price||60,avail:5}],revs:[],phone:h.phone||'',checkin:'14:00',checkout:'12:00',is_api:true}));
       // Сохраняем Ostrovok отели если они уже загружены
       var ostHotels=HOTELS.filter(function(h){return h.source==='ostrovok';});
       HOTELS=[...ostHotels,...(window.FB_KEEP||[]),...api];
@@ -3700,6 +3707,7 @@ function openBookModal(){
     <div style="border-top:1px solid var(--sand3);margin:14px 0 12px"></div>
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
+    ${bkArrivalHTML(h.checkin)}
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Заезд → Выезд</span><span>${fmtBkDates()}</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
       ${payIconsHTML()}
@@ -3712,6 +3720,68 @@ function openBookModal(){
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>`;
   document.getElementById('bk-modal').classList.add('open');
   bkRenderGuests();
+}
+
+// ══════════════════════════════════════════════════════
+// ВРЕМЯ ПРИБЫТИЯ ГОСТЯ
+// ══════════════════════════════════════════════════════
+// Зачем. П. 5.6 договора с поставщиком: если время прибытия не сообщено
+// не позднее чем за 48 часов до заезда, расходы по замене услуг относятся
+// на платформу. Житейски — гость приезжает ночью, объект к этому не готов,
+// номер отдан, разбираемся мы.
+//
+// Почему промежутки, а не точное время. Гость едет и точного времени не знает.
+// «19:30» — выдумка, которая не сбудется, зато потом обернётся спором
+// «вы обещали». Промежуток честно отражает неопределённость и на телефоне
+// выбирается одним касанием.
+//
+// Промежутки строятся ОТ времени заезда объекта: у усадеб бывает 16:00,
+// у квартир 15:00, жёсткие 14:00 подошли бы не всем.
+// Последний пункт — «после 00:00» — ради него всё и делается: поздние заезды
+// и создают проблему.
+function bkArrivalOptions(checkinTime){
+  var start = 14;
+  var m = String(checkinTime||'').match(/^(\d{1,2}):/);
+  if (m) { var hh = parseInt(m[1],10); if (hh>=6 && hh<=22) start = hh; }
+  var opts = '<option value="">— выберите —</option>';
+  for (var h=start; h<24; h+=2){
+    var a = ('0'+h).slice(-2)+':00';
+    var b = (h+2>=24) ? '00:00' : ('0'+(h+2)).slice(-2)+':00';
+    opts += '<option value="'+a+'-'+b+'">'+a+' – '+b+'</option>';
+  }
+  opts += '<option value="00:00+">После 00:00 — поздний заезд</option>';
+  return opts;
+}
+
+// Разметка поля. Одна на обе формы брони, чтобы они не разъезжались.
+function bkArrivalHTML(checkinTime){
+  return '<div class="fg"><label>Во сколько планируете приехать</label>'
+    +'<select id="f-arrival" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">'
+    + bkArrivalOptions(checkinTime)
+    +'</select>'
+    +'<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">Передадим объекту, чтобы вас дождались. Если планы поменяются — предупредите объект напрямую.</div>'
+    +'</div>';
+}
+
+// Значение для отправки. Пустое — не отправляем вовсе:
+// сервер поле не требует, а пустая строка засоряла бы записи.
+function bkArrivalValue(){
+  var e = document.getElementById('f-arrival');
+  var v = e ? String(e.value||'').trim() : '';
+  return v || undefined;
+}
+
+// Состояние галочек на момент отправки брони.
+// Ключи те же, что ждёт сервер: offer — оферта, pdn — обработка перс. данных.
+// Отправляем ТОЛЬКО отмеченные: снятая галочка — это отсутствие согласия,
+// а не согласие со значением «нет», записи о ней быть не должно.
+function bkCollectConsents(){
+  var pd = document.getElementById('cons-pd');
+  var of = document.getElementById('cons-offer');
+  var c = {};
+  if (of && of.checked) c.offer = true;
+  if (pd && pd.checked) c.pdn   = true;
+  return c;
 }
 
 // Кнопка оплаты активна только когда обе галочки согласий отмечены.
@@ -3909,7 +3979,7 @@ async function confirmBook(total){
   const _kids=(window._capState&&window._capState.kids)||0;
   const _totalGuests=gCnt+_kids;
   try{
-    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,room_type_id:(room&&room.room_type_id)||undefined,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):'',guest_citizenship:bkCollectGuests().citizenship,guest_list:JSON.stringify(bkCollectGuests().guests)})});
+    const res=await fetch(API+'/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_id:h.id,hotel_name:h.name_ru,room_name:room.name,room_type_id:(room&&room.room_type_id)||undefined,guest_name:(fn+' '+ln).trim(),guest_email:em.value.trim(),guest_phone:document.getElementById('f-ph')?.value||'',check_in:getIn(),check_out:getOut(),guests_count:_totalGuests,children_count:_kids,total_price:total,currency:'BYN',payment_method:'card',hotel_address:h.address||'',hotel_phone:h.phone||'',check_in_time:h.checkin||'',check_out_time:h.checkout||'',amenities:(room&&room.amenities&&room.amenities.length)?room.amenities.map(function(a){return a&&a.n?a.n:a;}).join(', '):'',guest_citizenship:bkCollectGuests().citizenship,guest_list:JSON.stringify(bkCollectGuests().guests),guest_arrival_time:bkArrivalValue(),consents:bkCollectConsents()})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Ошибка');
     const conf=data.booking_num||data.booking?.booking_num||'ZB-?????';
@@ -5374,6 +5444,7 @@ function ostRenderForm(oldPrice){
     <div style="border-top:1px solid var(--sand3);margin:14px 0 12px"></div>\
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
+    '+bkArrivalHTML((window._hpTimes&&_hpTimes.ci)||'')+'\
     <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
@@ -5462,7 +5533,9 @@ async function ostConfirm(){
       hotel_phone:h.phone||'',
       check_in_time:(window._hpTimes&&_hpTimes.ci)||'',
       check_out_time:(window._hpTimes&&_hpTimes.co)||'',
-      amenities:(_ostSel&&_ostSel.roomAmenities&&_ostSel.roomAmenities.length)?ostAmenList(_ostSel.roomAmenities,16).join(', '):''
+      amenities:(_ostSel&&_ostSel.roomAmenities&&_ostSel.roomAmenities.length)?ostAmenList(_ostSel.roomAmenities,16).join(', '):'',
+      guest_arrival_time:bkArrivalValue(),
+      consents:bkCollectConsents()
     })});
     var nd=await nr.json();
     if(!nr.ok||!nd.ok)throw new Error(nd.error||'Не удалось запустить бронирование');
