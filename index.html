@@ -3005,6 +3005,40 @@ function srpSlide(id,dir){
 
 // Пины
 var _serpMap=null;
+
+// ══════════════════════════════════════════════════════
+// КАРТА: ИСТОЧНИК ТАЙЛОВ
+// ══════════════════════════════════════════════════════
+// В августе 2026 CARTO ввёл обязательный ключ для растровых карт и начал
+// печатать «API KEY REQUIRED» поперёк тайлов у запросов без ключа.
+// Карта при этом продолжает работать — просто выглядит сломанной.
+//
+// ЧТО СДЕЛАТЬ: получить бесплатный ключ на carto.com/basemaps/apikey
+// (почта + домен + пара слов о проекте, приходит письмом сразу, аккаунт
+// не нужен, бесплатно до 5 млн тайлов в месяц) и вписать его ниже
+// в ZB_MAP_KEY. Больше нигде править не надо — обе карты сайта
+// (поиск и карточка объекта) берут адрес отсюда.
+//
+// ПОКА КЛЮЧА НЕТ — работает запасной источник OpenStreetMap: без ключа,
+// без водяного знака, вид чуть контрастнее. Лучше временная смена стиля,
+// чем надпись поперёк карты.
+//
+// НА БУДУЩЕЕ: растровые карты CARTO выводятся из эксплуатации. Ключ решает
+// вопрос сейчас, но через год-два понадобится переход на векторные.
+var ZB_MAP_KEY = '';   // ← сюда вставить ключ CARTO, в кавычках
+
+function zbTileUrl(){
+  return ZB_MAP_KEY
+    ? 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=' + encodeURIComponent(ZB_MAP_KEY)
+    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+}
+function zbTileOpts(){
+  // У OSM нет поддоменов a-d и ретины, у CARTO есть — параметры разные,
+  // иначе половина тайлов не грузится.
+  return ZB_MAP_KEY
+    ? { maxZoom:20, subdomains:'abcd', attribution:'&copy; OpenStreetMap, &copy; CARTO' }
+    : { maxZoom:19, attribution:'&copy; OpenStreetMap' };
+}
 var _serpCluster=null;
 var _serpMarkers={};
 function serpRenderPins(list){
@@ -3015,7 +3049,7 @@ function serpRenderPins(list){
   if(!el)return;
   if(!_serpMap){
     _serpMap=L.map('serp-leaflet',{zoomControl:true,attributionControl:false}).setView([53.9,27.56],11);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(_serpMap);
+    L.tileLayer(zbTileUrl(), zbTileOpts()).addTo(_serpMap);
   }
 
   // Группа кластеризации — объединяет близкие метки в один кружок
@@ -3936,13 +3970,104 @@ function bkCollectGuests(){
   });
   return {citizenship:citizenship, guests:guests};
 }
+// Для вывода чужих данных используется zbEsc() — она уже объявлена выше
+// в этом файле. Второе объявление здесь было лишним: одинаковое имя,
+// объявленное дважды, однажды разъедется при правке одной из копий.
+
+// ══════════════════════════════════════════════════════
+// ПРОВЕРКА ДАННЫХ ГОСТЯ
+// ══════════════════════════════════════════════════════
+// Зачем строже, чем было. Раньше имя проверялось только на длину «больше двух
+// символов»: проходили «ааа», «12345», «...». Эти данные уходят в отель,
+// печатаются в ваучере и в анкете МВД по иностранцам. Мусор в них означает,
+// что гостя не заселят и разбираться будем мы.
+
+// Имя и фамилия. Требуем ДВА слова: в ваучер и анкету нужны и имя, и фамилия.
+// Кириллица и латиница по отдельности — смесь почти всегда означает случайную
+// раскладку («Ивaн» с латинской a), и такое имя в паспорте не совпадёт.
+function zbValidName(v, foreign){
+  var s = String(v||'').trim().replace(/\s+/g,' ');
+  if (!s) return 'Укажите имя и фамилию';
+  if (s.length < 4) return 'Укажите имя и фамилию полностью';
+  if (s.length > 80) return 'Слишком длинное имя';
+  if (/\d/.test(s)) return 'В имени не должно быть цифр';
+
+  var cyr = /[а-яёА-ЯЁ]/.test(s), lat = /[a-zA-Z]/.test(s);
+  if (!cyr && !lat) return 'Имя должно состоять из букв';
+  if (cyr && lat) return 'Имя набрано в двух раскладках — проверьте буквы';
+  // Иностранцу подсказываем латиницу: так требует анкета МВД,
+  // но не запрещаем — пусть человек решает сам.
+  if (foreign && cyr && !lat) return 'Для иностранных гостей имя указывается латиницей, как в паспорте';
+
+  if (!/^[а-яёА-ЯЁa-zA-Z][а-яёА-ЯЁa-zA-Z\-' ]*[а-яёА-ЯЁa-zA-Z]$/.test(s))
+    return 'В имени допустимы только буквы, дефис и апостроф';
+
+  var parts = s.split(' ').filter(Boolean);
+  if (parts.length < 2) return 'Укажите и имя, и фамилию';
+  if (parts.some(function(p){ return p.replace(/[-']/g,'').length < 2; }))
+    return 'Слишком короткое имя или фамилия';
+  // «ааааа», «ыыыы» — одна буква подряд, явный мусор.
+  if (parts.some(function(p){ return /^(.)\1+$/i.test(p.replace(/[-']/g,'')); }))
+    return 'Проверьте написание имени';
+  return null;
+}
+
+function zbValidEmail(v){
+  var s = String(v||'').trim();
+  if (!s) return 'Укажите email — на него придёт ваучер';
+  if (s.length > 254) return 'Слишком длинный email';
+  if (/[а-яёА-ЯЁ]/.test(s)) return 'В email попали русские буквы — проверьте раскладку';
+  if (/\s/.test(s)) return 'В email не должно быть пробелов';
+  // Домен верхнего уровня минимум из двух букв, точка не в начале и не в конце.
+  if (!/^[^@\s]+@[^@\s.]+(\.[^@\s.]+)*\.[a-zA-Z]{2,}$/.test(s))
+    return 'Проверьте email — похоже, опечатка';
+  if (/\.\./.test(s)) return 'Проверьте email — две точки подряд';
+  return null;
+}
+
+function zbValidPhone(v){
+  var s = String(v||'').trim();
+  if (!s) return 'Укажите телефон — по нему свяжется объект';
+  var d = (s.match(/\d/g)||[]).join('');
+  if (!/^[\d\s()+\-.]+$/.test(s)) return 'В телефоне допустимы только цифры, пробелы, скобки, плюс и дефис';
+  // Белорусский номер: 375 + 9 цифр. Иностранные короче и длиннее бывают,
+  // поэтому общий диапазон широкий, а для +375 проверка точная.
+  if (/^375/.test(d) || /^\+?375/.test(s)) {
+    if (d.length !== 12) return 'Белорусский номер: +375 и 9 цифр, например +375 29 123-45-67';
+  } else if (/^80/.test(d)) {
+    if (d.length !== 11) return 'Формат: 80 29 1234567 или +375 29 1234567';
+  } else if (d.length < 9 || d.length > 15) {
+    return 'Проверьте номер телефона';
+  }
+  if (/^(\d)\1+$/.test(d)) return 'Проверьте номер телефона';
+  return null;
+}
+
 function bkValidate(){
-  var fn=(document.getElementById('f-fn')?.value||'').trim();
-  var em=(document.getElementById('f-em')?.value||'').trim();
-  var ph=(document.getElementById('f-ph')?.value||'').trim();
-  if(fn.length<2){document.getElementById('f-fn')?.focus();return 'Укажите имя';}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){document.getElementById('f-em')?.focus();return 'Проверьте email — похоже, опечатка';}
-  if((ph.match(/\d/g)||[]).length<9){document.getElementById('f-ph')?.focus();return 'Укажите телефон для связи';}
+  var sel = document.getElementById('f-citizen');
+  var foreign = !!(sel && sel.value && sel.value !== 'Беларусь');
+
+  // Имена ВСЕХ гостей, а не только заказчика: они все попадают
+  // в ваучер и в анкету по иностранцам.
+  var ids = ['f-fn','f-ad1','f-ad2','f-ad3','f-ad4','f-ad5','f-ch0','f-ch1','f-ch2','f-ch3','f-ch4'];
+  for (var i=0;i<ids.length;i++){
+    var el = document.getElementById(ids[i]);
+    if (!el) continue;
+    var isMain = (ids[i]==='f-fn');
+    var val = (el.value||'').trim();
+    if (!val && !isMain) continue;          // пустые поля доп. гостей пропускаем
+    var e = zbValidName(val, foreign);
+    if (e) { el.focus(); return e; }
+  }
+
+  var em = document.getElementById('f-em');
+  var e2 = zbValidEmail(em ? em.value : '');
+  if (e2) { if(em) em.focus(); return e2; }
+
+  var ph = document.getElementById('f-ph');
+  var e3 = zbValidPhone(ph ? ph.value : '');
+  if (e3) { if(ph) ph.focus(); return e3; }
+
   return null;
 }
 //   при успехе вызвать confirmBook(total) → бронь уходит на сервер.
@@ -4078,15 +4203,15 @@ function openCabinet(bookings){
     <button onclick="document.getElementById('cabinet-modal').classList.remove('open')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
     <div style="clear:both">
       <div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:4px">Мои брони</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">${b.guest_email}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">${zbEsc(b.guest_email)}</div>
       ${bookings.map(bk=>`
         <div style="background:#fff;border:1.5px solid var(--sand3);border-radius:16px;padding:18px 20px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
           <!-- Шапка карточки -->
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
             <div>
               <div style="font-family:'Unbounded',sans-serif;font-size:13px;color:#0F2D1D;font-weight:800;letter-spacing:.5px">${bk.booking_num}</div>
-              <div style="font-size:16px;font-weight:700;color:#111;margin-top:3px">${bk.hotel_name||'—'}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">${bk.room_name||''}</div>
+              <div style="font-size:16px;font-weight:700;color:#111;margin-top:3px">${zbEsc(bk.hotel_name||'—')}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">${zbEsc(bk.room_name||'')}</div>
             </div>
             <span style="background:${statusColor(bk.status)};color:${statusTextColor(bk.status)};font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-left:8px">${statusLabel(bk.status)}</span>
           </div>
@@ -4099,7 +4224,7 @@ function openCabinet(bookings){
           </div>
           <!-- Цена и имя -->
           <div style="display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid var(--sand3);padding-top:12px;margin-bottom:14px">
-            <div style="font-size:12px;color:var(--muted)">${bk.guest_name}</div>
+            <div style="font-size:12px;color:var(--muted)">${zbEsc(bk.guest_name)}</div>
             <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;color:#0F2D1D">${parseFloat(bk.total_price||0).toFixed(0)} ${bk.currency||'BYN'}</div>
           </div>
           <!-- Кнопки управления -->
@@ -4161,9 +4286,9 @@ function printBooking(bk){
   <hr>
   <div class="num">${num}</div>
   <div class="voucher-label">Ваучер бронирования</div>
-  <div class="hotel-name">${bk.hotel_name||'—'}</div>
+  <div class="hotel-name">${zbEsc(bk.hotel_name||'—')}</div>
   ${bk.hotel_address?`<div style="font-size:12px;color:#888;margin-top:3px">📍 ${bk.hotel_address}</div>`:''}
-  <div class="room-name">${bk.room_name||''}</div>
+  <div class="room-name">${zbEsc(bk.room_name||'')}</div>
   <span class="status-badge">${statusLabel}</span>
   <div class="grid">
     <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)}${bk.check_in_time?` · с ${bk.check_in_time}`:''}</div></div>
@@ -4171,11 +4296,11 @@ function printBooking(bk){
     <div class="cell"><div class="cell-label">Ночей</div><div class="cell-val">${bk.nights||'—'}</div></div>
     <div class="cell"><div class="cell-label">Гостей</div><div class="cell-val">${bk.guests_count||1}</div></div>
   </div>
-  <div class="row"><span class="label">Гость</span><span class="val">${bk.guest_name||'—'}</span></div>
-  <div class="row"><span class="label">Email</span><span class="val">${bk.guest_email||'—'}</span></div>
-  ${bk.guest_phone?`<div class="row"><span class="label">Телефон</span><span class="val">${bk.guest_phone}</span></div>`:''}
-  <div class="row"><span class="label">Способ оплаты</span><span class="val">${bk.payment_method||'—'}</span></div>
-  ${bk.hotel_phone?`<div class="row"><span class="label">Телефон отеля</span><span class="val">${bk.hotel_phone}</span></div>`:''}
+  <div class="row"><span class="label">Гость</span><span class="val">${zbEsc(bk.guest_name||'—')}</span></div>
+  <div class="row"><span class="label">Email</span><span class="val">${zbEsc(bk.guest_email||'—')}</span></div>
+  ${bk.guest_phone?`<div class="row"><span class="label">Телефон</span><span class="val">${zbEsc(bk.guest_phone)}</span></div>`:''}
+  <div class="row"><span class="label">Способ оплаты</span><span class="val">${zbEsc(bk.payment_method||'—')}</span></div>
+  ${bk.hotel_phone?`<div class="row"><span class="label">Телефон отеля</span><span class="val">${zbEsc(bk.hotel_phone)}</span></div>`:''}
   ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${(Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · ')}</div></div>`:''}
   <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
   <div class="footer">Заедем.by · ИП Горошко Жанна Витальевна · booking@zaedem.by<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
@@ -4285,7 +4410,7 @@ function openHotelMap(){
   setTimeout(function(){
     if(window._hmap){ window._hmap.remove(); window._hmap=null; }
     var map=L.map('hmap',{attributionControl:false}).setView([lat,lng],15);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(map);
+    L.tileLayer(zbTileUrl(), zbTileOpts()).addTo(map);
     L.marker([lat,lng]).addTo(map);
     window._hmap=map;
     setTimeout(function(){map.invalidateSize();},180);
