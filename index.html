@@ -1092,14 +1092,59 @@ async function loadHotels(){
     const r=await fetch(API+'/api/hotels?limit=20');
     const data=await r.json();
     if(data.hotels&&data.hotels.length>0){
-      const api=data.hotels.map(h=>({...h,name_ru:h.name_ru||h.name,
-        // Карта (serpRenderPins) отбирает объекты по latitude/longitude,
-        // а бэкенд отдаёт lat/lng — имена не совпадали, и прямые объекты
-        // на карту не попадали вообще. Координаты, которые хозяин вводит
-        // в кабинете, сохранялись, но гость их не видел.
-        latitude:(h.latitude!=null?h.latitude:h.lat),
-        longitude:(h.longitude!=null?h.longitude:h.lng),
-        rating:h.rating||8.0,reviews_count:h.reviews_count||20,price:h.price||60,category:h.category||'hotel',photos:h.photos||['https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=900&q=80'],amenities:[{i:'📶',n:'Wi-Fi'},{i:'🍽️',n:'Ресторан'}],rooms:[{id:1,name:'Стандарт',desc:'TV, Wi-Fi, душ',cap:2,beds:1,price:h.price||60,avail:5}],revs:[],phone:h.phone||'',checkin:'14:00',checkout:'12:00',is_api:true}));
+      // ══════════════════════════════════════════════════════
+      // СОПОСТАВЛЕНИЕ ПОЛЕЙ С ОТВЕТОМ БЭКЕНДА
+      // ══════════════════════════════════════════════════════
+      // Здесь была заготовка с демо-данными, оставшаяся с тех пор, когда
+      // настоящего API ещё не было. Она подставляла выдумку вместо реальных
+      // полей, потому что имена не совпадали, и подмена происходила молча.
+      // Что именно расходилось: бэкенд отдаёт min_price, cover_photo,
+      // check_in_time, а читалось price, photos, checkin.
+      const api=data.hotels.map(h=>{
+        // Фото: бэкенд отдаёт ОДНО обложечное фото полем cover_photo.
+        // Читалось h.photos, которого в ответе нет, поэтому у КАЖДОГО
+        // прямого объекта показывалась одна и та же стоковая картинка
+        // чужого отеля — гость видел не тот дом, который бронирует.
+        const ph = Array.isArray(h.photos) && h.photos.length ? h.photos
+                 : (h.cover_photo ? [h.cover_photo] : []);
+        // Цена: в ответе min_price. Читалось h.price, которого нет,
+        // и срабатывал запасной вариант — у всех объектов ровно 60 BYN.
+        const pr = (h.min_price != null) ? Number(h.min_price)
+                 : (h.price != null ? Number(h.price) : null);
+        // Время заезда/выезда объекта. Было жёстко «14:00»/«12:00» независимо
+        // от того, что указал хозяин: у усадеб часто 16:00. От этого зависит
+        // и ваучер, и список времени прибытия в форме брони.
+        const ci = h.check_in_time || h.checkin_time || h.checkin || '14:00';
+        const co = h.check_out_time || h.checkout_time || h.checkout || '12:00';
+        return {...h,
+          name_ru:h.name_ru||h.name,
+          // Карта (serpRenderPins) отбирает объекты по latitude/longitude,
+          // а бэкенд отдаёт lat/lng — имена не совпадали, и прямые объекты
+          // на карту не попадали вообще.
+          latitude:(h.latitude!=null?h.latitude:h.lat),
+          longitude:(h.longitude!=null?h.longitude:h.lng),
+          // Рейтинг и отзывы НЕ выдумываем. Раньше подставлялись 8.0 и 20 отзывов
+          // объекту, у которого нет ни одного. Во-первых, интерфейс трактует
+          // это поле как ЗВЁЗДЫ, и получалось «★ 8 звёзд» — такого не бывает.
+          // Во-вторых, показывать гостю несуществующую оценку — это заявление
+          // о свойствах услуги, которого никто не делал.
+          rating:(h.rating!=null?h.rating:null),
+          reviews_count:(h.reviews_count!=null?h.reviews_count:0),
+          price:pr,
+          category:h.category||'hotel',
+          photos:ph,
+          // Удобства приходят из базы. Раньше затирались парой «Wi-Fi, Ресторан»
+          // у всех подряд, включая объекты, где ресторана нет.
+          amenities:Array.isArray(h.amenities)&&h.amenities.length
+            ? h.amenities.map(a=>(a&&a.n)?a:{i:'•',n:String(a&&a.name?a.name:a)})
+            : [],
+          // Номера подгружаются отдельно (loadDirectRooms) при открытии
+          // карточки. Заглушка «Стандарт за 60 BYN» только вводила в заблуждение.
+          rooms:[], revs:[],
+          phone:h.phone||'',
+          checkin:ci, checkout:co,
+          is_api:true};
+      });
       // Сохраняем Ostrovok отели если они уже загружены
       var ostHotels=HOTELS.filter(function(h){return h.source==='ostrovok';});
       HOTELS=[...ostHotels,...(window.FB_KEEP||[]),...api];
