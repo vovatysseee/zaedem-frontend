@@ -1923,7 +1923,14 @@ async function hpQaAsk(){
     var _near=(h._nearby||[]).slice(0,12);
     // «Что рядом» тоже с экрана как подстраховка
     try{ document.querySelectorAll('#hp-nearby span').forEach(function(sp){var t=sp.textContent.trim();if(t&&t.length<40&&_near.indexOf(t)<0)_near.push(t);}); }catch(_){}
-    var payload={ q:q, hotel:{
+    var payload={ q:q,
+      // Идентификатор объекта — бэкенд проверяет, что объект существует,
+      // и берёт описание из базы. Без него ручка отвечает «Объект не найден»:
+      // раньше она принимала любые выдуманные данные и работала как бесплатный
+      // чат-бот за наш счёт.
+      hid: (h.hid!=null? h.hid : (String(h.id||'').indexOf('ost_')===0 ? String(h.id).slice(4) : null)),
+      hotel_id: (h.source!=='ostrovok' && /^[0-9a-f-]{36}$/i.test(String(h.id||'')) ? h.id : null),
+      hotel:{
       name:h.name_ru||h.name||'',
       desc:_desc.slice(0,3500),
       amenities:_amen.slice(0,60),
