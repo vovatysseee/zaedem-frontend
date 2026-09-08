@@ -1226,38 +1226,17 @@ function renderHotels(){
   }
   // Карточка из карусели должна открываться даже после того, как каталог/выдача перезаписали HOTELS
   function ensure(list){ (list||[]).forEach(function(h){ if(!HOTELS.find(function(x){return x.id===h.id;}))HOTELS.push(h); }); }
-  // Перерисовываем карусель ТОЛЬКО если состав изменился.
-  // renderHotels вызывается несколько раз подряд (кэш → сеть → loadHotels), и каждая
-  // перезапись innerHTML уничтожала карточку между касанием и кликом: палец опустился
-  // на один элемент, а отпустился уже на другом — клик не засчитывался. Второй источник
-  // «через раз».
-  function paint(el,list,empty){
-    if(!el)return;
-    // В подпись входят не только id, но и то, что видно на карточке. Иначе сеть привозит
-    // те же объекты со свежей ценой или фото, состав не меняется — и человек продолжает
-    // смотреть на устаревшие данные из кэша.
-    var sig=(list||[]).map(function(x){return [x.id,x.price,x.name_ru,(x.photos||[])[0]].join('~');}).join(',')+'|'+((list||[]).length?'':empty);
-    if(el.dataset.zbSig===sig)return;
-    // Подпись ставим ТОЛЬКО после удачной отрисовки. Если сборка карточек упадёт
-    // на кривом объекте, подпись останется прежней и следующий вызов попробует снова.
-    // Иначе одна ошибка запирала карусель навсегда: «Скоро появятся» и больше ни одной попытки.
-    var html;
-    try{ html=(list&&list.length)?list.map(card).join(''):''; }
-    catch(err){ try{console.warn('карусель:',err);}catch(_){} return; }
-    el.innerHTML=html||'<p style="padding:1rem;color:var(--muted)">'+empty+'</p>';
-    el.dataset.zbSig=sig;
-  }
   var bh=document.getElementById('carousel-hotel');
   if(bh){ var lh=(window._topHotels||[]).slice(0,5); ensure(lh);
-    paint(bh,lh,window._topLoaded?'Скоро появятся':'Загружаем топ отелей…'); }
+    bh.innerHTML=lh.length?lh.map(card).join(''):'<p style="padding:1rem;color:var(--muted)">'+(window._topLoaded?'Скоро появятся':'Загружаем топ отелей…')+'</p>'; }
   var ba=document.getElementById('carousel-apart');
   if(ba){ var la=(window._topAparts||[]).slice(0,5); ensure(la);
-    paint(ba,la,window._topLoaded?'Скоро появятся':'Загружаем топ апартаментов…'); }
+    ba.innerHTML=la.length?la.map(card).join(''):'<p style="padding:1rem;color:var(--muted)">'+(window._topLoaded?'Скоро появятся':'Загружаем топ апартаментов…')+'</p>'; }
   var bg=document.getElementById('carousel-guest');
   if(bg){ var g=HOTELS.filter(function(h){return h.category==='guest';});
     var real=g.filter(function(h){return h.is_api;});
     var lg=real.length?real.slice(0,5):g.slice(0,1);   // реальные усадьбы из базы приоритетнее черновика
-    paint(bg,lg,'Скоро появятся'); }
+    bg.innerHTML=lg.length?lg.map(card).join(''):'<p style="padding:1rem;color:var(--muted)">Скоро появятся</p>'; }
 }
 // Топ-5 отелей и апартаментов из каталога Островка для каруселей главной.
 // МГНОВЕННАЯ ГЛАВНАЯ: сначала рисуем из localStorage-кэша (если свежее 6 часов),
