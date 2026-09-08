@@ -2150,6 +2150,7 @@ function openHotel(id){
     if((_spNow&&_spNow.classList.contains('open'))||window._catMode){
       window._serpScrollY=window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;
       window._serpShownSaved=window._serpShown||0;
+      window._serpParamSnap=(typeof zbSearchSnap==='function')?zbSearchSnap():'';
     }
   }catch(e){}
   // Гасим отложенные попытки вернуть прокрутку списка: если они сработают уже здесь,
@@ -2177,6 +2178,12 @@ function openHotel(id){
   document.getElementById('serp-page').classList.remove('open');document.body.classList.remove('on-serp');
   zbSaveRoute('hotel', id);
   window.scrollTo(0,0);
+  // Второй заход после отрисовки: содержимое вставляется ниже, страница вырастает,
+  // и в этот момент система иногда возвращает прежнюю прокрутку. Проверяем, что
+  // открыта именно карточка отеля, — чтобы не дёрнуть чужой экран.
+  requestAnimationFrame(function(){
+    try{ if(document.body.classList.contains('on-hotel')&&(window.scrollY||0)>0)window.scrollTo(0,0); }catch(e){}
+  });
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
       ${(function(){var pf=(h.photos||[]);var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+p[i]+'" data-full="'+(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}var btn=pf.length?'<button class="hp-gallery-all" onclick="openGal(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Все фото ('+pf.length+')</button>':'';return g(0)+g(1)+g(2)+btn;})()}
@@ -3725,6 +3732,28 @@ function catShowExcl(){
   }
   var more=document.getElementById('serp-more'); if(more)more.remove();
 }
+// Браузер при переходах назад/вперёд возвращает прокрутку сам и делает это ПОСЛЕ нас —
+// его попытка перебивает нашу и роняет карточку отеля на середину. Прокруткой в этом
+// приложении управляем мы (serpReopen возвращает позицию списка), поэтому системное
+// восстановление отключаем.
+try{ if('scrollRestoration' in history)history.scrollRestoration='manual'; }catch(e){}
+
+// Слепок параметров поиска: даты и состав гостей. Нужен, чтобы отличить
+// «вернулся тем же запросом» от «поменял даты внутри карточки отеля».
+// В первом случае возвращаем сохранённый список, во втором он уже неверен —
+// человек ждёт выдачу по НОВЫМ датам, а не по тем, с которыми заходил.
+function zbSearchSnap(){
+  try{
+    var di=(typeof dIn!=='undefined'&&dIn)?new Date(dIn).toDateString():'';
+    var doo=(typeof dOut!=='undefined'&&dOut)?new Date(dOut).toDateString():'';
+    var ad=(typeof gAdults!=='undefined')?gAdults:'';
+    var kd=(typeof gKids!=='undefined')?gKids:'';
+    var gc=(typeof gCnt!=='undefined')?gCnt:'';
+    var ages=(window._hpKidAges||window._kidAges||[]).join('-');
+    return [di,doo,ad,kd,gc,ages].join('|');
+  }catch(e){ return ''; }
+}
+
 // Снимаем отложенные попытки восстановить прокрутку. Вызывается при любом уходе
 // со страницы выдачи, чтобы «догоняющая» прокрутка не сработала на другой странице.
 window._zbScrollTimers=[];
@@ -3743,6 +3772,13 @@ function zbCancelScrollRestore(){
 function serpReopen(){
   try{
     if(!(window._serpFullList&&window._serpFullList.length))return false;
+    // Даты или гости изменились внутри карточки отеля → сохранённый список
+    // относится к другому запросу. Возвращать его нельзя: человек увидит выдачу
+    // по старым датам, а плашка поиска — по новым, и поймёт это только со второго
+    // раза. Отдаём false, вызывающий пойдёт обычным путём и найдёт заново.
+    if(window._serpParamSnap!=null&&typeof zbSearchSnap==='function'){
+      if(zbSearchSnap()!==window._serpParamSnap)return false;
+    }
     var sp=document.getElementById('serp-page'); if(!sp)return false;
     var mp=document.getElementById('main-page'); if(mp)mp.style.display='none';
     var hp=document.getElementById('hotel-page'); if(hp)hp.classList.remove('open');
