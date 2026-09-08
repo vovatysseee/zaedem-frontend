@@ -2152,6 +2152,9 @@ function openHotel(id){
       window._serpShownSaved=window._serpShown||0;
     }
   }catch(e){}
+  // Гасим отложенные попытки вернуть прокрутку списка: если они сработают уже здесь,
+  // карточка отеля откроется не сверху, а на позиции из выдачи — где-то на описании.
+  try{ if(typeof zbCancelScrollRestore==='function')zbCancelScrollRestore(); }catch(e){}
   // Происхождение перехода: из избранного? (маркер выставляет openItem). Потребляем его здесь —
   // для обычных открытий из карточек маркера нет → _fromFav=false, «Назад» работает как раньше.
   window._fromFav = !!window._openFromFav; window._openFromFav=false;
@@ -3722,6 +3725,13 @@ function catShowExcl(){
   }
   var more=document.getElementById('serp-more'); if(more)more.remove();
 }
+// Снимаем отложенные попытки восстановить прокрутку. Вызывается при любом уходе
+// со страницы выдачи, чтобы «догоняющая» прокрутка не сработала на другой странице.
+window._zbScrollTimers=[];
+function zbCancelScrollRestore(){
+  try{ (window._zbScrollTimers||[]).forEach(clearTimeout); }catch(e){}
+  window._zbScrollTimers=[];
+}
 // ── ВОЗВРАТ В ВЫДАЧУ БЕЗ ПЕРЕЗАПРОСА ──
 // «Назад» из отеля раньше звал serpOpen(), а тот выставляет _serpReset=true (пагинация
 // сбрасывается на первые 15), делает scrollTo(0,0) и заново дёргает Островок. Человек,
@@ -3752,12 +3762,19 @@ function serpReopen(){
     // Возвращаем позицию в несколько подходов. Карточки с картинками досчитывают
     // высоту не сразу, и один заход упирается в ещё короткую страницу — прокрутка
     // обрезается по текущей высоте документа и человек оказывается выше, чем стоял.
-    function _put(){ try{ window.scrollTo(0,y); }catch(e){} }
+    // Каждый подход проверяет, что выдача ВСЁ ЕЩЁ открыта: если за эти полсекунды
+    // человек успел уйти в отель, поздний подход утащил бы карточку отеля на позицию
+    // из списка — она открывалась бы посередине, на описании.
+    zbCancelScrollRestore();
+    function _put(){ try{ if(sp.classList.contains('open'))window.scrollTo(0,y); }catch(e){} }
     requestAnimationFrame(function(){requestAnimationFrame(function(){
+      if(!sp.classList.contains('open'))return;
       _put();
       try{ sp.style.visibility=''; }catch(e){}
       [120,300,600].forEach(function(ms){
-        setTimeout(function(){ try{ if(Math.abs((window.scrollY||0)-y)>4)_put(); }catch(e){} },ms);
+        window._zbScrollTimers.push(setTimeout(function(){
+          try{ if(sp.classList.contains('open')&&Math.abs((window.scrollY||0)-y)>4)_put(); }catch(e){}
+        },ms));
       });
     });});
     // страховка: что бы ни случилось выше, экран не должен остаться невидимым
@@ -3870,8 +3887,14 @@ function selRoomBook(idx){
 function hpModuleBook(){
   if(!curHotel)return;
   if(curHotel.source==='ostrovok'){
-    // бронируем выбранный тариф Островка (или первый)
     var i=window._ostPicked||0;
+    // Раньше при пустом списке функция молча выходила: человек жал «Выбрать»
+    // и не понимал, сломалось или не нажалось. Теперь говорим вслух.
+    if(!_ostRates||!_ostRates.length||!_ostRates[i]){
+      try{ if(typeof bkToast==='function')bkToast('На выбранные даты номеров нет — измените даты'); }catch(e){}
+      var b=document.getElementById('ost-rates'); if(b)b.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
     if(typeof ostSelectRate==='function')ostSelectRate(i);
     return;
   }
@@ -5595,7 +5618,9 @@ function renderDirectRooms(list){
   if(box){
     if(!list.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:16px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте другие даты.</div>';
+      try{ hpSumState('empty','Нет номеров на эти даты'); }catch(e){}
     } else {
+      try{ hpSumState('ok','Выбрать'); }catch(e){}
       box.innerHTML=list.map(function(r,i){
         return '<div class="room hp-room-row" data-ridx="'+i+'" onclick="selRoomPick('+i+')" style="cursor:pointer">'
           +'<div><div class="rname">'+_esc(r.name)+'</div><div class="rmeta">👥 до '+r.cap+' · 🛏 '+r.beds+' кров.</div></div>'
@@ -5680,6 +5705,10 @@ async function loadOstRates(h){
   var box=document.getElementById('ost-rates');
   if(!box)return;
   _ostRates=[];_ostSel=null;
+  // Прошлый выбор относился к прошлым датам — сбрасываем, иначе кнопка забронирует
+  // тариф под тем же номером в новом списке, а это совсем другой номер и другая цена.
+  window._ostPicked=0;
+  try{ hpSumState('loading','Ищем номера…'); }catch(e){}
   box.innerHTML='<div class="ost-loading"><div class="ost-spin"></div><div>Ищем свободные номера…</div></div>';
   try{
     var ci=document.getElementById('hp-in')?.value||getIn();
@@ -5724,6 +5753,7 @@ async function loadOstRates(h){
     _ostRates=(data.rates||[]).filter(function(rt){return rt.book_hash&&rt.price_byn>0;});
     if(!_ostRates.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте изменить даты заезда и выезда.</div>';
+      try{ hpSumState('empty','Нет номеров на эти даты'); }catch(e){}
       return;
     }
     var n=getNights();
@@ -5753,9 +5783,30 @@ async function loadOstRates(h){
     ostPickRate(0); // по умолчанию выбран первый (самый дешёвый)
   }catch(e){
     box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">Не получилось загрузить номера. Обновите страницу или попробуйте чуть позже.</div>';
+    try{ hpSumState('error','Цены недоступны'); }catch(e){}
   }
 }
 
+// Итог в панели брони приводим к состоянию «пересчитываем». Прочерки вместо цифр
+// и выключенная кнопка — потому что цифра, оставшаяся от прошлых дат, выглядит живой,
+// а на деле относится к другому запросу. Человек видит сумму, жмёт «Выбрать» —
+// и получает либо тишину, либо другую цену на следующем шаге.
+function hpSumState(mode, label){
+  var pn=document.getElementById('bk-pn'), tot=document.getElementById('bk-tot'), nn=document.getElementById('bk-nights');
+  var btn=document.querySelector('.bk-box .btn-pay');
+  if(mode!=='ok'){
+    if(pn)pn.textContent='—';
+    if(tot)tot.textContent='—';
+    if(nn)nn.textContent=(typeof getNights==='function'?getNights():'') || '—';
+  }
+  if(btn){
+    var off=(mode!=='ok');
+    btn.disabled=off;
+    btn.style.opacity=off?'.45':'1';
+    btn.style.cursor=off?'not-allowed':'pointer';
+    btn.textContent=label||'Выбрать';
+  }
+}
 function ostPickRate(i){
   var rt=_ostRates[i];
   if(!rt)return;
