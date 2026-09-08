@@ -2141,6 +2141,17 @@ function zbFindHotel(id){
 function openHotel(id){
   curHotel=zbFindHotel(id);
   if(!curHotel){ if(typeof bkToast==='function')try{bkToast('Объект недоступен, обновите страницу');}catch(e){} return; }
+  // Позицию в списке снимаем ПЕРВЫМ ДЕЛОМ, до того как что-либо прячется.
+  // Как только у serp-page убирается класс open, она становится display:none,
+  // документ схлопывается до высоты экрана и браузер обнуляет прокрутку.
+  // Снимок, сделанный после этого, всегда возвращал ноль — отсюда «список с начала».
+  try{
+    var _spNow=document.getElementById('serp-page');
+    if((_spNow&&_spNow.classList.contains('open'))||window._catMode){
+      window._serpScrollY=window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;
+      window._serpShownSaved=window._serpShown||0;
+    }
+  }catch(e){}
   // Происхождение перехода: из избранного? (маркер выставляет openItem). Потребляем его здесь —
   // для обычных открытий из карточек маркера нет → _fromFav=false, «Назад» работает как раньше.
   window._fromFav = !!window._openFromFav; window._openFromFav=false;
@@ -2162,14 +2173,6 @@ function openHotel(id){
   document.getElementById('hotel-page').classList.add('open');document.body.classList.add('on-hotel');
   document.getElementById('serp-page').classList.remove('open');document.body.classList.remove('on-serp');
   zbSaveRoute('hotel', id);
-  // Запоминаем, где человек стоял в выдаче и сколько карточек было раскрыто —
-  // «Назад» вернёт ровно туда, а не в начало списка.
-  try{
-    if(window._fromSerp||window._catMode){
-      window._serpScrollY=window.scrollY||window.pageYOffset||0;
-      window._serpShownSaved=window._serpShown||0;
-    }
-  }catch(e){}
   window.scrollTo(0,0);
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
@@ -3746,10 +3749,16 @@ function serpReopen(){
     var y=window._serpScrollY||0;
     // Два кадра: даём разложить карточки, иначе прокрутка упрётся в ещё короткую страницу.
     // Повтор через 150 мс — на случай, если картинки досчитали высоту позже.
+    // Возвращаем позицию в несколько подходов. Карточки с картинками досчитывают
+    // высоту не сразу, и один заход упирается в ещё короткую страницу — прокрутка
+    // обрезается по текущей высоте документа и человек оказывается выше, чем стоял.
+    function _put(){ try{ window.scrollTo(0,y); }catch(e){} }
     requestAnimationFrame(function(){requestAnimationFrame(function(){
-      window.scrollTo(0,y);
+      _put();
       try{ sp.style.visibility=''; }catch(e){}
-      setTimeout(function(){ try{ if(Math.abs((window.scrollY||0)-y)>4)window.scrollTo(0,y); }catch(e){} },150);
+      [120,300,600].forEach(function(ms){
+        setTimeout(function(){ try{ if(Math.abs((window.scrollY||0)-y)>4)_put(); }catch(e){} },ms);
+      });
     });});
     // страховка: что бы ни случилось выше, экран не должен остаться невидимым
     setTimeout(function(){ try{ sp.style.visibility=''; }catch(e){} },600);
