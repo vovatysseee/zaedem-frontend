@@ -39,24 +39,29 @@
 <style>
 :root{--ink:#0c0c0c;--ink2:#1e1e1e;--muted:#6b6b6b;--hint:#aaa;--sand:#faf8f4;--sand2:#f2efe8;--sand3:#e5e0d5;--green:#1a5c38;--green2:#246b44;--lime:#c9f135;--lime2:#d9f554;--green4:#0d3320;--white:#fff;--sh:0 2px 16px rgba(0,0,0,.06);--sh2:0 12px 40px rgba(0,0,0,.12)}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;overflow-x:hidden;touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* iOS сам увеличивает страницу, когда фокус попадает в поле со шрифтом меньше 16px.
    Раньше это лечилось щипком обратно, но зум страницы теперь запрещён — и человек
    оставался в увеличенном виде без выхода. Поднимаем шрифт полей на сенсорных
    экранах до 16px: увеличения просто не происходит. Мышь и десктоп не задеты. */
+/* Поля, куда печатают с клавиатуры, на сенсорных экранах — 16px.
+   Ниже этого порога iOS увеличивает страницу при фокусе, и человек вводит данные
+   в перекошенном виде. Заодно 16px просто удобнее: фамилию латиницей и номер паспорта
+   набирают пальцем, и опечатка в имени гостя стоит переписки с отелем.
+   Списки (select) не трогаем: барабан выбора страницу не увеличивает, а 16px ломал
+   строку фильтров и списки возраста. Флажкам размер шрифта не нужен.
+   Без !important: это обычное правило, конкретному полю можно задать своё. */
 @media (pointer:coarse){
-  /* Только поля, куда реально печатают с клавиатуры — именно на них срабатывает автозум.
-     Списки (select) исключены намеренно: они открывают системный барабан, страницу не
-     увеличивают, а от 16px разъезжалась строка фильтров («Рекомендуемые») и мелкие
-     списки возраста. Флажки и переключатели тоже не трогаем — размер шрифта им не нужен. */
   input[type=text],input[type=email],input[type=tel],input[type=number],
   input[type=password],input[type=search],input[type=url],input[type=date],
-  input:not([type]),textarea{font-size:16px!important}
+  input:not([type]),textarea{font-size:16px}
+  .sf input[type=text],.bk-field input,.fg input,.fg textarea,#ai-q,#hp-qa-q{font-size:16px}
 }
-/* Зум страницы отключён: touch-action убирает двойной тап и щипок в Chrome/Android,
-   для Safari то же делают обработчики gesturestart (см. блок ZB-ZOOM в скриптах).
-   Внутри галереи фото зум СВОЙ — .gal-ov ниже возвращает жесты этому блоку. */
-body{touch-action:pan-x pan-y}
+/* touch-action:manipulation убирает двойной тап и случайное увеличение при прокрутке —
+   то, что раздражало. Щипок двумя пальцами оставлен намеренно: это осознанное действие,
+   которым люди читают мелкий текст (условия отмены, адрес, сумма). Для сайта бронирования,
+   где заметная часть гостей старше пятидесяти, отнимать его нельзя. */
+body{touch-action:manipulation}
 .leaflet-container,.gal-ov,.gal-ov *{touch-action:auto}
 .home-cv{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
@@ -4678,24 +4683,15 @@ function zbGalClamp(){
     zbGalClamp(); zbGalApply();
   },{passive:false});
 })();
-// Зум САМОЙ СТРАНИЦЫ в Safari: touch-action его не ловит, ловим жесты.
-// Внутри галереи не мешаем — там зум свой, на transform.
+// Двойной тап по странице Safari увеличивает даже при touch-action:manipulation — гасим.
+// Щипок НЕ трогаем: он остаётся рабочим на всей странице, это осознанное действие.
+// В галерее не вмешиваемся — там свой зум на transform и свой двойной тап.
 (function(){
   function inGal(t){ try{ return !!(t&&t.closest&&t.closest('#gal-ov')); }catch(e){ return false; } }
-  ['gesturestart','gesturechange','gestureend'].forEach(function(ev){
-    document.addEventListener(ev,function(e){
-      if(inGal(e.target))return;
-      // Увеличение страницы гасим, УМЕНЬШЕНИЕ пропускаем — это аварийный выход.
-      // Если страница почему-то окажется увеличенной (например, системная подсказка),
-      // человек всегда сможет свести пальцами обратно и не застрянет.
-      if(e.scale!=null&&e.scale<1)return;
-      e.preventDefault();
-    },{passive:false});
-  });
-  // Двойной тап по странице (не по галерее) — Safari до сих пор зумит, гасим
   var lt=0;
   document.addEventListener('touchend',function(e){
     if(inGal(e.target))return;
+    if(e.touches&&e.touches.length)return;          // палец ещё на экране — не двойной тап
     var now=Date.now();
     if(now-lt<320){ e.preventDefault(); }
     lt=now;
