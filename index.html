@@ -3742,15 +3742,24 @@ try{ if('scrollRestoration' in history)history.scrollRestoration='manual'; }catc
 // «вернулся тем же запросом» от «поменял даты внутри карточки отеля».
 // В первом случае возвращаем сохранённый список, во втором он уже неверен —
 // человек ждёт выдачу по НОВЫМ датам, а не по тем, с которыми заходил.
+// ВАЖНО: читаем ровно те поля, из которых собирается запрос в serpLoadOstrovok —
+// window._capState {city, din, dout, adults, childAges}. Это единственный источник
+// правды для поиска: и виджет на главной, и модули дат/гостей внутри карточки отеля
+// пишут именно сюда. Раньше здесь сравнивались gAdults/gKids/gCnt — состояние виджета
+// на главной, которого карточка отеля не касается. Из-за этого смена числа гостей
+// внутри отеля слепок не меняла: возврат отдавал список, найденный под прежний состав,
+// и отели в нём были без свободных номеров под новый.
 function zbSearchSnap(){
   try{
-    var di=(typeof dIn!=='undefined'&&dIn)?new Date(dIn).toDateString():'';
-    var doo=(typeof dOut!=='undefined'&&dOut)?new Date(dOut).toDateString():'';
-    var ad=(typeof gAdults!=='undefined')?gAdults:'';
-    var kd=(typeof gKids!=='undefined')?gKids:'';
-    var gc=(typeof gCnt!=='undefined')?gCnt:'';
-    var ages=(window._hpKidAges||window._kidAges||[]).join('-');
-    return [di,doo,ad,kd,gc,ages].join('|');
+    var st=window._capState||{};
+    var d=function(v){ try{ var x=new Date(v); return isNaN(x)?String(v||''):x.toDateString(); }catch(e){ return ''; } };
+    return [
+      st.city||'',
+      d(st.din), d(st.dout),
+      (st.adults!=null?st.adults:''),
+      (st.kids!=null?st.kids:''),
+      (Array.isArray(st.childAges)?st.childAges.join('-'):'')
+    ].join('|');
   }catch(e){ return ''; }
 }
 
