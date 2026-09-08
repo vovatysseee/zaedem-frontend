@@ -45,7 +45,13 @@ html{scroll-behavior:smooth;overflow-x:hidden;touch-action:pan-x pan-y;-webkit-t
    оставался в увеличенном виде без выхода. Поднимаем шрифт полей на сенсорных
    экранах до 16px: увеличения просто не происходит. Мышь и десктоп не задеты. */
 @media (pointer:coarse){
-  input,select,textarea{font-size:16px!important}
+  /* Только поля, куда реально печатают с клавиатуры — именно на них срабатывает автозум.
+     Списки (select) исключены намеренно: они открывают системный барабан, страницу не
+     увеличивают, а от 16px разъезжалась строка фильтров («Рекомендуемые») и мелкие
+     списки возраста. Флажки и переключатели тоже не трогаем — размер шрифта им не нужен. */
+  input[type=text],input[type=email],input[type=tel],input[type=number],
+  input[type=password],input[type=search],input[type=url],input[type=date],
+  input:not([type]),textarea{font-size:16px!important}
 }
 /* Зум страницы отключён: touch-action убирает двойной тап и щипок в Chrome/Android,
    для Safari то же делают обработчики gesturestart (см. блок ZB-ZOOM в скриптах).
