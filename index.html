@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Заедем.by — Бронирование отелей Беларуси</title>
 <meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Оплата картой, ЕРИП, Apple Pay. Мгновенное подтверждение, 0% комиссии для гостя.">
 <meta name="theme-color" content="#0F2D1D">
@@ -31,7 +31,7 @@
 <meta name="theme-color" content="#0F2D1D">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Заедем.by">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -390,7 +390,7 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .g-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:46px;height:46px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
 .g-prev{left:-60px}.g-next{right:-60px}
 @media(max-width:600px){.g-prev{left:10px}.g-next{right:10px}.g-btn{background:rgba(0,0,0,.5);width:44px;height:44px;font-size:24px}}
-.g-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.g-close{position:absolute;top:max(18px,env(safe-area-inset-top,0px));right:18px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .g-dots{display:flex;gap:7px}
 .g-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer}
 .g-dot.on{background:#fff}
@@ -3732,6 +3732,9 @@ function serpReopen(){
     var nav=document.querySelector('nav'); if(nav)nav.style.display='none';
     window._serpReset=false;
     if(window._serpShownSaved)window._serpShown=Math.max(window._serpShown||0,window._serpShownSaved);
+    // Список рисуется с нуля страницы, поэтому виден рывок «сверху вниз».
+    // Прячем на время расстановки — человек увидит уже готовый экран на нужном месте.
+    try{ sp.style.visibility='hidden'; }catch(e){}
     serpRender();
     try{ if(typeof zbSaveRoute==='function')zbSaveRoute('serp'); }catch(e){}
     var y=window._serpScrollY||0;
@@ -3739,8 +3742,11 @@ function serpReopen(){
     // Повтор через 150 мс — на случай, если картинки досчитали высоту позже.
     requestAnimationFrame(function(){requestAnimationFrame(function(){
       window.scrollTo(0,y);
+      try{ sp.style.visibility=''; }catch(e){}
       setTimeout(function(){ try{ if(Math.abs((window.scrollY||0)-y)>4)window.scrollTo(0,y); }catch(e){} },150);
     });});
+    // страховка: что бы ни случилось выше, экран не должен остаться невидимым
+    setTimeout(function(){ try{ sp.style.visibility=''; }catch(e){} },600);
     return true;
   }catch(e){ return false; }
 }
@@ -4531,6 +4537,17 @@ async function submitApp(){
 
 function openGal(idx){if(!curHotel?.photos?.length)return;gPhotos=curHotel.photos;gIdx=idx;showG();document.getElementById('gal-ov').classList.add('open')}
 function closeGal(){document.getElementById('gal-ov').classList.remove('open');try{zbGalReset();}catch(e){}}
+// Тап по тёмному фону закрывает просмотр. Раньше выйти можно было только крестиком,
+// а в режиме приложения он оказывался под часами и не нажимался.
+// По самому снимку и по стрелкам не закрываем — там щипок, перетаскивание и листание.
+(function(){
+  var ov=document.getElementById('gal-ov'); if(!ov)return;
+  ov.addEventListener('click',function(e){
+    var t=e.target;
+    if(t&&t.closest&&(t.closest('.gal-wrap')||t.closest('.g-btn')||t.closest('.g-dots')||t.closest('.g-close')))return;
+    closeGal();
+  });
+})();
 // Карта расположения отеля по клику на адрес
 function openHotelMap(){
   var h=curHotel; if(!h)return;
