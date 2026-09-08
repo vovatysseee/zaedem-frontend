@@ -1233,10 +1233,19 @@ function renderHotels(){
   // «через раз».
   function paint(el,list,empty){
     if(!el)return;
-    var sig=(list||[]).map(function(x){return x.id;}).join(',')+'|'+((list||[]).length?'':empty);
+    // В подпись входят не только id, но и то, что видно на карточке. Иначе сеть привозит
+    // те же объекты со свежей ценой или фото, состав не меняется — и человек продолжает
+    // смотреть на устаревшие данные из кэша.
+    var sig=(list||[]).map(function(x){return [x.id,x.price,x.name_ru,(x.photos||[])[0]].join('~');}).join(',')+'|'+((list||[]).length?'':empty);
     if(el.dataset.zbSig===sig)return;
+    // Подпись ставим ТОЛЬКО после удачной отрисовки. Если сборка карточек упадёт
+    // на кривом объекте, подпись останется прежней и следующий вызов попробует снова.
+    // Иначе одна ошибка запирала карусель навсегда: «Скоро появятся» и больше ни одной попытки.
+    var html;
+    try{ html=(list&&list.length)?list.map(card).join(''):''; }
+    catch(err){ try{console.warn('карусель:',err);}catch(_){} return; }
+    el.innerHTML=html||'<p style="padding:1rem;color:var(--muted)">'+empty+'</p>';
     el.dataset.zbSig=sig;
-    el.innerHTML=(list&&list.length)?list.map(card).join(''):'<p style="padding:1rem;color:var(--muted)">'+empty+'</p>';
   }
   var bh=document.getElementById('carousel-hotel');
   if(bh){ var lh=(window._topHotels||[]).slice(0,5); ensure(lh);
