@@ -404,9 +404,12 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .gal-wrap{position:relative;max-width:90vw;max-height:80vh;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none}
 .gal-wrap img{max-width:90vw;max-height:75vh;object-fit:contain;border-radius:14px;transform-origin:center center;will-change:transform;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
 .gal-wrap img.zb-zoomed{cursor:grab}
-.g-hint{color:rgba(255,255,255,.45);font-size:11.5px;text-align:center}
 .g-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;width:46px;height:46px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
-.g-prev{left:-60px}.g-next{right:-60px}
+/* Стрелки стоят ВНУТРИ окна фотографии. Раньше было left/right:-60px — снаружи,
+   и после появления обрезки (.gal-wrap{overflow:hidden}, нужна чтобы увеличенное фото
+   не вылезало за края) их срезало. На телефоне они уцелели только потому, что правило
+   ниже ставит их внутрь. Теперь одинаково везде — и клипом больше не задеваются. */
+.g-prev{left:10px}.g-next{right:10px}
 @media(max-width:600px){.g-prev{left:10px}.g-next{right:10px}.g-btn{background:rgba(0,0,0,.5);width:44px;height:44px;font-size:24px}}
 .g-close{position:absolute;top:max(18px,env(safe-area-inset-top,0px));right:18px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .g-dots{display:flex;gap:7px}
@@ -871,7 +874,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
 <div class="gal-ov" id="gal-ov">
   <button class="g-close" onclick="closeGal()">✕</button>
   <div class="gal-wrap"><button class="g-btn g-prev" onclick="galNav(-1)">&#8249;</button><img id="g-img" src="" alt=""><button class="g-btn g-next" onclick="galNav(1)">&#8250;</button></div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div class="g-dots" id="g-dots"></div><div class="g-cnt" id="g-cnt"></div><div class="g-hint">Щипок или двойное касание — увеличить</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div class="g-dots" id="g-dots"></div><div class="g-cnt" id="g-cnt"></div></div>
 </div>
 <div class="cal-popup" id="pop-in"></div>
 <div class="cal-popup" id="pop-out"></div>
@@ -1933,7 +1936,16 @@ function hpConfirmDates(e){
 function hpQaToggle(){
   var b=document.getElementById('hp-qa'); if(!b)return;
   b.style.display=(b.style.display==='none'||!b.style.display)?'block':'none';
-  if(b.style.display==='block'){ var i=document.getElementById('hp-qa-q'); if(i)setTimeout(function(){i.focus();},50); }
+  if(b.style.display==='block'){
+    var i=document.getElementById('hp-qa-q');
+    if(i)setTimeout(function(){
+      i.focus();
+      // Клавиатура занимает нижнюю треть экрана, и поле оказывается под ней.
+      // Подматываем блок к середине видимой области — уже ПОСЛЕ фокуса, когда
+      // клавиатура выехала и браузер пересчитал высоту.
+      setTimeout(function(){ try{ b.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} },250);
+    },50);
+  }
 }
 async function hpQaAsk(){
   var i=document.getElementById('hp-qa-q'), a=document.getElementById('hp-qa-a');
@@ -2198,7 +2210,7 @@ function openHotel(id){
           <div id="hp-qa" style="display:none;margin-top:10px;border:1.5px solid var(--sand3);border-radius:14px;padding:12px 14px;background:#fff">
             <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Отвечу по описанию и удобствам этого объекта. Например: «Есть парковка?», «Можно с собакой?», «Во сколько заезд?»</div>
             <div style="display:flex;gap:8px">
-              <input id="hp-qa-q" type="text" maxlength="200" placeholder="Ваш вопрос..." onkeydown="if(event.key==='Enter')hpQaAsk()" style="flex:1;border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;outline:none">
+              <input id="hp-qa-q" type="text" maxlength="200" placeholder="Ваш вопрос..." onkeydown="if(event.key==='Enter')hpQaAsk()" style="flex:1;min-width:0;border:1.5px solid #e0e0e0;border-radius:10px;padding:9px 12px;font-size:16px;font-family:inherit;outline:none">
               <button onclick="hpQaAsk()" style="border:none;background:var(--green);color:#fff;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Спросить</button>
             </div>
             <div id="hp-qa-a" style="display:none;margin-top:10px;font-size:13px;color:var(--ink2);line-height:1.6;background:var(--sand1,#faf8f4);border-radius:10px;padding:10px 12px"></div>
