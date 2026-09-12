@@ -3308,8 +3308,30 @@ function serpSearchClose(){
   document.removeEventListener('click',window._serpSDOutside);
 }
 
+// Ширины окна второго поиска на компьютере.
+// SSD_W_CITY — шаг «Куда едете?»: список городов, названия длинные, нужен простор.
+// SSD_W_REST — даты и гости: подобрана так, чтобы ячейки календаря совпали
+//              с главной (ширина сетки 270 + отступы), то есть ~37px.
+var SSD_W_CITY = 420, SSD_W_REST = 340;
+
+// Меняет ширину окна, пересчитывая положение от центра капсулы. Без пересчёта
+// окно при смене шага съезжало бы вбок на половину разницы ширин.
+function serpSearchSetW(w){
+  try{
+    if(!_serpSD || !_serpSD.desk) return;          // на мобиле ширина своя, не трогаем
+    var m=document.getElementById('serp-sd-modal'); if(!m) return;
+    var W=Math.min(w, window.innerWidth-16);
+    var left=_serpSD.cx - W/2;
+    if(left<8)left=8;
+    if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
+    m.style.width=W+'px';
+    m.style.left=left+'px';
+  }catch(e){}
+}
+
 function serpSearchStep(n){
   _serpSD.step=n;
+  serpSearchSetW(n===1 ? SSD_W_CITY : SSD_W_REST);
   var s1=document.getElementById('ssd-step1'),s2=document.getElementById('ssd-step2'),s3=document.getElementById('ssd-step3');
   if(s1)s1.style.display=n===1?'block':'none';
   if(s2)s2.style.display=n===2?'block':'none';
@@ -3468,13 +3490,19 @@ function serpEditSearch(){
     backdrop.onclick=function(){serpSearchClose();};
     document.body.appendChild(backdrop);
   } else {
-    // Было 420 — окно второго поиска выходило заметно крупнее, чем поиск на главной:
-    // сетка календаря растягивалась по всей ширине, и ячейки дней становились ~53px
-    // против ~37px на главной. Разница в 43% бросается в глаза, хотя элемент тот же.
-    // 340 даёт ширину, близкую к главной (306), и оставляет запас для списка городов.
-    var W=Math.min(340,window.innerWidth-16),left=r.left+r.width/2-W/2;
+    // ═ ШИРИНА ПО ШАГУ ═
+    // Единая ширина 420 делала календарь заметно крупнее, чем на главной: сетка
+    // растягивалась по всей ширине, ячейки выходили ~53px против ~37px. А если
+    // сузить всё окно, тесно становится списку городов — там длинные названия.
+    // Поэтому ширина разная: город остаётся просторным, даты и гости подбираются
+    // под главную. Переключается в serpSearchStep, положение пересчитывается от
+    // центра капсулы, чтобы окно не прыгало вбок при смене шага.
+    _serpSD.desk = true;
+    _serpSD.cx   = r.left + r.width / 2;
+    _serpSD.top  = r.bottom + 8;
+    var W=Math.min(SSD_W_CITY,window.innerWidth-16),left=_serpSD.cx-W/2;
     if(left<8)left=8;if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
-    modal.style.cssText='position:fixed;top:'+(r.bottom+8)+'px;left:'+left+'px;width:'+W+'px;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.25);border:1.5px solid #e8e4dc;z-index:999999;overflow:hidden';
+    modal.style.cssText='position:fixed;top:'+_serpSD.top+'px;left:'+left+'px;width:'+W+'px;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.25);border:1.5px solid #e8e4dc;z-index:999999;overflow:hidden';
   }
   modal.addEventListener('click',function(e){e.stopPropagation();});
   // Шапка
@@ -3525,7 +3553,10 @@ function serpEditSearch(){
         '</div>'+
       '</div>'+
       '<div id="ssd-ages"></div>'+
-      '<button onclick="serpSearchSubmit()" style="width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer">Найти жильё</button>'+
+      // Размеры выровнены с такой же кнопкой на главной (#ddc-search): там
+      // padding:12px и font-size:14px. Здесь было 14px и 15px — кнопка выглядела
+      // тяжелее, хотя делает то же самое.
+      '<button onclick="serpSearchSubmit()" style="width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer">Найти жильё</button>'+
     '</div>';
   document.body.appendChild(modal);
   // Закрыть при клике вне — используем один глобальный флаг
