@@ -3468,7 +3468,11 @@ function serpEditSearch(){
     backdrop.onclick=function(){serpSearchClose();};
     document.body.appendChild(backdrop);
   } else {
-    var W=Math.min(420,window.innerWidth-16),left=r.left+r.width/2-W/2;
+    // Было 420 — окно второго поиска выходило заметно крупнее, чем поиск на главной:
+    // сетка календаря растягивалась по всей ширине, и ячейки дней становились ~53px
+    // против ~37px на главной. Разница в 43% бросается в глаза, хотя элемент тот же.
+    // 340 даёт ширину, близкую к главной (306), и оставляет запас для списка городов.
+    var W=Math.min(340,window.innerWidth-16),left=r.left+r.width/2-W/2;
     if(left<8)left=8;if(left+W>window.innerWidth-8)left=window.innerWidth-W-8;
     modal.style.cssText='position:fixed;top:'+(r.bottom+8)+'px;left:'+left+'px;width:'+W+'px;background:#fff;border-radius:20px;box-shadow:0 16px 60px rgba(0,0,0,.25);border:1.5px solid #e8e4dc;z-index:999999;overflow:hidden';
   }
@@ -3495,7 +3499,10 @@ function serpEditSearch(){
         '<div id="ssd-cmon" style="font-size:14px;font-weight:700;color:#111"></div>'+
         '<button onclick="event.stopPropagation();_serpSD.nav=new Date(_serpSD.nav.getFullYear(),_serpSD.nav.getMonth()+1,1);serpSearchBuildCal()" style="background:none;border:1.5px solid #e0e0e0;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:18px;color:#555">›</button>'+
       '</div>'+
-      '<div id="ssd-cgrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>'+
+      // Сетка ограничена той же шириной, что на главной (min-width:270px у .cal-grid),
+      // и отцентрована. Без ограничения ячейки растягивались бы по ширине окна,
+      // и календарь снова оказался бы крупнее, чем на главной.
+      '<div id="ssd-cgrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-width:270px;margin:0 auto"></div>'+
       '<div id="ssd-chint" style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;min-height:16px">Выберите дату заезда</div>'+
       '<button id="ssd-next-btn" onclick="serpSearchStep(3)" style="display:none;width:100%;margin-top:14px;background:#0F2D1D;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Далее</button>'+
     '</div>'+
