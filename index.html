@@ -1203,7 +1203,7 @@ var HERO_SLIDES=[
 ];
 function buildHeroSlides(){
   var c=document.querySelector('.hero-slides');if(!c||!HERO_SLIDES.length)return;
-  c.innerHTML=HERO_SLIDES.map(function(u){return '<div class="hero-slide" style="background-image:url(\''+u+'\')"><div class="hero-overlay"></div></div>';}).join('');
+  c.innerHTML=HERO_SLIDES.map(function(u){return '<div class="hero-slide" style="background-image:url(\''+encodeURI(String(u||''))+'\')"><div class="hero-overlay"></div></div>';}).join('');
   var slides=c.querySelectorAll('.hero-slide');
   // Первый кадр показываем ТОЛЬКО когда его фото готово — без подгрузки кусками
   var first=new Image();
@@ -1235,7 +1235,7 @@ function renderHotels(){
     var loc=cleanAddr(h.address); loc=loc?loc.split(',').pop().trim():'';
     return '<div class="home-cv" style="flex:0 0 200px;cursor:pointer" onclick="openHotel(this.dataset.id)" data-id="'+h.id+'">'
       +'<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--sand2)">'
-      +(img?'<img src="'+thumb+'" data-full="'+img+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
+      +(img?'<img src="'+zbUrl(thumb)+'" data-full="'+zbUrl(img)+'" onerror="srImgFallback(this)" style="width:100%;height:100%;object-fit:cover" loading="lazy">':'')
       +'<span class="hc-fav" data-hcfav="'+h.id+'" onclick="event.stopPropagation();try{if(window.ZB_FAV_ENABLED&&window.zbFavToggle)zbFavToggle(this.dataset.hcfav,this)}catch(e){}">🤍</span>'
       +'<div style="position:absolute;left:0;right:0;bottom:0;padding:34px 12px 12px;background:linear-gradient(transparent,rgba(0,0,0,.72))">'
         +'<div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2">'+zbEsc(h.name_ru)+'</div>'
@@ -2177,7 +2177,11 @@ function openHotel(id){
   const revs=h.revs||[];
   const amenities=h.amenities||[];
   const phone=h.phone||'';
-  const desc=cleanText(h.description_ru||h.description||'');
+  // ═ БЕЗОПАСНОСТЬ ═ cleanText вырезает теги, но НЕ экранирует: обрывок вида
+  //   <img src=x onerror=alert(1)
+  // без закрывающей скобки он не трогает, а закрывает его уже наша собственная
+  // разметка ниже. Экранируем после очистки — текст выглядит так же, выполниться не может.
+  const desc=zbEsc(cleanText(h.description_ru||h.description||''));
   const pricePerNight=h.price||rooms[0]?.price||0;
   const isOst=h.source==='ostrovok';
   document.getElementById('main-page').style.display='none';
@@ -2198,12 +2202,12 @@ function openHotel(id){
   });
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
-      ${(function(){var pf=(h.photos||[]);var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+p[i]+'" data-full="'+(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}var btn=pf.length?'<button class="hp-gallery-all" onclick="openGal(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Все фото ('+pf.length+')</button>':'';return g(0)+g(1)+g(2)+btn;})()}
+      ${(function(){var pf=(h.photos||[]);var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+zbUrl(p[i])+'" data-full="'+zbUrl(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}var btn=pf.length?'<button class="hp-gallery-all" onclick="openGal(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Все фото ('+pf.length+')</button>':'';return g(0)+g(1)+g(2)+btn;})()}
     </div>
     <div class="hp-layout">
       <div>
         <h1 class="hp-title">${zbEsc(h.name_ru)}</h1>
-        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${cleanAddr(h.address)}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${phone}</span>`:''}</div>
+        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${zbEsc(cleanAddr(h.address))}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${zbEsc(phone)}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         <div style="margin:0 0 1.5rem">
           <button onclick="hpQaToggle()" style="display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:9px 16px;font-size:13px;font-weight:700;color:var(--green);font-family:inherit;cursor:pointer">💬 Спросить об объекте</button>
@@ -2226,15 +2230,15 @@ function openHotel(id){
         ${(!isOst && h.booking_enabled===false)?`<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование откроется совсем скоро. Можно выбрать номер и посмотреть детали.</div>`:``}
         <div class="hp-rooms">${rooms.map((r,i)=>`
           <div class="room hp-room-row" data-ridx="${i}" onclick="selRoomPick(${i})" style="cursor:pointer">
-            <div><div class="rname">${r.name}</div><div class="rmeta">👥 до ${r.cap} · 🛏 ${r.beds} кров.${r.desc?" · "+cleanText(r.desc):""}</div></div>
+            <div><div class="rname">${zbEsc(r.name)}</div><div class="rmeta">👥 до ${zbEsc(r.cap)} · 🛏 ${zbEsc(r.beds)} кров.${r.desc?" · "+zbEsc(cleanText(r.desc)):""}</div></div>
             <div style="text-align:right;flex-shrink:0">
-              <div class="rprice">${r.price} BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>
-              ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${r.avail}!</div>`:''}
+              <div class="rprice">${zbEsc(r.price)} BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>
+              ${r.avail<=2?`<div style="font-size:11px;color:#d03;font-weight:700">Осталось ${zbEsc(r.avail)}!</div>`:''}
               <button class="btn-select" onclick="event.stopPropagation();selRoomBook(${i})">Выбрать</button>
             </div>
           </div>`).join('')}
         </div>`:''}
-        ${revs.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Отзывы</h3>${revs.map(r=>`<div class="rv"><div class="rv-head"><div class="rv-ava">${r.ava}</div><div style="flex:1"><div class="rv-name">${r.name} <span style="font-size:11px;color:var(--hint)">· ${r.city}</span></div><div class="rv-date">${r.date}</div></div><div class="rv-stars">${'★'.repeat(r.rat)}${'☆'.repeat(5-r.rat)}</div></div><p class="rv-text">${r.text}</p></div>`).join('')}`:''}
+        ${revs.length?`<h3 style="font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Отзывы</h3>${revs.map(r=>`<div class="rv"><div class="rv-head"><div class="rv-ava">${zbEsc(r.ava)}</div><div style="flex:1"><div class="rv-name">${zbEsc(r.name)} <span style="font-size:11px;color:var(--hint)">· ${zbEsc(r.city)}</span></div><div class="rv-date">${zbEsc(r.date)}</div></div><div class="rv-stars">${'★'.repeat(Math.max(0,Math.min(5,parseInt(r.rat,10)||0)))}${'☆'.repeat(5-Math.max(0,Math.min(5,parseInt(r.rat,10)||0)))}</div></div><p class="rv-text">${zbEsc(r.text)}</p></div>`).join('')}`:''}
       </div>
       <div>
         <div class="bk-box">
@@ -2620,6 +2624,18 @@ function zbEsc(s){
   return String(s==null?'':s).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
   });
+}
+// ═ БЕЗОПАСНОСТЬ ═ Ссылка, попадающая в src/href.
+// Адреса фотографий задаёт ПАРТНЁР в своём кабинете («вставьте ссылку на фото»),
+// а вставлялись они в разметку простой склейкой: '<img src="'+u+'"'.
+// Кавычка внутри адреса закрывала атрибут, и дальше в теге оказывалось что угодно —
+// например обработчик onerror. Это выполнялось у КАЖДОГО гостя, открывшего объект,
+// на той же странице, где он потом вводит имя, почту и телефон.
+// Пропускаем только безопасные схемы и экранируем кавычки.
+function zbUrl(u){
+  var x=String(u==null?'':u).trim();
+  if(!/^(https?:\/\/|\/|data:image\/)/i.test(x)) return '';
+  return zbEsc(x);
 }
 
 function cleanAddr(addr){
@@ -3008,7 +3024,7 @@ function serpRender(){
      var c=document.createElement('div');
      c.className='sr-card';c.id='src-'+h.id;c.dataset.hid=h.id;
      var lazyAttr=idx<6?'':' loading="lazy"';
-     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+img+'" data-full="'+imgFull+'" alt=""'+lazyAttr+' onerror="srImgFallback(this)" onload="this.parentNode.classList.add(\'loaded\')">':'';
+     var imgHtml=img?'<img id="srimg-'+h.id+'" src="'+zbUrl(img)+'" data-full="'+zbUrl(imgFull)+'" alt=""'+lazyAttr+' onerror="srImgFallback(this)" onload="this.parentNode.classList.add(\'loaded\')">':'';
      var imgCls=img?'sr-img':'sr-img noimg';
      var navHtml=photos.length>1?'<button class="sr-img-nav prev" data-id="'+h.id+'" data-dir="-1">&#8249;</button><button class="sr-img-nav next" data-id="'+h.id+'" data-dir="1">&#8250;</button>':'';
      var cntHtml=photos.length>1?'<div id="srcnt-'+h.id+'" style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">1/'+photos.length+'</div>':'';
@@ -4132,7 +4148,7 @@ function bkInjectRoomPhoto(){
   head.innerHTML='';
   head.classList.add('has-roomgal');
   var strip=document.createElement('div'); strip.className='bk-rp-strip';
-  strip.innerHTML=imgs.map(function(u,k){return '<img src="'+u+'" data-k="'+k+'" onerror="this.style.display=\'none\'" alt="">';}).join('');
+  strip.innerHTML=imgs.map(function(u,k){return '<img src="'+zbUrl(u)+'" data-k="'+k+'" onerror="this.style.display=\'none\'" alt="">';}).join('');
   head.appendChild(strip);
   if(imgs.length>1){
     var dots=document.createElement('div'); dots.className='bk-rp-dots';
@@ -5854,7 +5870,7 @@ async function loadOstRates(h){
     var n=getNights();
     box.innerHTML=_ostRates.map(function(rt,i){
       var imgs=rt.images||[];
-      var cover=imgs.length?'<div class="ostc-img" onclick="event.stopPropagation();openRateGal('+i+')"><img src="'+imgs[0]+'" onerror="this.parentNode.style.display=\'none\'" alt="">'+(imgs.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+imgs.length+' фото</div>':'')+'</div>':'';
+      var cover=imgs.length?'<div class="ostc-img" onclick="event.stopPropagation();openRateGal('+i+')"><img src="'+zbUrl(imgs[0])+'" onerror="this.parentNode.style.display=\'none\'" alt="">'+(imgs.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+imgs.length+' фото</div>':'')+'</div>':'';
       var chips=ostAmenList(rt.room_amenities,5);
       var chipsHtml=chips.length?'<div class="ostc-chips">'+chips.map(function(a){return '<span class="ostc-chip">'+a+'</span>';}).join('')+'</div>':'';
       var capParts=[];
@@ -5928,7 +5944,7 @@ function ostBookCheapest(){
 
 function ostModalShell(){
   var h=curHotel;
-  document.getElementById('bm-img').innerHTML=((h.photos||[])[0]?'<img src="'+(h.photos||[])[0]+'" alt="">':'')+'<button class="modal-close" onclick="closeBK()">✕</button>';
+  document.getElementById('bm-img').innerHTML=((h.photos||[])[0]?'<img src="'+zbUrl((h.photos||[])[0])+'" alt="">':'')+'<button class="modal-close" onclick="closeBK()">✕</button>';
   document.getElementById('bk-modal').classList.add('open');
 }
 
