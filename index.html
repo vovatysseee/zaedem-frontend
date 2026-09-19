@@ -5872,7 +5872,7 @@ async function loadOstRates(h){
       var imgs=rt.images||[];
       var cover=imgs.length?'<div class="ostc-img" onclick="event.stopPropagation();openRateGal('+i+')"><img src="'+zbUrl(imgs[0])+'" onerror="this.parentNode.style.display=\'none\'" alt="">'+(imgs.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+imgs.length+' фото</div>':'')+'</div>':'';
       var chips=ostAmenList(rt.room_amenities,5);
-      var chipsHtml=chips.length?'<div class="ostc-chips">'+chips.map(function(a){return '<span class="ostc-chip">'+a+'</span>';}).join('')+'</div>':'';
+      var chipsHtml=chips.length?'<div class="ostc-chips">'+chips.map(function(a){return '<span class="ostc-chip">'+zbEsc(a)+'</span>';}).join('')+'</div>':'';
       var capParts=[];
       if(rt.capacity)capParts.push('👥 до '+rt.capacity+' '+(rt.capacity==1?'гостя':'гостей'));
       if(rt.bedrooms)capParts.push('🛏 '+rt.bedrooms+(rt.bedrooms==1?' комната':' комн.'));
@@ -5880,7 +5880,7 @@ async function loadOstRates(h){
       return '<div class="ostc ost-rate-row" data-idx="'+i+'" onclick="ostPickRate('+i+')">'
         +cover
         +'<div class="ostc-body">'
-        +'<div class="ostc-name">'+cleanRoomName(rt.room_name)+'</div>'
+        +'<div class="ostc-name">'+zbEsc(cleanRoomName(rt.room_name))+'</div>'
         +capHtml
         +chipsHtml
         +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+ostCancelText(rt.cancellation)+'</div>'
@@ -5988,7 +5988,7 @@ function ostRenderForm(oldPrice){
   }
   document.getElementById('bm-body').innerHTML='\
     <div style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">'+h.name_ru+'</div>\
-    <div style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 '+(h.address||'')+' · '+_ostSel.roomName+'</div>\
+    <div style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 '+zbEsc(h.address||'')+' · '+zbEsc(_ostSel.roomName)+'</div>\
     '+ostCancelBox(rt.cancellation)
     +(oldPrice?'<div style="background:#fff6e0;border-radius:10px;padding:10px 12px;font-size:13px;color:#9a6b00;margin-bottom:12px">⚠️ Цена обновилась: было '+oldPrice+' BYN, актуальная — <b>'+rt.price_byn+' BYN</b></div>':'')
     +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option></select></div>\
@@ -5997,7 +5997,7 @@ function ostRenderForm(oldPrice){
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     '+bkArrivalHTML((window._hpTimes&&_hpTimes.ci)||'')+'\
-    <div class="sumbox"><div class="srow2"><span>'+_ostSel.roomName+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
+    <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>';
