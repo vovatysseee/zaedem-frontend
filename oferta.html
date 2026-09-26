@@ -2,87 +2,299 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Публичная оферта — Zaedem.by</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Публичная оферта — Заедем.by</title>
+<meta name="description" content="Публичная оферта ООО «ЗАЕДЕМБАЙ» на оказание услуг по бронированию мест проживания через сайт zaedem.by.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>/* Открыта внутри окна на сайте (при бронировании) — прячем шапку и подвал страницы */try{if(window.self!==window.top)document.documentElement.className+=" embed"}catch(e){document.documentElement.className+=" embed"}</script>
 <style>
-:root{--green:#1a5c38;--green4:#0d3320;--lime:#c9f135;--sand:#faf8f4;--sand2:#f0ece3;--sand3:#e2dccf;--ink:#0c0c0c;--muted:#6b6b6b}
+:root{--green:#1a5c38;--green2:#23764a;--green4:#0d3320;--lime:#c9f135;
+--sand:#faf8f4;--sand2:#f2eee6;--sand3:#e3ddd0;--ink:#101010;--muted:#6b6b6b}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink);line-height:1.7;font-size:15px}
-.top{background:var(--green4);padding:18px 0}
-.wrap{max-width:780px;margin:0 auto;padding:0 22px}
-.logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:20px;color:var(--lime);text-decoration:none;letter-spacing:-1px}
-.logo em{color:rgba(255,255,255,.85);font-style:normal}
-.back{color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;font-weight:500;float:right;margin-top:6px}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Golos Text',-apple-system,Segoe UI,sans-serif;background:var(--sand);
+color:var(--ink);line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding:0 24px}
+
+/* шапка */
+.top{background:var(--green4)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;
+gap:16px;min-height:62px;padding-top:12px;padding-bottom:12px}
+.logo{font-family:'Unbounded',sans-serif;font-weight:800;font-size:19px;color:var(--lime);
+text-decoration:none;letter-spacing:-.5px;white-space:nowrap}
+.logo em{color:rgba(255,255,255,.82);font-style:normal}
+.back{color:rgba(255,255,255,.72);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
 .back:hover{color:#fff}
-main{padding:40px 0 80px}
-h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:28px;line-height:1.2;margin-bottom:10px;color:var(--green4)}
-.upd{color:var(--muted);font-size:13px;margin-bottom:32px}
-h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;margin:32px 0 12px;color:var(--green)}
-p{margin-bottom:14px}
-ul{margin:0 0 14px 22px}
-li{margin-bottom:8px}
-.note{background:var(--sand2);border-left:3px solid var(--lime);border-radius:8px;padding:14px 18px;font-size:13.5px;color:var(--muted);margin:18px 0}
-a{color:var(--green);text-decoration:underline}
-.foot{border-top:1px solid var(--sand3);margin-top:48px;padding-top:24px;font-size:13px;color:var(--muted)}
+
+/* заголовочный блок — воздух сверху */
+.hero{background:var(--sand2);border-bottom:1px solid var(--sand3);padding:60px 0 44px}
+.eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+color:var(--green2);font-weight:600;margin-bottom:16px}
+h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:34px;line-height:1.16;
+color:var(--green4);letter-spacing:-.5px}
+h1::after{content:"";display:block;width:58px;height:4px;background:var(--lime);
+border-radius:3px;margin-top:20px}
+.lede{margin-top:22px;font-size:17px;color:#3a3a3a;max-width:64ch}
+.meta{margin-top:22px;font-size:13.5px;color:var(--muted)}
+
+/* содержание */
+main{padding:44px 0 64px}
+.toc{background:#fff;border:1px solid var(--sand3);border-radius:14px;
+padding:22px 26px;margin-bottom:44px}
+.toc-t{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--muted);font-weight:600;margin-bottom:12px}
+.toc ul{margin:0;padding:0;list-style:none;font-size:15px;
+columns:2;column-gap:32px}
+.toc li{margin-bottom:7px;break-inside:avoid}
+.toc a{color:var(--green);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+
+/* текст */
+h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;line-height:1.3;
+margin:48px 0 16px;color:var(--green4);scroll-margin-top:20px}
+h2:first-child{margin-top:0}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px;color:var(--green)}
+p{margin:0 0 16px}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:9px}
+li>ul,li>ol{margin-top:9px}
+a{color:var(--green);text-decoration:underline;text-underline-offset:2px}
+strong{font-weight:600}
+hr{border:0;border-top:1px solid var(--sand3);margin:40px 0}
+
+/* таблицы */
+.tw{overflow-x:auto;margin:0 0 20px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:420px}
+th{background:var(--sand2);text-align:left;font-weight:600;color:var(--green4)}
+th,td{padding:11px 14px;border:1px solid var(--sand3);vertical-align:top}
+td:first-child{font-weight:500}
+
+/* врезки */
+.note{background:#fff;border:1px solid var(--sand3);border-left:4px solid var(--lime);
+border-radius:12px;padding:18px 22px;margin:24px 0}
+.note p:last-child{margin-bottom:0}
+.note-t{font-weight:600;color:var(--green4);margin-bottom:6px;display:block}
+
+/* реквизиты */
+.req{background:#fff;border:1px solid var(--sand3);border-radius:14px;padding:8px 26px;margin:0 0 24px}
+.req dl{display:grid;grid-template-columns:230px 1fr;gap:0}
+.req dt,.req dd{padding:13px 0;border-bottom:1px solid var(--sand2)}
+.req dt{color:var(--muted);font-size:14.5px;padding-right:18px}
+.req dd{font-weight:500}
+.req dl>dt:last-of-type,.req dl>dd:last-of-type{border-bottom:0}
+
+/* подвал */
+.pagefoot{background:var(--green4);color:rgba(255,255,255,.72);
+padding:44px 0 52px;font-size:14px;line-height:1.7;margin-top:56px}
+.pagefoot a{color:var(--lime);text-decoration:none}
+.pagefoot a:hover{text-decoration:underline}
+.pf-links{display:flex;flex-wrap:wrap;gap:8px 26px;margin-bottom:26px;
+padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.pf-req{color:rgba(255,255,255,.62);font-size:13.5px}
+.pf-req b{color:rgba(255,255,255,.9);font-weight:600}
+
+/* режим «внутри окна на сайте»: без шапки и подвала страницы */
+.embed .top,.embed .pagefoot{display:none}
+.embed .hero{padding-top:58px}
+
+@media(max-width:640px){
+ body{font-size:15.5px}
+ .wrap{padding:0 18px}
+ .hero{padding:40px 0 32px}
+ h1{font-size:26px}
+ h1::after{margin-top:16px}
+ .lede{font-size:16px}
+ main{padding:32px 0 48px}
+ h2{font-size:18px;margin:38px 0 14px}
+ .toc{padding:18px 20px;margin-bottom:34px}
+ .toc ul{columns:1}
+ .req{padding:6px 18px}
+ .req dl{grid-template-columns:1fr;gap:0}
+ .req dt{padding-bottom:2px;border-bottom:0}
+ .req dd{padding-top:0}
+}
+@media print{
+ .top,.back,.toc,.pagefoot{display:none}
+ body{background:#fff;font-size:11pt}
+ .hero{background:#fff;padding:0 0 18pt;border:0}
+ a{color:#000;text-decoration:none}
+ h2{margin:20pt 0 8pt}
+}
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap"><a href="/" class="logo">Заедем<em>.by</em></a><a href="/" class="back" onclick="if(history.length>1){history.back();return false;}">← Назад</a></div></div>
+<header class="top"><div class="wrap">
+<a href="/" class="logo">Заедем<em>.by</em></a>
+<a href="/" class="back">← На сайт</a>
+</div></header>
+
+<div class="hero"><div class="wrap">
+<div class="eyebrow">Документы Заедем.by</div>
+<h1>Публичная оферта</h1>
+<p class="lede">Условия, на которых ООО «ЗАЕДЕМБАЙ» оказывает услугу бронирования мест краткосрочного проживания на сайте zaedem.by. Оформляя и оплачивая бронирование, вы принимаете эти условия.</p>
+<div class="meta">Редакция 1</div><!-- дату «действует с …» вписать в день публикации -->
+</div></div>
+
 <main class="wrap">
-  <h1>Публичная оферта</h1>
-  <div class="upd">Действует с [дата]</div>
+<nav class="toc"><div class="toc-t">Содержание</div><ul><li><a href="#s1">1. Основные понятия</a></li><li><a href="#s2">2. Предмет договора</a></li><li><a href="#s3">3. Как заключается договор</a></li><li><a href="#s4">4. Цена и оплата</a></li><li><a href="#s5">5. Подтверждение бронирования</a></li><li><a href="#s6">6. Изменение и отмена бронирования</a></li><li><a href="#s7">7. Обязанности сторон</a></li><li><a href="#s8">8. Ответственность</a></li><li><a href="#s9">9. Персональные данные</a></li><li><a href="#s10">10. Обращения, претензии и споры</a></li><li><a href="#s11">11. Срок действия и изменения</a></li><li><a href="#s12">12. Реквизиты Исполнителя</a></li></ul></nav>
+<p>Настоящий документ — публичная оферта Общества с ограниченной ответственностью «ЗАЕДЕМБАЙ»
+(УНП 291928518, далее — <strong>Исполнитель</strong>) о заключении договора оказания услуг по бронированию
+на условиях, изложенных ниже, с любым лицом, которое отзовётся (пункт 2 статьи 407 Гражданского кодекса
+Республики Беларусь).</p>
 
-  <!--
-    ВНИМАНИЕ ВЛАДЕЛЬЦУ: это шаблон. Условия оферты (предмет, цена, оплата, отмена,
-    ответственность) должен согласовать юрист. Замени [квадратные скобки] своими данными.
-  -->
+<h2 id="s1">1. Основные понятия</h2>
+<div class="tw"><table>
+<tr><th>Понятие</th><th>Значение</th></tr>
+<tr><td>Сайт</td><td>интернет-ресурс zaedem.by и его поддомены, принадлежащие Исполнителю</td></tr>
+<tr><td>Заказчик</td><td>лицо, оформившее бронирование на Сайте</td></tr>
+<tr><td>Гость</td><td>лицо, которое будет проживать в объекте размещения; может совпадать с Заказчиком</td></tr>
+<tr><td>Объект размещения</td><td>гостиница, апартаменты, усадьба, квартира или иное место краткосрочного проживания</td></tr>
+<tr><td>Бронирование</td><td>закрепление за Гостем места в Объекте размещения на выбранные даты</td></tr>
+<tr><td>Ваучер</td><td>электронный документ, подтверждающий бронирование</td></tr>
+<tr><td>Правила тарифа</td><td>условия отмены и изменения бронирования, установленные Объектом размещения для выбранного варианта проживания</td></tr>
+</table></div>
 
-  <p>Настоящий документ является публичной офертой [наименование, УНП]
-  (далее — «Исполнитель») и содержит условия оказания услуг по
-  бронированию мест размещения через сайт zaedem.by (далее — «Сайт»).</p>
+<h2 id="s2">2. Предмет договора</h2>
+<p><strong>2.1.</strong> Исполнитель оказывает Заказчику услугу по бронированию: подбор Объекта размещения по
+заданным Заказчиком условиям, оформление и подтверждение бронирования, проведение расчётов, выдачу Ваучера,
+приём и обработку обращений об изменении и отмене бронирования, возврат денежных средств по Правилам тарифа.</p>
+<p><strong>2.2.</strong> <strong>Услугу проживания оказывает Объект размещения.</strong> Исполнитель собственных
+средств размещения не имеет и услуги проживания не оказывает. Товарами Исполнитель не торгует.</p>
+<p><strong>2.3.</strong> Бронирование оформляется Исполнителем <strong>от своего имени и за счёт</strong> Объекта
+размещения либо поставщика системы бронирования на основании заключённых с ними договоров комиссии (агентских
+договоров). Перед Заказчиком за оформление бронирования, выдачу Ваучера, отмену и возврат денежных средств
+отвечает Исполнитель.</p>
+<p><strong>2.4.</strong> Сведения о том, кто является Объектом размещения по конкретному бронированию,
+указываются при оформлении и в Ваучере.</p>
 
-  <h2>1. Общие положения</h2>
-  <p>Оформление бронирования на Сайте означает полное и безоговорочное принятие
-  пользователем (далее — «Заказчик») условий настоящей оферты.</p>
+<h2 id="s3">3. Как заключается договор</h2>
+<p><strong>3.1.</strong> Договор считается заключённым с момента <strong>оплаты бронирования</strong> Заказчиком.
+Оплата означает полное и безоговорочное принятие условий настоящей оферты.</p>
+<p><strong>3.2.</strong> До оплаты Заказчику отображаются: Объект размещения, даты заезда и выезда, состав Гостей,
+итоговая стоимость в белорусских рублях и Правила тарифа. Заказчик подтверждает ознакомление с ними
+при оформлении бронирования.</p>
+<p><strong>3.3.</strong> Факт принятия условий фиксируется Исполнителем с указанием редакции настоящей оферты,
+даты, времени и IP-адреса.</p>
+<p><strong>3.4.</strong> Оформлять бронирование вправе лица, достигшие восемнадцати лет. Оформляя бронирование
+за других лиц, Заказчик подтверждает, что вправе передавать их данные.</p>
 
-  <h2>2. Предмет</h2>
-  <p>Исполнитель предоставляет Заказчику возможность забронировать размещение
-  (отель, апартаменты, усадьбу и т.п.) у партнёров Сайта и оплатить его. [Уточнить
-  роль Исполнителя: агент / посредник — согласовать с юристом.]</p>
+<h2 id="s4">4. Цена и оплата</h2>
+<p><strong>4.1.</strong> Цена указывается на Сайте <strong>в белорусских рублях</strong> и является итоговой.
+Она включает стоимость проживания за выбранный срок и вознаграждение Исполнителя. Отдельная комиссия
+с Заказчика не взимается.</p>
+<p><strong>4.2.</strong> Оплата производится <strong>в полном объёме при оформлении</strong> бронирования.
+Доплат при заселении Исполнителем не предусмотрено.</p>
+<p><strong>4.3.</strong> Отдельные Объекты размещения вправе взимать при заселении обязательные местные сборы,
+не входящие в стоимость проживания. Если по бронированию такой сбор предусмотрен, его размер указывается
+до оплаты.</p>
+<p><strong>4.4.</strong> Денежные средства, полученные Исполнителем от Заказчика, за вычетом вознаграждения
+Исполнителя <strong>причитаются Объекту размещения (поставщику)</strong> и перечисляются ему в порядке
+и сроки, установленные договором с ним.</p>
+<p><strong>4.5.</strong> Порядок оплаты, приём карт и порядок возврата описаны на странице
+<a href="payment.html">«Оплата и возврат»</a>, которая является неотъемлемой частью настоящей оферты.</p>
 
-  <h2>3. Цена и оплата</h2>
-  <ul>
-    <li>стоимость указывается на странице объекта в белорусских рублях;</li>
-    <li>оплата производится способами, доступными на Сайте;</li>
-    <li>бронирование считается подтверждённым после [условие].</li>
-  </ul>
+<h2 id="s5">5. Подтверждение бронирования</h2>
+<p><strong>5.1.</strong> После оплаты Исполнитель направляет на указанный Заказчиком адрес электронной почты
+<strong>Ваучер</strong> с номером бронирования, датами, адресом Объекта размещения, составом Гостей, суммой
+и Правилами тарифа.</p>
+<p><strong>5.2.</strong> Ваучер является подтверждением бронирования и предъявляется при заселении.</p>
+<p><strong>5.3.</strong> Если Ваучер не поступил в течение 15 минут после оплаты, Заказчику следует проверить
+папку со спам-сообщениями и обратиться на admin@zaedem.by с указанием номера бронирования.</p>
+<p><strong>5.4.</strong> Отдельные Объекты размещения требуют оформления договора найма жилого помещения.
+В этом случае Заказчику направляется персональная ссылка для внесения сведений о проживающих.
+Без этих сведений заселение может быть невозможно.</p>
 
-  <h2>4. Отмена и возврат</h2>
-  <p>Условия отмены и возврата зависят от выбранного тарифа и указываются при
-  оформлении бронирования. [Описать правила и сроки возврата.]</p>
+<h2 id="s6">6. Изменение и отмена бронирования</h2>
+<p><strong>6.1.</strong> <strong>Правила тарифа устанавливает Объект размещения.</strong> Они различаются
+для разных Объектов и вариантов проживания, отображаются до оплаты и фиксируются в Ваучере.</p>
+<p><strong>6.2.</strong> К бронированию применяются Правила тарифа, действовавшие на момент его оформления.
+Последующие изменения на оформленное бронирование не распространяются.</p>
+<p><strong>6.3.</strong> Заказчик вправе отказаться от услуги. Удержание при отказе производится в размере,
+определённом Правилами тарифа и соответствующем расходам, фактически понесённым в связи с исполнением
+бронирования (пункт 1 статьи 736 Гражданского кодекса Республики Беларусь).</p>
+<p><strong>6.4.</strong> Отмена оформляется по персональной ссылке управления бронированием из письма с Ваучером
+либо по обращению на admin@zaedem.by с указанием номера бронирования и адреса электронной почты,
+на который оно оформлено.</p>
+<p><strong>6.5.</strong> Исполнитель вправе отменить бронирование, если Объект размещения не может его принять,
+а также при выявлении недостоверных сведений, указанных Заказчиком. В первом случае Заказчику возвращается
+полная стоимость.</p>
 
-  <h2>5. Права и обязанности</h2>
-  <ul>
-    <li>Исполнитель обязуется передать данные бронирования партнёру размещения;</li>
-    <li>Заказчик обязуется предоставить достоверные данные;</li>
-    <li>[иные условия — согласовать с юристом].</li>
-  </ul>
+<h2 id="s7">7. Обязанности сторон</h2>
+<h3>Исполнитель обязуется</h3>
+<ul>
+<li>передать сведения о бронировании Объекту размещения в полном и неискажённом виде;</li>
+<li>направить Заказчику Ваучер после оплаты;</li>
+<li>произвести расчёты и возврат денежных средств по Правилам тарифа;</li>
+<li>обеспечить защиту переданных Заказчиком персональных данных;</li>
+<li>рассматривать обращения Заказчика в порядке, установленном разделом 10.</li>
+</ul>
+<h3>Заказчик обязуется</h3>
+<ul>
+<li>указывать достоверные сведения о себе и о Гостях;</li>
+<li>ознакомиться с Правилами тарифа до оплаты;</li>
+<li>оплатить бронирование в полном объёме;</li>
+<li>соблюдать правила проживания, установленные Объектом размещения;</li>
+<li>не передавать посторонним персональные ссылки, направленные Исполнителем.</li>
+</ul>
 
-  <h2>6. Ответственность</h2>
-  <p>Исполнитель не несёт ответственности за качество услуг, оказываемых
-  непосредственно объектом размещения. [Уточнить пределы ответственности.]</p>
+<h2 id="s8">8. Ответственность</h2>
+<p><strong>8.1.</strong> Исполнитель отвечает за оформление и передачу бронирования, корректность расчётов,
+работу Сайта и сохранность переданных ему персональных данных.</p>
+<p><strong>8.2.</strong> За фактическое предоставление помещения, его состояние, соответствие описанию, чистоту
+и соблюдение правил проживания отвечает <strong>Объект размещения</strong>.</p>
+<p><strong>8.3.</strong> Сведения об Объектах размещения — описания, фотографии, перечень удобств — предоставляются
+Объектами размещения и поставщиком системы бронирования. Исполнитель не является их источником.</p>
+<p><strong>8.4.</strong> Если Объект размещения не принял Гостя по подтверждённому бронированию, Исполнитель
+возвращает полную стоимость бронирования.</p>
+<p><strong>8.5.</strong> Исполнитель не отвечает за обстоятельства, находящиеся вне его контроля: отказ Гостя
+от заселения, недоступность Сайта вследствие сбоев связи или действий третьих лиц, обстоятельства
+непреодолимой силы.</p>
+<p><strong>8.6.</strong> Настоящий раздел не ограничивает прав Заказчика, установленных законодательством
+Республики Беларусь о защите прав потребителей.</p>
 
-  <h2>7. Реквизиты</h2>
-  <p>[Наименование, УНП, юридический адрес, расчётный счёт, контактные данные.]</p>
+<h2 id="s9">9. Персональные данные</h2>
+<p><strong>9.1.</strong> Персональные данные обрабатываются в соответствии с Законом Республики Беларусь
+от 7 мая 2021 г. № 99-З «О защите персональных данных» и
+<a href="privacy.html">Политикой обработки персональных данных</a>.</p>
+<p><strong>9.2.</strong> Оформляя бронирование, Заказчик даёт согласие на обработку своих персональных данных
+и подтверждает, что располагает согласием Гостей на передачу их данных в объёме, необходимом для исполнения
+бронирования.</p>
 
-  <div class="note">Это предварительная версия. Итоговый текст согласуется с юристом
-  и может быть изменён.</div>
+<h2 id="s10">10. Обращения, претензии и споры</h2>
+<p><strong>10.1.</strong> Обращения направляются на <strong>admin@zaedem.by</strong>. В обращении указываются
+номер бронирования, адрес электронной почты, на который оно оформлено, и существо требования.</p>
+<p><strong>10.2.</strong> Претензия рассматривается в срок, установленный законодательством Республики Беларусь.
+Если претензия касается качества проживания, Исполнитель содействует её урегулированию с Объектом размещения.</p>
+<p><strong>10.3.</strong> Споры, не урегулированные путём переговоров, разрешаются в судебном порядке
+в соответствии с законодательством Республики Беларусь.</p>
 
-  <div class="foot">© <span id="y"></span> Zaedem.by · <a href="/privacy.html">Политика обработки персональных данных</a></div>
+<h2 id="s11">11. Срок действия и изменения</h2>
+<p><strong>11.1.</strong> Оферта действует с даты размещения на Сайте и до её отзыва или замены новой редакцией.</p>
+<p><strong>11.2.</strong> Исполнитель вправе изменить оферту. Изменения вступают в силу с момента размещения
+на Сайте. <strong>К оформленным бронированиям применяется редакция, действовавшая на момент оформления.</strong></p>
+<p><strong>11.3.</strong> Действующая редакция размещается по адресу
+<a href="https://zaedem.by/oferta.html">zaedem.by/oferta.html</a>.</p>
+
+<h2 id="s12">12. Реквизиты Исполнителя</h2>
+<div class="req"><dl>
+<dt>Полное наименование</dt><dd>Общество с ограниченной ответственностью «ЗАЕДЕМБАЙ»</dd>
+<dt>Сокращённое наименование</dt><dd>ООО «ЗАЕДЕМБАЙ»</dd>
+<dt>УНП</dt><dd>291928518</dd>
+<dt>Государственная регистрация</dt><dd>16.09.2026, Пинский городской исполнительный комитет</dd>
+<dt>Юридический и почтовый адрес</dt><dd>225716, Республика Беларусь, Брестская область, г. Пинск, улица Пушкина, дом 5, офис 119</dd>
+<dt>Расчётный счёт</dt><dd>BY46 POIS 3012 0188 6680 0193 3001</dd>
+<dt>Банк</dt><dd>ОАО «Паритетбанк», БИК POISBY2X</dd>
+<dt>Директор</dt><dd>Горошко Владимир Витальевич</dd>
+<dt>Электронная почта</dt><dd>admin@zaedem.by</dd>
+<dt>Телефон</dt><dd>+375 __ ___-__-__</dd>
+</dl></div>
 </main>
-<script>document.getElementById('y').textContent=new Date().getFullYear();if(window.self!==window.top){var _b=document.querySelector('.back');if(_b)_b.style.display='none';}</script>
+
+<footer class="pagefoot"><div class="wrap">
+<div class="pf-links"><a href="payment.html">Оплата и возврат</a><a href="privacy.html">Персональные данные</a><a href="confidential.html">Конфиденциальность</a><a href="terms.html">Правила пользования</a><a href="contacts.html">Контакты</a></div>
+<div class="pf-req"><b>Общество с ограниченной ответственностью «ЗАЕДЕМБАЙ»</b><br>УНП 291928518 · зарегистрировано 16.09.2026 Пинским городским исполнительным комитетом<br>225716, Республика Беларусь, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119<br>admin@zaedem.by · +375 __ ___-__-__</div>
+</div></footer>
 </body>
 </html>
