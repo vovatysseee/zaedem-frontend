@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Заедем.by — Бронирование отелей Беларуси</title>
-<meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Оплата картой, ЕРИП, Apple Pay. Мгновенное подтверждение, 0% комиссии для гостя.">
+<meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Оплата картами Visa, Mastercard, БЕЛКАРТ, МИР. Мгновенное подтверждение, 0% комиссии для гостя.">
 <meta name="theme-color" content="#0F2D1D">
 
 <!-- Open Graph (превью при отправке ссылки в Telegram, ВК, WhatsApp) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Заедем.by">
 <meta property="og:title" content="Заедем.by — Бронирование отелей Беларуси">
-<meta property="og:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Оплата картой, ЕРИП, Apple Pay. Мгновенное подтверждение.">
+<meta property="og:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Оплата картами Visa, Mastercard, БЕЛКАРТ, МИР. Мгновенное подтверждение.">
 <meta property="og:url" content="https://zaedem.by">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:image" content="https://zaedem.by/og-image.png?v=2">
@@ -382,7 +382,7 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .btn-pay,.btn-select,.sr-book,.cap-search-btn,.btn-search{transition:transform .12s ease,filter .15s ease,background .15s ease,box-shadow .15s ease,opacity .15s ease}
 .btn-pay:active,.btn-select:active,.sr-book:active,.cap-search-btn:active,.btn-search:active{transform:scale(.96)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
-.modal{background:#fff;border-radius:24px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 40px 120px rgba(0,0,0,.35)}
+.modal{background:#fff;border-radius:24px;width:100%;max-width:520px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 40px 120px rgba(0,0,0,.35)}
 #bk-modal .modal{max-width:560px}
 .modal-img{height:215px;background:var(--sand2);border-radius:24px 24px 0 0;position:relative;overflow:hidden}
 .modal-img img{width:100%;height:100%;object-fit:cover;border-radius:24px 24px 0 0}
@@ -639,6 +639,60 @@ html.zb-fav-booting{background:var(--sand,#faf8f4)}
    (#fav-page.open{display:block}) продолжает работать: у него выше специфичность. */
 #fav-page{display:none}
 </style>
+<style id="zb-26-09">
+/* ═══ 26.09: подвал, галочки согласий, блокировка прокрутки под окнами ═══
+   Отдельный блок в конце <head>: перекрывает старые правила, ничего в них не удаляя.
+   Откат — удалить этот блок целиком (и вернуть старый <footer> из копии). */
+
+/* ПОДВАЛ. Документы в подвале открываются ОТДЕЛЬНЫМИ страницами (свой адрес, так их проверяет банк).
+   В форме брони те же документы открываются в окне поверх формы — чтобы не терять введённые данные. */
+footer{padding:3.25rem 0 2rem;border-top:1px solid rgba(201,241,53,.08)}
+footer .ft-inner{grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;margin-bottom:2.25rem}
+footer .ft-logo{font-size:1.25rem}
+footer .ft-logo em{font-style:normal;color:rgba(255,255,255,.85)}
+footer .ft-desc{font-size:13px;line-height:1.7;color:rgba(255,255,255,.52);max-width:330px;margin-bottom:16px}
+footer .ft-pay-block{display:flex;align-items:center;min-height:22px}
+footer .ft-secure{display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:12px;color:rgba(255,255,255,.55);transition:.15s}
+footer .ft-secure:hover{color:var(--lime)}
+footer .ft-col h4{font-size:10.5px;letter-spacing:1.3px;color:rgba(255,255,255,.42);margin-bottom:14px}
+footer .ft-col a{font-size:13.5px;font-weight:400;color:rgba(255,255,255,.8);margin-bottom:11px;line-height:1.35}
+footer .ft-col a:hover{color:var(--lime)}
+footer .ft-req{border-top:1px solid rgba(255,255,255,.08);padding:1.35rem 0 1.15rem;font-size:12px;line-height:1.8;color:rgba(255,255,255,.46)}
+footer .ft-req b{color:rgba(255,255,255,.78);font-weight:600}
+footer .ft-req a{color:rgba(255,255,255,.72)}
+footer .ft-req a:hover{color:var(--lime)}
+footer .ft-bottom{flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 16px;padding-top:1.1rem}
+@media(max-width:900px){
+  footer .ft-inner{grid-template-columns:repeat(3,1fr)}
+  footer .ft-brand{grid-column:1/-1}
+}
+@media(max-width:600px){
+  footer{padding:2.5rem 0 1.6rem}
+  footer .wrap{padding:0 1.25rem}
+  footer .ft-inner{grid-template-columns:1fr 1fr;gap:1.6rem 1.25rem;margin-bottom:1.6rem}
+  footer .ft-col-partners{grid-column:1/-1}
+  footer .ft-col-partners .ft-links{display:flex;flex-wrap:wrap;gap:0 22px}
+  footer .ft-col a{font-size:14px;padding:6px 0;margin:0}
+  footer .ft-col h4{margin-bottom:6px}
+  footer .ft-desc{font-size:13.5px}
+  footer .ft-sep{display:none}
+  footer .ft-contacts{margin-top:8px}
+  footer .ft-contacts>*{display:block;font-size:13px;color:rgba(255,255,255,.72)}
+}
+
+/* ГАЛОЧКИ СОГЛАСИЙ в форме брони: крупнее квадрат и текст, отдельная плашка */
+.bk-consent{margin:16px 0 10px;gap:12px;background:var(--sand);border:1px solid var(--sand3);border-radius:14px;padding:13px 14px}
+.bk-check{font-size:12.5px;line-height:1.5;color:var(--ink2);position:relative}
+.bk-check .bx{flex:0 0 20px;width:20px;height:20px;margin-top:0;border-color:#cfc8b8}
+.bk-docs{display:flex;flex-wrap:wrap;gap:4px 16px;padding-top:9px;border-top:1px solid var(--sand3);font-size:11.5px}
+.bk-docs a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+.bk-docs a:hover{color:var(--green)}
+
+/* БЛОКИРОВКА ПРОКРУТКИ: пока открыто окно (шторка поиска, бронь, вход, фото, карта, документ, избранное),
+   страница под ним стоит на месте. Класс zb-lock ставит скрипт в конце страницы. */
+html.zb-lock,html.zb-lock body{overflow:hidden!important}
+#cs-scroll,#fav-page,#serp-sd-modal,.overlay{overscroll-behavior:contain}
+</style>
 </head>
 <body>
 <script>try{var _de=document.documentElement;var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');
@@ -882,12 +936,23 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
 <footer>
   <div class="wrap">
     <div class="ft-inner">
-      <div><div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем.by</div><p class="ft-desc">Белорусская платформа бронирования жилья. Принимаем белорусские и российские карты.</p><div class="ft-pay-block" style="margin-top:12px"><span id="ft-pay-icons"></span></div></div>
-      <div class="ft-col"><h4>Партнёрам</h4><a onclick="openHotelApp()">Добавить свой объект</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div>
-      <div class="ft-col"><h4>Компания</h4><a>О Заедем.by</a><a>Контакты</a><a href="privacy.html" class="legal-link">Политика конфиденциальности</a><a href="oferta.html" class="legal-link">Публичная оферта</a></div>
+      <div class="ft-brand">
+        <div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем<em>.by</em></div>
+        <p class="ft-desc">Бронирование жилья по всей Беларуси: отели, апартаменты, агроусадьбы. Цены в белорусских рублях, без комиссии для гостя.</p>
+        <div class="ft-pay-block"><span id="ft-pay-icons"></span></div>
+        <a href="payment.html" class="ft-secure"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Защищённая оплата картой · 3-D Secure</a>
+      </div>
+      <div class="ft-col"><h4>Гостям</h4><a onclick="openAuth('tourist')">Найти мою бронь</a><a href="payment.html">Оплата и возврат</a><a href="oferta.html">Публичная оферта</a><a href="terms.html">Правила пользования</a></div>
+      <div class="ft-col"><h4>Компания</h4><a href="contacts.html">Контакты и реквизиты</a><a href="privacy.html">Персональные данные</a><a href="confidential.html">Конфиденциальность</a></div>
+      <div class="ft-col ft-col-partners"><h4>Партнёрам</h4><div class="ft-links"><a onclick="openHotelApp()">Добавить свой объект</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div></div>
+    </div>
+    <div class="ft-req">
+      <div><b>ООО «ЗАЕДЕМБАЙ»</b> · УНП 291928518 · зарегистрировано Пинским городским исполнительным комитетом 16.09.2026</div>
+      <div>225716, Республика Беларусь, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119</div>
+      <div class="ft-contacts"><a href="mailto:admin@zaedem.by">admin@zaedem.by</a><span class="ft-sep"> · </span><span class="ft-phone">+375 __ ___-__-__</span><span class="ft-sep"> · </span><span>ежедневно с __:__ до __:__</span></div>
     </div>
     <div class="ft-bottom">
-      <span>© 2026 Заедем.by · УНП [—]</span>
+      <span>© 2026 Заедем.by</span>
       <span style="display:inline-flex;align-items:center;gap:6px"><svg width="16" height="10" viewBox="0 0 22 14" style="border-radius:2px;flex-shrink:0" xmlns="http://www.w3.org/2000/svg"><rect width="22" height="14" fill="#CF101A"/><rect y="9.5" width="22" height="4.5" fill="#4AA657"/><rect width="3.5" height="14" fill="#fff"/><rect x="0.5" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="2" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="4" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="6" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="8" width="2.5" height="2" fill="#CF101A"/><rect x="0.5" y="10" width="2.5" height="2" fill="#4AA657"/><rect x="0.5" y="12" width="2.5" height="2" fill="#CF101A"/></svg> Сделано в Беларуси</span>
     </div>
   </div>
@@ -1203,19 +1268,37 @@ var HERO_SLIDES=[
 ];
 function buildHeroSlides(){
   var c=document.querySelector('.hero-slides');if(!c||!HERO_SLIDES.length)return;
-  c.innerHTML=HERO_SLIDES.map(function(u){return '<div class="hero-slide" style="background-image:url(\''+encodeURI(String(u||''))+'\')"><div class="hero-overlay"></div></div>';}).join('');
+  // ═ ФИКС «ВТОРОГО БЛИКА» (26.09) ═
+  // Первый слайд уже стоит в разметке с классом active — браузер показывает его сразу.
+  // Раньше здесь вся разметка слайдов пересобиралась заново, и новые слайды были БЕЗ active,
+  // то есть прозрачные: фото гасло до тёмного фона и проявлялось снова за 2,2 с.
+  // Это и был «чёрный экран, как будто слайд меняется». Теперь первый слайд не трогаем,
+  // дописываем только остальные.
+  var first=c.querySelector('.hero-slide');
+  var f0=String(HERO_SLIDES[0]||'');
+  if(!first){
+    first=document.createElement('div'); first.className='hero-slide active';
+    first.style.backgroundImage="url('"+encodeURI(f0)+"')";
+    first.innerHTML='<div class="hero-overlay"></div>';
+    c.appendChild(first);
+  }else{
+    // если первый файл в списке поменяли, а в разметке остался старый — подставляем (без затемнения)
+    if(String(first.style.backgroundImage||'').indexOf(f0.split('/').pop())<0)first.style.backgroundImage="url('"+encodeURI(f0)+"')";
+    first.classList.add('active');
+  }
+  c.querySelectorAll('.hero-slide').forEach(function(el){ if(el!==first)el.remove(); });
+  HERO_SLIDES.slice(1).forEach(function(u){
+    var d=document.createElement('div'); d.className='hero-slide';
+    d.style.backgroundImage="url('"+encodeURI(String(u||''))+"')";
+    d.innerHTML='<div class="hero-overlay"></div>';
+    c.appendChild(d);
+    var im=new Image(); im.src=u; // предзагрузка, чтобы при смене не грузилось кусками
+  });
   var slides=c.querySelectorAll('.hero-slide');
-  // Первый кадр показываем ТОЛЬКО когда его фото готово — без подгрузки кусками
-  var first=new Image();
-  first.onload=first.onerror=function(){
-    requestAnimationFrame(function(){requestAnimationFrame(function(){
-      if(slides[0])slides[0].classList.add('active');
-      if(slides.length>1){var i=0;setInterval(function(){slides[i].classList.remove('active');i=(i+1)%slides.length;slides[i].classList.add('active');},12000);}
-    });});
-  };
-  first.src=HERO_SLIDES[0];
-  // Предзагрузка остальных, чтобы при смене не подгружалось кусками
-  HERO_SLIDES.slice(1).forEach(function(u){var im=new Image();im.src=u;});
+  if(slides.length>1&&!window._zbHeroTimer){
+    var i=0;
+    window._zbHeroTimer=setInterval(function(){slides[i].classList.remove('active');i=(i+1)%slides.length;slides[i].classList.add('active');},12000);
+  }
 }
 document.addEventListener('DOMContentLoaded',function(){renderHotels();var fp=document.getElementById('ft-pay-icons');if(fp&&typeof payIconsHTML==='function')fp.innerHTML=payIconsHTML(true);fitHeroTitle();buildHeroSlides();});
 window.addEventListener('resize',fitHeroTitle);
@@ -4041,12 +4124,9 @@ function openBookModal(){
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
       ${payIconsHTML()}
     </div>
-    <div class="bk-consent">
-      <label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html" class="legal-link">обработку персональных данных</a></span></label>
-      <label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html" class="legal-link">публичной оферты</a></span></label>
-    </div>
+    ${bkConsentHTML()}
     <button class="btn-pay btn-pay-soon" id="bk-pay-btn" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
-    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>`;
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>`;
   document.getElementById('bk-modal').classList.add('open');
   bkRenderGuests();
 }
@@ -4125,9 +4205,18 @@ function bkConsentCheck(){
 
 // Разметка двух согласий (переиспользуется в обеих формах брони)
 function bkConsentHTML(){
+  // Тексты согласованы с документами сайта:
+  //  • оферта п. 3.1–3.4 — договор заключается оплатой, заказчику 18+, условия отмены — часть оферты;
+  //  • политика обработки ПДн разд. 2–3 — согласие даётся при оформлении брони, в т. ч. на передачу
+  //    объекту, поставщику бронирования, платёжному сервису и почтовому сервису (за пределы РБ).
+  // id галочек (cons-offer, cons-pd) НЕ МЕНЯТЬ: по ним сервер пишет запись о согласии (bkCollectConsents).
+  var tick='<span class="bx"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span>';
   return '<div class="bk-consent">'
-   +'<label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Даю согласие на <a href="privacy.html" class="legal-link">обработку персональных данных</a></span></label>'
-   +'<label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()"><span class="bx"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 12l4.5 4.5L19 6"/></svg></span><span>Принимаю условия <a href="oferta.html" class="legal-link">публичной оферты</a></span></label>'
+   +'<label class="bk-check"><input type="checkbox" id="cons-offer" onchange="bkConsentCheck()">'+tick
+   +'<span>Мне исполнилось 18 лет. Принимаю условия <a href="oferta.html" class="legal-link">публичной оферты</a>, включая условия отмены бронирования</span></label>'
+   +'<label class="bk-check"><input type="checkbox" id="cons-pd" onchange="bkConsentCheck()">'+tick
+   +'<span>Даю согласие на обработку моих персональных данных на условиях <a href="privacy.html" class="legal-link">Политики обработки персональных данных</a>, в том числе на их передачу получателям, указанным в ней. Данные других гостей передаю с их ведома</span></label>'
+   +'<div class="bk-docs"><a href="payment.html" class="legal-link">Оплата и возврат</a><a href="confidential.html" class="legal-link">Конфиденциальность</a><a href="terms.html" class="legal-link">Правила пользования</a></div>'
    +'</div>';
 }
 // Вставляет согласия прямо над кнопкой оплаты в текущей форме брони (#bm-body)
@@ -4195,16 +4284,17 @@ function bkInjectRoomAmen(){
 
 // Красивые значки оплаты (переиспользуемые)
 function payIconsHTML(dark){
-  // Без плашек. Спокойный приглушённый тон: текст серый, значки (яблоко/кружки) в тот же цвет.
-  var col=dark?'rgba(255,255,255,.55)':'#9a9a9a';
+  // Только то, что принимаем при запуске (bePaid): карты Visa, Mastercard, БЕЛКАРТ, МИР.
+  // ЕРИП, Apple Pay и Samsung Pay вернуть сюда, когда их реально включим: банк при проверке сайта
+  // сверяет значки с тем, что работает. Официальные логотипы с правилами размещения выдаёт bePaid —
+  // когда пришлют, заменить ими эти текстовые значки.
+  var col=dark?'rgba(255,255,255,.62)':'#9a9a9a';
   var t='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';white-space:nowrap;display:inline-flex;align-items:center';
   return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap">'
-    +'<span class="pay-ic" style="'+t+';font-style:italic">VISA</span>'
+    +'<span class="pay-ic" style="'+t+';font-style:italic;letter-spacing:.4px">VISA</span>'
     +'<span class="pay-ic" style="'+t+'" title="Mastercard"><svg viewBox="0 0 30 18" width="28" height="17"><circle cx="12" cy="9" r="6.5" fill="'+col+'"/><circle cx="18" cy="9" r="6.5" fill="'+col+'" fill-opacity=".5"/></svg></span>'
+    +'<span class="pay-ic" style="'+t+';letter-spacing:.3px">БЕЛКАРТ</span>'
     +'<span class="pay-ic" style="'+t+'">МИР</span>'
-    +'<span class="pay-ic" style="'+t+'">ЕРИП</span>'
-    +'<span class="pay-ic" style="'+t+'" title="Apple Pay"><svg viewBox="0 0 14 16" width="11" height="13" style="margin-right:3px"><path d="M9.5 4.6c-.3.4-.8.7-1.3.6 0-.5.2-1 .5-1.3.3-.4.8-.6 1.2-.7.1.5-.1 1-.4 1.4zm.4.7c-.7 0-1.3.4-1.6.4-.3 0-.8-.4-1.4-.4-.7 0-1.4.4-1.7 1.1-.7 1.3-.2 3.1.5 4.1.4.5.8 1 1.3 1 .5 0 .7-.3 1.4-.3s.8.3 1.4.3c.6 0 .9-.5 1.3-1 .3-.4.4-.8.5-.9-1.2-.5-1.3-2.2-.1-2.8-.4-.6-.9-.6-1.4-.6z" fill="'+col+'"/></svg>Pay</span>'
-    +'<span class="pay-ic" style="'+t+'">Samsung</span>'
     +'</span>';
 }
 
@@ -4375,7 +4465,7 @@ async function startPayment(total){
     document.getElementById('bm-body').innerHTML=`<div style="text-align:center;padding:36px 20px">
       <div style="font-size:2.2rem;margin-bottom:14px">⏳</div>
       <div style="font-family:'Unbounded',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Онлайн-оплата скоро появится</div>
-      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты — картой, ЕРИП, Apple&nbsp;Pay и Samsung&nbsp;Pay. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты банковской картой. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>
       <button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button>
     </div>`;
     return;
@@ -4598,7 +4688,7 @@ function printBooking(bk){
   ${bk.hotel_phone?`<div class="row"><span class="label">Телефон отеля</span><span class="val">${zbEsc(bk.hotel_phone)}</span></div>`:''}
   ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${(Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · ')}</div></div>`:''}
   <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
-  <div class="footer">Заедем.by · ИП Горошко Жанна Витальевна · booking@zaedem.by<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
+  <div class="footer">Заедем.by · ООО «ЗАЕДЕМБАЙ» · УНП 291928518 · 225716, г. Пинск, ул. Пушкина, 5, офис 119<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
   </body></html>`);
   w.document.close();
 }
@@ -4658,7 +4748,7 @@ function openHotelApp(){
       </div>
       <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--muted);margin:6px 0 12px;cursor:pointer">
         <input type="checkbox" id="ap-consent" style="margin-top:2px;flex-shrink:0;width:16px;height:16px;accent-color:var(--green)">
-        <span>Отправляя заявку, я соглашаюсь на <a href="privacy.html" target="_blank" style="color:var(--green);font-weight:600">обработку персональных данных</a> и принимаю политику конфиденциальности.</span>
+        <span>Даю согласие на обработку персональных данных, указанных в заявке, для её рассмотрения и связи со мной — на условиях <a href="privacy.html" class="legal-link" style="color:var(--green);font-weight:600">Политики обработки персональных данных</a>.</span>
       </label>
       <button class="btn-pay" id="ap-btn" onclick="submitApp()">Отправить заявку →</button>
       <div id="ap-err" style="color:#e53935;font-size:12px;margin-top:8px;text-align:center"></div>
@@ -4732,11 +4822,12 @@ function openLegal(url){
   if(!ov){
     ov=document.createElement('div'); ov.id='legal-ov';
     ov.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px';
-    ov.innerHTML='<div style="background:#fff;border-radius:16px;width:min(820px,100%);height:90vh;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)"><button onclick="closeLegal()" aria-label="Закрыть" style="position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);font-size:17px;cursor:pointer">✕</button><iframe id="legal-frame" title="Документ" style="border:none;width:100%;height:100%"></iframe></div>';
+    ov.innerHTML='<div class="legal-box" style="background:#fff;border-radius:16px;width:min(820px,100%);height:90vh;height:90dvh;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)"><a id="legal-open" target="_blank" rel="noopener" style="position:absolute;top:16px;left:16px;z-index:2;font-size:12.5px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--sand3);border-radius:50px;padding:6px 12px;text-decoration:none">Открыть отдельной страницей ↗</a><button onclick="closeLegal()" aria-label="Закрыть" style="position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);font-size:17px;cursor:pointer">✕</button><iframe id="legal-frame" title="Документ" style="border:none;width:100%;height:100%"></iframe></div>';
     ov.addEventListener('click',function(e){if(e.target===ov)closeLegal();});
     document.body.appendChild(ov);
   }
   document.getElementById('legal-frame').src=url;
+  var _lo=document.getElementById('legal-open'); if(_lo)_lo.href=url;
   ov.style.display='flex';
 }
 function closeLegal(){var ov=document.getElementById('legal-ov');if(ov)ov.style.display='none';}
@@ -6000,7 +6091,7 @@ function ostRenderForm(oldPrice){
     <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
     <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
-    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? Контакты — внизу страницы</div>';
+    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>';
   bkInjectConsent();
   bkInjectRoomPhoto();
   bkInjectRoomAmen();
@@ -6015,7 +6106,7 @@ function ostStartPayment(){
     document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:36px 20px">'
       +'<div style="font-size:2.2rem;margin-bottom:14px">⏳</div>'
       +'<div style="font-family:\'Unbounded\',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:10px">Онлайн-оплата скоро появится</div>'
-      +'<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты — картой, ЕРИП, Apple&nbsp;Pay и Samsung&nbsp;Pay. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>'
+      +'<p style="color:var(--muted);font-size:13px;line-height:1.7;margin-bottom:22px">Мы заканчиваем подключение безопасной оплаты банковской картой. Бронирование откроется совсем скоро. Спасибо, что вы с нами!</p>'
       +'<button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button></div>';
     return;
   }
@@ -6622,6 +6713,43 @@ function ostFail(e){
     }catch(e){ try{ document.documentElement.classList.remove('zb-fav-booting'); }catch(_){} }
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+</script>
+<script>
+// ═ ПРОКРУТКА ПОД ВСПЛЫВАЮЩИМИ ОКНАМИ (26.09) ═
+// Было: на телефоне открываешь шторку поиска, окно брони, вход, фото — листаешь, а под окном едет
+// страница с отелями (а на iPhone ещё и прыгает адресная строка). Теперь, пока открыто любое из окон,
+// у страницы выключается прокрутка (класс zb-lock). Позицию не трогаем: закрыли окно — страница там же.
+// Какие окна считаются — список в isOpen(). Откат: удалить этот блок и стили zb-lock в <head>.
+(function(){
+  var de=document.documentElement, locked=false, raf=0;
+  function shown(id,cls){ var e=document.getElementById(id); if(!e)return false; return cls?e.classList.contains(cls):(e.style.display&&e.style.display!=='none'); }
+  function isOpen(){
+    try{
+      if(document.querySelector('.overlay.open'))return true;   // бронь, вход, заявка, мои брони, отмена
+      if(shown('cap-sheet'))return true;                        // шторка поиска на телефоне
+      if(shown('gal-ov','open'))return true;                    // фото на весь экран
+      if(shown('hmap-ov','open'))return true;                   // карта объекта
+      if(shown('legal-ov'))return true;                         // документ в окне
+      if(shown('fav-page','open'))return true;                  // избранное
+      if(document.getElementById('serp-sd-backdrop'))return true;
+    }catch(e){}
+    return false;
+  }
+  function sync(){
+    raf=0;
+    var want=isOpen(); if(want===locked)return; locked=want;
+    if(want){
+      // на компьютере полоса прокрутки исчезает — компенсируем, чтобы страница не дёргалась вбок
+      var sbw=window.innerWidth-de.clientWidth; if(sbw>0)document.body.style.paddingRight=sbw+'px';
+      de.classList.add('zb-lock');
+    }else{
+      de.classList.remove('zb-lock'); document.body.style.paddingRight='';
+    }
+  }
+  function queue(){ if(!raf)raf=requestAnimationFrame(sync); }
+  try{ new MutationObserver(queue).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']}); }catch(e){}
+  queue();
 })();
 </script>
 </body>
