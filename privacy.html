@@ -2,99 +2,293 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Политика обработки персональных данных — Zaedem.by</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Политика обработки персональных данных — Заедем.by</title>
+<meta name="description" content="Политика обработки персональных данных ООО «ЗАЕДЕМБАЙ» (сайт zaedem.by) по Закону Республики Беларусь № 99-З.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>/* Открыта внутри окна на сайте (при бронировании) — прячем шапку и подвал страницы */try{if(window.self!==window.top)document.documentElement.className+=" embed"}catch(e){document.documentElement.className+=" embed"}</script>
 <style>
-:root{--green:#1a5c38;--green4:#0d3320;--lime:#c9f135;--sand:#faf8f4;--sand2:#f0ece3;--sand3:#e2dccf;--ink:#0c0c0c;--muted:#6b6b6b}
+:root{--green:#1a5c38;--green2:#23764a;--green4:#0d3320;--lime:#c9f135;
+--sand:#faf8f4;--sand2:#f2eee6;--sand3:#e3ddd0;--ink:#101010;--muted:#6b6b6b}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Golos Text',sans-serif;background:var(--sand);color:var(--ink);line-height:1.7;font-size:15px}
-.top{background:var(--green4);padding:18px 0}
-.wrap{max-width:780px;margin:0 auto;padding:0 22px}
-.logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:20px;color:var(--lime);text-decoration:none;letter-spacing:-1px}
-.logo em{color:rgba(255,255,255,.85);font-style:normal}
-.back{color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;font-weight:500;float:right;margin-top:6px}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Golos Text',-apple-system,Segoe UI,sans-serif;background:var(--sand);
+color:var(--ink);line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding:0 24px}
+
+/* шапка */
+.top{background:var(--green4)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;
+gap:16px;min-height:62px;padding-top:12px;padding-bottom:12px}
+.logo{font-family:'Unbounded',sans-serif;font-weight:800;font-size:19px;color:var(--lime);
+text-decoration:none;letter-spacing:-.5px;white-space:nowrap}
+.logo em{color:rgba(255,255,255,.82);font-style:normal}
+.back{color:rgba(255,255,255,.72);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
 .back:hover{color:#fff}
-main{padding:40px 0 80px}
-h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:28px;line-height:1.2;margin-bottom:10px;color:var(--green4)}
-.upd{color:var(--muted);font-size:13px;margin-bottom:32px}
-h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:17px;margin:32px 0 12px;color:var(--green)}
-p{margin-bottom:14px}
-ul{margin:0 0 14px 22px}
-li{margin-bottom:8px}
-.note{background:var(--sand2);border-left:3px solid var(--lime);border-radius:8px;padding:14px 18px;font-size:13.5px;color:var(--muted);margin:18px 0}
-a{color:var(--green);text-decoration:underline}
-.foot{border-top:1px solid var(--sand3);margin-top:48px;padding-top:24px;font-size:13px;color:var(--muted)}
+
+/* заголовочный блок — воздух сверху */
+.hero{background:var(--sand2);border-bottom:1px solid var(--sand3);padding:60px 0 44px}
+.eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+color:var(--green2);font-weight:600;margin-bottom:16px}
+h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:34px;line-height:1.16;
+color:var(--green4);letter-spacing:-.5px}
+h1::after{content:"";display:block;width:58px;height:4px;background:var(--lime);
+border-radius:3px;margin-top:20px}
+.lede{margin-top:22px;font-size:17px;color:#3a3a3a;max-width:64ch}
+.meta{margin-top:22px;font-size:13.5px;color:var(--muted)}
+
+/* содержание */
+main{padding:44px 0 64px}
+.toc{background:#fff;border:1px solid var(--sand3);border-radius:14px;
+padding:22px 26px;margin-bottom:44px}
+.toc-t{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--muted);font-weight:600;margin-bottom:12px}
+.toc ul{margin:0;padding:0;list-style:none;font-size:15px;
+columns:2;column-gap:32px}
+.toc li{margin-bottom:7px;break-inside:avoid}
+.toc a{color:var(--green);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+
+/* текст */
+h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;line-height:1.3;
+margin:48px 0 16px;color:var(--green4);scroll-margin-top:20px}
+h2:first-child{margin-top:0}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px;color:var(--green)}
+p{margin:0 0 16px}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:9px}
+li>ul,li>ol{margin-top:9px}
+a{color:var(--green);text-decoration:underline;text-underline-offset:2px}
+strong{font-weight:600}
+hr{border:0;border-top:1px solid var(--sand3);margin:40px 0}
+
+/* таблицы */
+.tw{overflow-x:auto;margin:0 0 20px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:420px}
+th{background:var(--sand2);text-align:left;font-weight:600;color:var(--green4)}
+th,td{padding:11px 14px;border:1px solid var(--sand3);vertical-align:top}
+td:first-child{font-weight:500}
+
+/* врезки */
+.note{background:#fff;border:1px solid var(--sand3);border-left:4px solid var(--lime);
+border-radius:12px;padding:18px 22px;margin:24px 0}
+.note p:last-child{margin-bottom:0}
+.note-t{font-weight:600;color:var(--green4);margin-bottom:6px;display:block}
+
+/* реквизиты */
+.req{background:#fff;border:1px solid var(--sand3);border-radius:14px;padding:8px 26px;margin:0 0 24px}
+.req dl{display:grid;grid-template-columns:230px 1fr;gap:0}
+.req dt,.req dd{padding:13px 0;border-bottom:1px solid var(--sand2)}
+.req dt{color:var(--muted);font-size:14.5px;padding-right:18px}
+.req dd{font-weight:500}
+.req dl>dt:last-of-type,.req dl>dd:last-of-type{border-bottom:0}
+
+/* подвал */
+.pagefoot{background:var(--green4);color:rgba(255,255,255,.72);
+padding:44px 0 52px;font-size:14px;line-height:1.7;margin-top:56px}
+.pagefoot a{color:var(--lime);text-decoration:none}
+.pagefoot a:hover{text-decoration:underline}
+.pf-links{display:flex;flex-wrap:wrap;gap:8px 26px;margin-bottom:26px;
+padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.pf-req{color:rgba(255,255,255,.62);font-size:13.5px}
+.pf-req b{color:rgba(255,255,255,.9);font-weight:600}
+
+/* режим «внутри окна на сайте»: без шапки и подвала страницы */
+.embed .top,.embed .pagefoot{display:none}
+.embed .hero{padding-top:58px}
+
+@media(max-width:640px){
+ body{font-size:15.5px}
+ .wrap{padding:0 18px}
+ .hero{padding:40px 0 32px}
+ h1{font-size:26px}
+ h1::after{margin-top:16px}
+ .lede{font-size:16px}
+ main{padding:32px 0 48px}
+ h2{font-size:18px;margin:38px 0 14px}
+ .toc{padding:18px 20px;margin-bottom:34px}
+ .toc ul{columns:1}
+ .req{padding:6px 18px}
+ .req dl{grid-template-columns:1fr;gap:0}
+ .req dt{padding-bottom:2px;border-bottom:0}
+ .req dd{padding-top:0}
+}
+@media print{
+ .top,.back,.toc,.pagefoot{display:none}
+ body{background:#fff;font-size:11pt}
+ .hero{background:#fff;padding:0 0 18pt;border:0}
+ a{color:#000;text-decoration:none}
+ h2{margin:20pt 0 8pt}
+}
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap"><a href="/" class="logo">Заедем<em>.by</em></a><a href="/" class="back" onclick="if(history.length>1){history.back();return false;}">← Назад</a></div></div>
+<header class="top"><div class="wrap">
+<a href="/" class="logo">Заедем<em>.by</em></a>
+<a href="/" class="back">← На сайт</a>
+</div></header>
+
+<div class="hero"><div class="wrap">
+<div class="eyebrow">Документы Заедем.by</div>
+<h1>Политика обработки персональных данных</h1>
+<p class="lede">Какие данные мы собираем при бронировании, зачем они нужны, кому передаются, сколько хранятся и как вы можете ими распоряжаться.</p>
+<div class="meta">Редакция 1</div><!-- дату «действует с …» вписать в день публикации -->
+</div></div>
+
 <main class="wrap">
-  <h1>Политика обработки персональных данных</h1>
-  <div class="upd">Действует с [дата]</div>
+<nav class="toc"><div class="toc-t">Содержание</div><ul><li><a href="#s1">1. Какие данные мы обрабатываем</a></li><li><a href="#s2">2. На каком основании мы обрабатываем данные</a></li><li><a href="#s3">3. Кому мы передаём данные</a></li><li><a href="#s4">4. Сколько мы храним данные</a></li><li><a href="#s5">5. Что сохраняется в вашем браузере</a></li><li><a href="#s6">6. Ваши права</a></li><li><a href="#s7">7. Как мы защищаем данные</a></li><li><a href="#s8">8. Изменения политики</a></li></ul></nav>
+<p>Общество с ограниченной ответственностью «ЗАЕДЕМБАЙ» (далее — <strong>Оператор</strong>) обрабатывает
+персональные данные пользователей сайта zaedem.by в соответствии с Законом Республики Беларусь
+от 7 мая 2021 г. № 99-З «О защите персональных данных».</p>
+<div class="req"><dl>
+<dt>Оператор</dt><dd>ООО «ЗАЕДЕМБАЙ», УНП 291928518</dd>
+<dt>Адрес</dt><dd>225716, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119</dd>
+<dt>Ответственный за внутренний контроль</dt><dd>директор Общества</dd>
+<dt>Обращения по персональным данным</dt><dd>admin@zaedem.by</dd>
+<dt>Срок ответа</dt><dd>пятнадцать дней со дня получения заявления</dd>
+</dl></div>
 
-  <!--
-    ВНИМАНИЕ ВЛАДЕЛЬЦУ: это шаблон. Точные формулировки и состав разделов должен
-    согласовать юрист в соответствии с Законом Республики Беларусь от 07.05.2021 № 99-З
-    «О защите персональных данных». Замени текст в [квадратных скобках] на свои данные.
-  -->
+<h2 id="s1">1. Какие данные мы обрабатываем</h2>
+<h3>1.1. При оформлении бронирования</h3>
+<div class="tw"><table>
+<tr><th>Данные</th><th>Зачем</th></tr>
+<tr><td>Имя и фамилия заказчика и гостей</td><td>оформление брони, ваучер, заселение</td></tr>
+<tr><td>Адрес электронной почты</td><td>отправка ваучера, уведомления об изменении и отмене</td></tr>
+<tr><td>Номер телефона</td><td>связь по броне, передача объекту размещения</td></tr>
+<tr><td>Даты проживания и состав гостей</td><td>оформление брони</td></tr>
+<tr><td>Сумма и сведения о платеже</td><td>проведение оплаты и возврата, бухгалтерский учёт</td></tr>
+</table></div>
+<h3>1.2. Данные проживающих для договора найма</h3>
+<p>Если объект размещения требует оформления договора найма жилого помещения, гость по отдельной персональной
+ссылке вносит сведения о проживающих: фамилию, имя, отчество, дату рождения, страну гражданства, вид и номер
+документа, удостоверяющего личность, адрес.</p>
+<p><strong>Эти сведения хранятся в зашифрованном виде</strong> и передаются только собственнику того объекта,
+который забронирован. Каждое обращение к ним фиксируется в журнале.</p>
+<h3>1.3. При подаче заявки на подключение объекта</h3>
+<div class="tw"><table>
+<tr><th>Данные</th><th>Зачем</th></tr>
+<tr><td>Имя контактного лица, телефон, адрес электронной почты</td><td>связь по заявке</td></tr>
+<tr><td>Название объекта, город, используемая система бронирования</td><td>рассмотрение заявки, подготовка договора</td></tr>
+</table></div>
+<h3>1.4. Технические данные</h3>
+<p>IP-адрес и сведения о браузере записываются в момент принятия условий оферты — как подтверждение согласия,
+а также для защиты от автоматических запросов.</p>
+<h3>1.5. Что мы не собираем</h3>
+<ul>
+<li><strong>Данные банковских карт.</strong> Номер карты, срок действия и код проверки вводятся на стороне
+платёжного сервиса. На наши серверы они не передаются и у нас не хранятся.</li>
+<li><strong>Сторонние счётчики посещаемости и рекламные системы.</strong> Сайт их не использует.</li>
+</ul>
 
-  <p>Настоящая Политика определяет порядок обработки и защиты персональных данных
-  пользователей сайта zaedem.by (далее — «Сайт»).</p>
+<h2 id="s2">2. На каком основании мы обрабатываем данные</h2>
+<p><strong>Согласие.</strong> Даётся при оформлении бронирования, при подаче заявки на подключение объекта и при внесении сведений о проживающих.
+Фиксируется с указанием редакции документа, даты, времени и IP-адреса.</p>
+<p><strong>Исполнение договора.</strong> Обработка данных, без которых бронирование невозможно оформить
+и исполнить.</p>
+<p><strong>Требования законодательства.</strong> Хранение документов по хозяйственным операциям в объёме,
+установленном законодательством о бухгалтерском учёте и отчётности.</p>
 
-  <h2>1. Оператор</h2>
-  <p>Оператором персональных данных является [наименование, УНП, юридический адрес],
-  далее — «Оператор».</p>
-  <p>Контакт по вопросам обработки персональных данных: [email / телефон].</p>
+<h2 id="s3">3. Кому мы передаём данные</h2>
+<p>Передача происходит только в объёме, необходимом для исполнения бронирования.</p>
+<div class="tw"><table>
+<tr><th>Получатель</th><th>Что передаётся</th></tr>
+<tr><td>Объект размещения</td><td>данные, необходимые для заселения и оформления договора найма</td></tr>
+<tr><td>Поставщик системы бронирования — ООО «Агентика Трэвел Бел» (Республика Беларусь)</td>
+<td>имя и фамилия проживающих, гражданство, контакты заказчика — для оформления брони у объекта</td></tr>
+<tr><td>Платёжный сервис — ООО «ИКомЧардж» (bePaid) и банк-эквайер</td>
+<td>сведения, необходимые для проведения платежа и возврата</td></tr>
+<tr><td>Сервис отправки электронной почты</td><td>адрес электронной почты получателя и содержание письма</td></tr>
+</table></div>
+<p><strong>Передача за пределы Республики Беларусь.</strong> Письма гостям отправляются через сервис,
+серверы которого расположены на территории Европейского союза. В письмо попадают адрес электронной почты
+и сведения о бронировании. Передача осуществляется с согласия пользователя, которое даётся при оформлении
+бронирования.</p>
+<p>Мы не продаём персональные данные и не передаём их третьим лицам в рекламных целях.</p>
 
-  <h2>2. Какие данные мы обрабатываем</h2>
-  <p>При бронировании и использовании Сайта мы можем обрабатывать:</p>
-  <ul>
-    <li>имя и фамилию;</li>
-    <li>адрес электронной почты;</li>
-    <li>номер телефона;</li>
-    <li>данные о бронировании (отель, даты, состав гостей);</li>
-    <li>технические данные (IP-адрес, тип устройства, cookies).</li>
-  </ul>
+<h2 id="s4">4. Сколько мы храним данные</h2>
+<div class="tw"><table>
+<tr><th>Данные</th><th>Срок хранения</th></tr>
+<tr><td><strong>Сведения о проживающих</strong> (документ, дата рождения, гражданство)</td>
+<td><strong>30 дней после выезда</strong>, затем удаляются</td></tr>
+<tr><td>Данные бронирования: имя, контакты, даты, суммы</td>
+<td>в течение сроков, установленных законодательством о бухгалтерском учёте и отчётности для документов
+по хозяйственным операциям</td></tr>
+<tr><td>Записи о принятии условий (редакция, дата, IP)</td><td>вместе с данными бронирования</td></tr>
+<tr><td>Данные из заявки на подключение объекта</td><td>до решения по заявке; если договор заключён — в течение срока его действия и сроков хранения документов по законодательству</td></tr>
+</table></div>
+<p>По истечении срока данные удаляются.</p>
 
-  <h2>3. Цели обработки</h2>
-  <ul>
-    <li>оформление и подтверждение бронирования;</li>
-    <li>связь с пользователем по поводу заказа;</li>
-    <li>исполнение обязательств перед партнёрами размещения;</li>
-    <li>улучшение работы Сайта.</li>
-  </ul>
+<h2 id="s5">5. Что сохраняется в вашем браузере</h2>
+<p><strong>Сайт не устанавливает файлов cookie.</strong> Для работы используется локальное хранилище браузера —
+небольшие технические значения, которые остаются на вашем устройстве и нам не передаются.</p>
+<div class="tw"><table>
+<tr><th>Что сохраняется</th><th>Зачем</th></tr>
+<tr><td>Избранные объекты</td><td>чтобы список сохранялся между визитами</td></tr>
+<tr><td>Способ показа цены — за ночь или за весь срок</td><td>чтобы не выбирать заново</td></tr>
+<tr><td>Счётчик посещений и отметка об отказе от установки приложения</td><td>чтобы не предлагать установку повторно</td></tr>
+<tr><td>Список объектов на главной странице</td><td>ускорение загрузки, обновляется каждые несколько часов</td></tr>
+<tr><td>Текущий экран и выбранные фильтры (до закрытия вкладки)</td><td>чтобы не задавать их заново при обновлении страницы</td></tr>
+</table></div>
+<p>Ни одно из этих значений не позволяет установить личность. <strong>Как отказаться:</strong> очистите данные
+сайта в настройках браузера. Часть возможностей при этом перестанет работать — например, избранное.</p>
+<p><strong>Внешние сервисы.</strong> Карты, изображения и шрифты загружаются с серверов сторонних сервисов.
+При их отображении ваш браузер обращается к ним напрямую, и этим сервисам становится известен ваш IP-адрес.
+Мы этими сведениями не располагаем и на их обработку повлиять не можем.</p>
 
-  <h2>4. Правовые основания</h2>
-  <p>Обработка осуществляется на основании согласия пользователя, а также в целях
-  исполнения договора, стороной которого является пользователь. [Уточнить с юристом.]</p>
+<h2 id="s6">6. Ваши права</h2>
+<p>В соответствии с Законом № 99-З вы вправе:</p>
+<ul>
+<li><strong>отозвать согласие</strong> на обработку персональных данных (статья 10);</li>
+<li><strong>получить информацию</strong> о том, какие ваши данные мы обрабатываем, и потребовать внести
+изменения в неполные, устаревшие или неточные данные (статья 11);</li>
+<li><strong>получить информацию</strong> о предоставлении ваших данных третьим лицам — один раз в календарный
+год бесплатно (статья 12);</li>
+<li><strong>потребовать прекращения обработки и удаления</strong> данных при отсутствии оснований для их
+обработки (статья 13);</li>
+<li><strong>обжаловать</strong> наши действия в Национальном центре защиты персональных данных Республики
+Беларусь (статья 15).</li>
+</ul>
+<h3>Как подать заявление</h3>
+<p>Заявление подаётся в письменной форме либо в виде электронного документа и должно содержать
+(статья 14 Закона № 99-З):</p>
+<ul>
+<li>фамилию, собственное имя, отчество и адрес места жительства (места пребывания);</li>
+<li>дату рождения;</li>
+<li>идентификационный номер, а при его отсутствии — номер документа, удостоверяющего личность, если эти
+сведения указывались при даче согласия;</li>
+<li>изложение сути требования;</li>
+<li>личную подпись либо электронную цифровую подпись.</li>
+</ul>
+<p>Ответ направляется в той же форме, в которой подано заявление, <strong>в пятнадцатидневный срок</strong>
+со дня его получения. Обычные вопросы об обработке данных можно задать письмом на
+<strong>admin@zaedem.by</strong> — на них мы отвечаем без соблюдения этих формальностей.</p>
+<div class="note"><span class="note-t">Отзыв согласия до заезда</span>
+<p>Данные проживающих необходимы объекту размещения для заселения. Если согласие отозвано до заезда,
+исполнить бронирование невозможно — оно будет отменено, а возврат произведён по правилам отмены,
+действовавшим на момент оформления. Данные, которые мы обязаны хранить по законодательству о бухгалтерском
+учёте, по отзыву согласия не удаляются до истечения установленного срока.</p></div>
 
-  <h2>5. Передача третьим лицам</h2>
-  <p>Данные могут передаваться партнёрам, обеспечивающим размещение и оплату, в объёме,
-  необходимом для исполнения бронирования. [Перечислить категории получателей.]</p>
+<h2 id="s7">7. Как мы защищаем данные</h2>
+<ul>
+<li>передача данных между вашим браузером и сайтом защищена шифрованием;</li>
+<li>сведения о документах, удостоверяющих личность, хранятся в зашифрованном виде;</li>
+<li>доступ к данным имеет ограниченный круг лиц;</li>
+<li>персональные ссылки для внесения данных и управления бронированием имеют ограниченный срок действия;</li>
+<li>каждая выгрузка сведений о проживающих фиксируется в журнале;</li>
+<li>назначено лицо, ответственное за осуществление внутреннего контроля за обработкой персональных данных.</li>
+</ul>
 
-  <h2>6. Срок и защита</h2>
-  <p>Персональные данные хранятся в течение срока, необходимого для целей обработки,
-  и защищаются организационными и техническими мерами от несанкционированного доступа.</p>
-
-  <h2>7. Права пользователя</h2>
-  <p>Пользователь вправе получить информацию об обработке своих данных, требовать их
-  изменения, удаления и отзыва согласия, направив обращение на [email].</p>
-
-  <h2>8. Файлы cookie и локальное хранилище</h2>
-  <p>Сайт использует только технически необходимые файлы (cookie и локальное
-  хранилище браузера) — для корректной работы: запоминания параметров поиска,
-  авторизации и навигации. Эти файлы не используются для рекламы или отслеживания
-  поведения, поэтому отдельное согласие на их использование не требуется.
-  Пользователь может очистить эти файлы в настройках браузера.</p>
-
-  <div class="note">Это предварительная версия. Итоговый текст согласуется с юристом
-  и может быть изменён.</div>
-
-  <div class="foot">© <span id="y"></span> Zaedem.by · <a href="/oferta.html">Публичная оферта</a></div>
+<h2 id="s8">8. Изменения политики</h2>
+<p>Действующая редакция размещается по адресу
+<a href="https://zaedem.by/privacy.html">zaedem.by/privacy.html</a>. При существенных изменениях мы уведомляем
+по электронной почте пользователей, оформивших бронирование.</p>
 </main>
-<script>document.getElementById('y').textContent=new Date().getFullYear();if(window.self!==window.top){var _b=document.querySelector('.back');if(_b)_b.style.display='none';}</script>
+
+<footer class="pagefoot"><div class="wrap">
+<div class="pf-links"><a href="oferta.html">Публичная оферта</a><a href="payment.html">Оплата и возврат</a><a href="confidential.html">Конфиденциальность</a><a href="terms.html">Правила пользования</a><a href="contacts.html">Контакты</a></div>
+<div class="pf-req"><b>Общество с ограниченной ответственностью «ЗАЕДЕМБАЙ»</b><br>УНП 291928518 · зарегистрировано 16.09.2026 Пинским городским исполнительным комитетом<br>225716, Республика Беларусь, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119<br>admin@zaedem.by · +375 __ ___-__-__</div>
+</div></footer>
 </body>
 </html>
