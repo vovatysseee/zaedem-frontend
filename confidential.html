@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Политика конфиденциальности — Заедем.by</title>
+<meta name="description" content="Политика конфиденциальности сайта zaedem.by: данные карт, cookie, внешние сервисы, защита сведений.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>/* Открыта внутри окна на сайте (при бронировании) — прячем шапку и подвал страницы */try{if(window.self!==window.top)document.documentElement.className+=" embed"}catch(e){document.documentElement.className+=" embed"}</script>
+<style>
+:root{--green:#1a5c38;--green2:#23764a;--green4:#0d3320;--lime:#c9f135;
+--sand:#faf8f4;--sand2:#f2eee6;--sand3:#e3ddd0;--ink:#101010;--muted:#6b6b6b}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Golos Text',-apple-system,Segoe UI,sans-serif;background:var(--sand);
+color:var(--ink);line-height:1.72;font-size:16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding:0 24px}
+
+/* шапка */
+.top{background:var(--green4)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;
+gap:16px;min-height:62px;padding-top:12px;padding-bottom:12px}
+.logo{font-family:'Unbounded',sans-serif;font-weight:800;font-size:19px;color:var(--lime);
+text-decoration:none;letter-spacing:-.5px;white-space:nowrap}
+.logo em{color:rgba(255,255,255,.82);font-style:normal}
+.back{color:rgba(255,255,255,.72);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap}
+.back:hover{color:#fff}
+
+/* заголовочный блок — воздух сверху */
+.hero{background:var(--sand2);border-bottom:1px solid var(--sand3);padding:60px 0 44px}
+.eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;
+color:var(--green2);font-weight:600;margin-bottom:16px}
+h1{font-family:'Unbounded',sans-serif;font-weight:700;font-size:34px;line-height:1.16;
+color:var(--green4);letter-spacing:-.5px}
+h1::after{content:"";display:block;width:58px;height:4px;background:var(--lime);
+border-radius:3px;margin-top:20px}
+.lede{margin-top:22px;font-size:17px;color:#3a3a3a;max-width:64ch}
+.meta{margin-top:22px;font-size:13.5px;color:var(--muted)}
+
+/* содержание */
+main{padding:44px 0 64px}
+.toc{background:#fff;border:1px solid var(--sand3);border-radius:14px;
+padding:22px 26px;margin-bottom:44px}
+.toc-t{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--muted);font-weight:600;margin-bottom:12px}
+.toc ul{margin:0;padding:0;list-style:none;font-size:15px;
+columns:2;column-gap:32px}
+.toc li{margin-bottom:7px;break-inside:avoid}
+.toc a{color:var(--green);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+
+/* текст */
+h2{font-family:'Unbounded',sans-serif;font-weight:600;font-size:20px;line-height:1.3;
+margin:48px 0 16px;color:var(--green4);scroll-margin-top:20px}
+h2:first-child{margin-top:0}
+h3{font-size:16px;font-weight:700;margin:28px 0 10px;color:var(--green)}
+p{margin:0 0 16px}
+ul,ol{margin:0 0 16px 22px}
+li{margin-bottom:9px}
+li>ul,li>ol{margin-top:9px}
+a{color:var(--green);text-decoration:underline;text-underline-offset:2px}
+strong{font-weight:600}
+hr{border:0;border-top:1px solid var(--sand3);margin:40px 0}
+
+/* таблицы */
+.tw{overflow-x:auto;margin:0 0 20px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:420px}
+th{background:var(--sand2);text-align:left;font-weight:600;color:var(--green4)}
+th,td{padding:11px 14px;border:1px solid var(--sand3);vertical-align:top}
+td:first-child{font-weight:500}
+
+/* врезки */
+.note{background:#fff;border:1px solid var(--sand3);border-left:4px solid var(--lime);
+border-radius:12px;padding:18px 22px;margin:24px 0}
+.note p:last-child{margin-bottom:0}
+.note-t{font-weight:600;color:var(--green4);margin-bottom:6px;display:block}
+
+/* реквизиты */
+.req{background:#fff;border:1px solid var(--sand3);border-radius:14px;padding:8px 26px;margin:0 0 24px}
+.req dl{display:grid;grid-template-columns:230px 1fr;gap:0}
+.req dt,.req dd{padding:13px 0;border-bottom:1px solid var(--sand2)}
+.req dt{color:var(--muted);font-size:14.5px;padding-right:18px}
+.req dd{font-weight:500}
+.req dl>dt:last-of-type,.req dl>dd:last-of-type{border-bottom:0}
+
+/* подвал */
+.pagefoot{background:var(--green4);color:rgba(255,255,255,.72);
+padding:44px 0 52px;font-size:14px;line-height:1.7;margin-top:56px}
+.pagefoot a{color:var(--lime);text-decoration:none}
+.pagefoot a:hover{text-decoration:underline}
+.pf-links{display:flex;flex-wrap:wrap;gap:8px 26px;margin-bottom:26px;
+padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.14)}
+.pf-req{color:rgba(255,255,255,.62);font-size:13.5px}
+.pf-req b{color:rgba(255,255,255,.9);font-weight:600}
+
+/* режим «внутри окна на сайте»: без шапки и подвала страницы */
+.embed .top,.embed .pagefoot{display:none}
+.embed .hero{padding-top:58px}
+
+@media(max-width:640px){
+ body{font-size:15.5px}
+ .wrap{padding:0 18px}
+ .hero{padding:40px 0 32px}
+ h1{font-size:26px}
+ h1::after{margin-top:16px}
+ .lede{font-size:16px}
+ main{padding:32px 0 48px}
+ h2{font-size:18px;margin:38px 0 14px}
+ .toc{padding:18px 20px;margin-bottom:34px}
+ .toc ul{columns:1}
+ .req{padding:6px 18px}
+ .req dl{grid-template-columns:1fr;gap:0}
+ .req dt{padding-bottom:2px;border-bottom:0}
+ .req dd{padding-top:0}
+}
+@media print{
+ .top,.back,.toc,.pagefoot{display:none}
+ body{background:#fff;font-size:11pt}
+ .hero{background:#fff;padding:0 0 18pt;border:0}
+ a{color:#000;text-decoration:none}
+ h2{margin:20pt 0 8pt}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a href="/" class="logo">Заедем<em>.by</em></a>
+<a href="/" class="back">← На сайт</a>
+</div></header>
+
+<div class="hero"><div class="wrap">
+<div class="eyebrow">Документы Заедем.by</div>
+<h1>Политика конфиденциальности</h1>
+<p class="lede">Коротко о главном: данные карт к нам не попадают, слежения нет, сведения собираем только те, без которых не оформить бронь.</p>
+<!-- дату «Обновлено …» вписать в день публикации -->
+</div></div>
+
+<main class="wrap">
+<nav class="toc"><div class="toc-t">Содержание</div><ul><li><a href="#s1">1. Данные банковских карт к нам не попадают</a></li><li><a href="#s2">2. Мы не следим за вами</a></li><li><a href="#s3">3. Что мы собираем и зачем</a></li><li><a href="#s4">4. Кому мы передаём сведения</a></li><li><a href="#s5">5. Как мы защищаем сведения</a></li><li><a href="#s6">6. Внешние сервисы</a></li><li><a href="#s7">7. Ваши права и обращения</a></li></ul></nav>
+<p>Этот документ коротко объясняет, как мы обращаемся с вашими сведениями на сайте zaedem.by.
+Подробный порядок обработки персональных данных изложен в
+<a href="privacy.html">Политике обработки персональных данных</a>.</p>
+
+<h2 id="s1">1. Данные банковских карт к нам не попадают</h2>
+<p>Оплата проходит на защищённой странице платёжного сервиса. Номер карты, срок её действия и код проверки
+вводятся там, на наши серверы не передаются и в нашей базе не сохраняются. Подробнее —
+на странице <a href="payment.html">«Оплата и возврат»</a>.</p>
+<p>Мы никогда не просим сообщить реквизиты карты по телефону, в письме или в мессенджере.</p>
+
+<h2 id="s2">2. Мы не следим за вами</h2>
+<ul>
+<li>Сайт <strong>не устанавливает файлов cookie</strong>.</li>
+<li>Мы не используем сторонние счётчики посещаемости, рекламные системы и инструменты отслеживания поведения.</li>
+<li>Мы не продаём ваши данные и не передаём их третьим лицам в рекламных целях.</li>
+</ul>
+<p>Для работы сайта используется локальное хранилище браузера: избранные объекты, выбранный способ показа
+цены, фильтры поиска. Эти значения остаются на вашем устройстве и нам не передаются. Полный перечень —
+в разделе 5 <a href="privacy.html">Политики обработки персональных данных</a>.</p>
+
+<h2 id="s3">3. Что мы собираем и зачем</h2>
+<p>Только то, без чего невозможно оформить бронирование: имя и фамилию, адрес электронной почты, телефон,
+даты и состав гостей. Если объект размещения требует договор найма — сведения о проживающих; они хранятся
+в зашифрованном виде и передаются только собственнику забронированного объекта.</p>
+
+<h2 id="s4">4. Кому мы передаём сведения</h2>
+<p>Объекту размещения, поставщику системы бронирования, платёжному сервису и сервису отправки писем —
+каждому только в том объёме, который нужен для исполнения вашей брони. Перечень получателей
+приведён в разделе 3 <a href="privacy.html">Политики обработки персональных данных</a>.</p>
+
+<h2 id="s5">5. Как мы защищаем сведения</h2>
+<ul>
+<li>соединение с сайтом защищено шифрованием;</li>
+<li>сведения о документах, удостоверяющих личность, хранятся в зашифрованном виде;</li>
+<li>персональные ссылки из писем действуют ограниченное время;</li>
+<li>доступ к данным имеет ограниченный круг лиц, обращения к сведениям о проживающих фиксируются в журнале.</li>
+</ul>
+
+<h2 id="s6">6. Внешние сервисы</h2>
+<p>Карты, изображения, шрифты и сведения о погоде загружаются с серверов сторонних сервисов. При их
+отображении ваш браузер обращается к ним напрямую, и этим сервисам становится известен ваш IP-адрес.
+Мы этими сведениями не располагаем.</p>
+
+<h2 id="s7">7. Ваши права и обращения</h2>
+<p>Вы вправе узнать, какие ваши данные мы обрабатываем, исправить их, отозвать согласие и потребовать
+удаления. Порядок описан в разделе 6
+<a href="privacy.html">Политики обработки персональных данных</a>.</p>
+<p>Обращения: <strong>admin@zaedem.by</strong></p>
+</main>
+
+<footer class="pagefoot"><div class="wrap">
+<div class="pf-links"><a href="oferta.html">Публичная оферта</a><a href="payment.html">Оплата и возврат</a><a href="privacy.html">Персональные данные</a><a href="terms.html">Правила пользования</a><a href="contacts.html">Контакты</a></div>
+<div class="pf-req"><b>Общество с ограниченной ответственностью «ЗАЕДЕМБАЙ»</b><br>УНП 291928518 · зарегистрировано 16.09.2026 Пинским городским исполнительным комитетом<br>225716, Республика Беларусь, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119<br>admin@zaedem.by · +375 __ ___-__-__</div>
+</div></footer>
+</body>
+</html>
