@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Заедем.by — Бронирование отелей Беларуси</title>
-<meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Оплата картами Visa, Mastercard, БЕЛКАРТ, МИР. Мгновенное подтверждение, 0% комиссии для гостя.">
+<meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
 <meta name="theme-color" content="#0F2D1D">
 
 <!-- Open Graph (превью при отправке ссылки в Telegram, ВК, WhatsApp) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Заедем.by">
 <meta property="og:title" content="Заедем.by — Бронирование отелей Беларуси">
-<meta property="og:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Оплата картами Visa, Mastercard, БЕЛКАРТ, МИР. Мгновенное подтверждение.">
+<meta property="og:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
 <meta property="og:url" content="https://zaedem.by">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:image" content="https://zaedem.by/og-image.png?v=2">
@@ -678,6 +678,7 @@ footer .ft-bottom{flex-direction:row;justify-content:space-between;align-items:c
   footer .ft-sep{display:none}
   footer .ft-contacts{margin-top:8px}
   footer .ft-contacts>*{display:block;font-size:13px;color:rgba(255,255,255,.72)}
+  footer .ft-contacts .ft-sep{display:none}
 }
 
 /* ГАЛОЧКИ СОГЛАСИЙ в форме брони: крупнее квадрат и текст, отдельная плашка */
@@ -938,7 +939,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
     <div class="ft-inner">
       <div class="ft-brand">
         <div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем<em>.by</em></div>
-        <p class="ft-desc">Бронирование жилья по всей Беларуси: отели, апартаменты, агроусадьбы. Цены в белорусских рублях, без комиссии для гостя.</p>
+        <p class="ft-desc">Технологичный сервис бронирования жилья в Беларуси: отели, апартаменты и агроусадьбы. Умный поиск, цены в белорусских рублях, оплата онлайн.</p>
         <div class="ft-pay-block"><span id="ft-pay-icons"></span></div>
         <a href="payment.html" class="ft-secure"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Защищённая оплата картой · 3-D Secure</a>
       </div>
@@ -949,7 +950,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
     <div class="ft-req">
       <div><b>ООО «ЗАЕДЕМБАЙ»</b> · УНП 291928518 · зарегистрировано Пинским городским исполнительным комитетом 16.09.2026</div>
       <div>225716, Республика Беларусь, Брестская обл., г. Пинск, ул. Пушкина, д. 5, офис 119</div>
-      <div class="ft-contacts"><a href="mailto:admin@zaedem.by">admin@zaedem.by</a><span class="ft-sep"> · </span><span class="ft-phone">+375 __ ___-__-__</span><span class="ft-sep"> · </span><span>ежедневно с __:__ до __:__</span></div>
+      <div class="ft-contacts"><a href="mailto:booking@zaedem.by">booking@zaedem.by</a><span class="ft-sep"> · </span><span class="ft-phone">+375 __ ___-__-__</span><span class="ft-sep"> · </span><span>ежедневно с __:__ до __:__</span></div>
     </div>
     <div class="ft-bottom">
       <span>© 2026 Заедем.by</span>
@@ -4283,18 +4284,33 @@ function bkInjectRoomAmen(){
 }
 
 // Красивые значки оплаты (переиспользуемые)
+// ═ СПОСОБЫ ОПЛАТЫ — значки в подвале и в форме брони ═
+// Порядок = порядок на экране. Убрать способ — удалить строку.
+// ЛОГОТИПЫ. Фирменные знаки (яблоко Apple Pay, «G» Google Pay, СБП и т. д.) рисовать вручную нельзя:
+// у каждой системы свои правила использования, и банк при проверке сайта требует ОФИЦИАЛЬНЫЕ файлы.
+// Их выдаёт bePaid. Положить файл в img/pay/ и вписать имя в logo — значок сам сменится с текста
+// на логотип, в том же приглушённом стиле (серый на светлом, белый на тёмном подвале).
+var ZB_PAY_METHODS=[
+  {label:'VISA',        logo:'', italic:true},
+  {label:'Mastercard',  logo:'', circles:true},
+  {label:'БЕЛКАРТ',     logo:''},
+  {label:'МИР',         logo:''},
+  {label:'Apple Pay',   logo:''},
+  {label:'Google Pay',  logo:''},
+  {label:'Samsung Pay', logo:''},
+  {label:'СБП',         logo:'', title:'Система быстрых платежей — для карт банков РФ'}
+];
 function payIconsHTML(dark){
-  // Только то, что принимаем при запуске (bePaid): карты Visa, Mastercard, БЕЛКАРТ, МИР.
-  // ЕРИП, Apple Pay и Samsung Pay вернуть сюда, когда их реально включим: банк при проверке сайта
-  // сверяет значки с тем, что работает. Официальные логотипы с правилами размещения выдаёт bePaid —
-  // когда пришлют, заменить ими эти текстовые значки.
   var col=dark?'rgba(255,255,255,.62)':'#9a9a9a';
+  var imgFilter=dark?'grayscale(1) brightness(0) invert(1) opacity(.62)':'grayscale(1) opacity(.55)';
   var t='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';white-space:nowrap;display:inline-flex;align-items:center';
-  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap">'
-    +'<span class="pay-ic" style="'+t+';font-style:italic;letter-spacing:.4px">VISA</span>'
-    +'<span class="pay-ic" style="'+t+'" title="Mastercard"><svg viewBox="0 0 30 18" width="28" height="17"><circle cx="12" cy="9" r="6.5" fill="'+col+'"/><circle cx="18" cy="9" r="6.5" fill="'+col+'" fill-opacity=".5"/></svg></span>'
-    +'<span class="pay-ic" style="'+t+';letter-spacing:.3px">БЕЛКАРТ</span>'
-    +'<span class="pay-ic" style="'+t+'">МИР</span>'
+  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:8px 14px;flex-wrap:wrap">'
+    +ZB_PAY_METHODS.map(function(m){
+      var tip=' title="'+zbEsc(m.title||m.label)+'"';
+      if(m.logo) return '<span class="pay-ic"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'" style="height:18px;width:auto;display:block;filter:'+imgFilter+'"></span>';
+      if(m.circles) return '<span class="pay-ic" style="'+t+'"'+tip+'><svg viewBox="0 0 30 18" width="28" height="17" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="'+col+'"/><circle cx="18" cy="9" r="6.5" fill="'+col+'" fill-opacity=".5"/></svg></span>';
+      return '<span class="pay-ic" style="'+t+(m.italic?';font-style:italic;letter-spacing:.4px':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
+    }).join('')
     +'</span>';
 }
 
@@ -4513,7 +4529,7 @@ function openAuth(tab){
       </div>
       ${tab==='tourist'?`
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Найдите бронь по номеру и email.</div>
-        <div class="fg"><label>Номер брони</label><input type="text" id="bn-inp" placeholder="ZB-12345" style="text-transform:uppercase"></div>
+        <div class="fg"><label>Номер брони</label><input type="text" id="bn-inp" placeholder="ZB-K7M4Q2XHD" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></div>
         <div class="fg"><label>Email</label><input type="email" id="be-inp" placeholder="ivan@mail.ru"></div>
         <button class="btn-pay" onclick="findBooking()">Найти мою бронь →</button>
         <div id="b-err" style="color:#e53935;font-size:12px;margin-top:8px;text-align:center"></div>
@@ -6750,6 +6766,34 @@ function ostFail(e){
   function queue(){ if(!raf)raf=requestAnimationFrame(sync); }
   try{ new MutationObserver(queue).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']}); }catch(e){}
   queue();
+})();
+</script>
+<script>
+// ═ ВОЗВРАТ ИЗ ДОКУМЕНТОВ В ПОДВАЛ (27.09) ═
+// Открыл «Публичную оферту» из подвала → нажал «← На сайт» или «Назад» в браузере → попадаешь
+// обратно к подвалу, а не на самый верх. Если документ открыт не из подвала (прямая ссылка) —
+// главная открывается как обычно, сверху. Метка живёт 30 минут и только в этой вкладке.
+(function(){
+  var KEY='zb_ret_footer';
+  document.addEventListener('click',function(e){
+    var a=e.target&&e.target.closest?e.target.closest('footer a[href$=".html"]'):null;
+    if(a){ try{ sessionStorage.setItem(KEY,String(Date.now())); }catch(_){} }
+  },true);
+  var moved=false;
+  function stop(){ moved=true; }
+  function toFooter(){
+    var t=0; try{ t=parseInt(sessionStorage.getItem(KEY)||'0',10); sessionStorage.removeItem(KEY); }catch(_){}
+    if(!t||Date.now()-t>30*60*1000)return;
+    var b=document.body; if(b.classList.contains('on-serp')||b.classList.contains('on-hotel'))return;
+    moved=false;
+    window.addEventListener('wheel',stop,{once:true,passive:true});
+    window.addEventListener('touchmove',stop,{once:true,passive:true});
+    // карусели главной догружаются позже и сдвигают подвал вниз — доводим несколько раз,
+    // пока человек сам не начал листать
+    function go(){ if(moved)return; try{ window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}); }catch(_){ window.scrollTo(0,document.documentElement.scrollHeight); } }
+    go(); [150,500,1200].forEach(function(ms){ setTimeout(go,ms); });
+  }
+  window.addEventListener('pageshow',function(){ setTimeout(toFooter,0); });
 })();
 </script>
 </body>
