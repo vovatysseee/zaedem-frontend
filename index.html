@@ -693,7 +693,40 @@ footer .ft-bottom{flex-direction:row;justify-content:space-between;align-items:c
    страница под ним стоит на месте. Класс zb-lock ставит скрипт в конце страницы. */
 html.zb-lock,html.zb-lock body{overflow:hidden!important}
 #cs-scroll,#fav-page,#serp-sd-modal,.overlay{overscroll-behavior:contain}
+
+/* ЗНАЧКИ ОПЛАТЫ В ФОРМЕ БРОНИ (01.10): ровная сетка 4×2 — карты сверху, кошельки снизу,
+   все плашки одного размера. В подвале значки по-прежнему идут строкой. */
+.pay-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:14px 0 12px}
+.pay-grid-cap{grid-column:1/-1;text-align:center;font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--hint);margin-bottom:1px}
+.pay-chip{display:flex;align-items:center;justify-content:center;height:34px;padding:0 4px;border:1px solid var(--sand3);border-radius:9px;background:#fff;font:700 11.5px/1.05 Arial,sans-serif;color:#8d8d8d;text-align:center;overflow:hidden;min-width:0}
+.pay-chip.it{font-style:italic;letter-spacing:.4px}
+.pay-chip img{max-height:18px;max-width:100%;width:auto;display:block;filter:grayscale(1) opacity(.55)}
+.pay-chip svg{display:block}
+@media(max-width:360px){.pay-chip{font-size:10.5px;padding:0 2px}}
+
+/* ВОЗВРАТ К ПОДВАЛУ (01.10): пока страница не доведена до подвала, её не видно —
+   иначе мелькает верх и середина. Класс снимает скрипт в конце страницы
+   или предохранитель ниже, не позже чем через 1,5 секунды. */
+html.zb-ret body{opacity:0}
 </style>
+<script>
+// ═ ВОЗВРАТ ИЗ ДОКУМЕНТА К ПОДВАЛУ — РАННЯЯ ЧАСТЬ (01.10) ═
+// Метку ставит клик по документу в подвале (скрипт в конце страницы). Здесь, в <head>,
+// её надо прочитать ДО первой отрисовки: тогда страница не мелькает сверху,
+// а сразу встаёт к подвалу. Метка одноразовая и живёт 30 минут.
+(function(){
+  try{
+    var t=parseInt(sessionStorage.getItem('zb_ret_footer')||'0',10);
+    sessionStorage.removeItem('zb_ret_footer');
+    if(t && Date.now()-t<30*60*1000 && !/^#(s|h|c)=/.test(location.hash||'')){
+      window.__zbRetFooter=true;
+      document.documentElement.classList.add('zb-ret');
+      if('scrollRestoration' in history)history.scrollRestoration='manual';
+      setTimeout(function(){ document.documentElement.classList.remove('zb-ret'); },1500);
+    }
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
 <script>try{var _de=document.documentElement;var _zr=JSON.parse(sessionStorage.getItem('zb_route')||'null');
@@ -4122,9 +4155,7 @@ function openBookModal(){
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>
     ${bkArrivalHTML(h.checkin)}
     <div class="sumbox"><div class="srow2"><span>${room?room.name:'Номер'}</span><span>${pricePerNight} BYN/ночь</span></div><div class="srow2"><span>Заезд → Выезд</span><span>${fmtBkDates()}</span></div><div class="srow2"><span>Ночей</span><span>${n}</span></div><div class="stotal"><span>Итого</span><span>${total} BYN</span></div></div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">
-      ${payIconsHTML()}
-    </div>
+    ${payGridHTML()}
     ${bkConsentHTML()}
     <button class="btn-pay btn-pay-soon" id="bk-pay-btn" disabled>🔒 Забронировать и оплатить ${total} BYN</button>
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>`;
@@ -4262,6 +4293,15 @@ function openRoomGal(idx){
   document.getElementById('gal-ov').classList.add('open');
 }
 // Открыть фото конкретного номера из карточки выбора
+// Удобства номера из кабинета партнёра (ключи — как в кабинете)
+var DIRECT_ROOM_AMEN={wifi:'Wi-Fi',tv:'Телевизор',ac:'Кондиционер',bath:'Ванна',shower:'Душ',balcony:'Балкон',fridge:'Холодильник',kettle:'Чайник',safe:'Сейф',desk:'Рабочий стол'};
+function openDirectRoomGal(i){
+  var r=curHotel&&curHotel.rooms&&curHotel.rooms[i];
+  var imgs=(r&&r.photos)||[];
+  if(!imgs.length)return;
+  gPhotos=imgs; gIdx=0; showG();
+  document.getElementById('gal-ov').classList.add('open');
+}
 function openRateGal(i){
   var imgs=(_ostRates[i]&&_ostRates[i].images)||[];
   if(!imgs.length)return;
@@ -4312,6 +4352,18 @@ function payIconsHTML(dark){
       return '<span class="pay-ic" style="'+t+(m.italic?';font-style:italic;letter-spacing:.4px':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
     }).join('')
     +'</span>';
+}
+
+// Те же способы в форме брони — ровной сеткой: 4 карты в первом ряду, 4 кошелька во втором.
+function payGridHTML(){
+  return '<div class="pay-grid" aria-label="Способы оплаты"><div class="pay-grid-cap">Способы оплаты</div>'
+    +ZB_PAY_METHODS.map(function(m){
+      var tip=' title="'+zbEsc(m.title||m.label)+'"';
+      if(m.logo) return '<span class="pay-chip"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'"></span>';
+      if(m.circles) return '<span class="pay-chip"'+tip+'><svg viewBox="0 0 30 18" width="34" height="20" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="#9a9a9a"/><circle cx="18" cy="9" r="6.5" fill="#9a9a9a" fill-opacity=".5"/></svg></span>';
+      return '<span class="pay-chip'+(m.italic?' it':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
+    }).join('')
+    +'</div>';
 }
 
 // Точка входа оплаты. Сейчас — заглушка (оплата выключена).
@@ -5857,25 +5909,58 @@ async function loadDirectRooms(h){
     var nights=getNights()||1;
     var list=(d.available_rooms||[]).map(function(rm){
       var perNight=rm.total_price?Math.round(rm.total_price/nights):Math.round(rm.price||0);
-      return {id:rm.id, room_type_id:rm.id, name:rm.name_ru, price:perNight, total_price:Math.round(rm.total_price||perNight*nights), cap:rm.capacity||2, beds:rm.beds||1, desc:'', avail:rm.rooms_left||1};
+      // Фото, удобства и описание номера хозяин заполняет в кабинете
+      var ph=Array.isArray(rm.photos)?rm.photos.filter(function(u){return !!zbUrl(u);}):[];
+      return {id:rm.id, room_type_id:rm.id, name:rm.name_ru, price:perNight, total_price:Math.round(rm.total_price||perNight*nights), cap:rm.capacity||2, beds:rm.beds||1,
+        size:parseFloat(rm.size_sqm)||0, desc:String(rm.description_ru||''), photos:ph, amen:Array.isArray(rm.amenities)?rm.amenities:[], avail:rm.rooms_left||1};
     });
     if(curHotel&&curHotel.id===h.id){ curHotel.rooms=list; curHotel._directLoaded=true; renderDirectRooms(list); }
   }catch(e){ /* при ошибке оставляем что было */ }
 }
 function renderDirectRooms(list){
   var box=document.querySelector('.hp-rooms');
+  // Объект из базы открывается с пустым списком номеров (они приходят следом, из
+  // /availability), и шаблон страницы блок «Номера» тогда не рисует. Раньше из-за этого
+  // карточки номеров не появлялись вовсе — номер можно было выбрать только в списке
+  // справа. Теперь блок создаётся на месте, сразу после удобств.
+  if(!box && curHotel && curHotel.source!=='ostrovok'){
+    var anchor=document.getElementById('hp-amen-sec');
+    if(anchor){
+      var sec=document.createElement('div'); sec.id='hp-rooms-sec';
+      sec.innerHTML='<h3 style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.75rem">Номера</h3>'
+        +(curHotel.booking_enabled===false?'<div style="background:var(--sand2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--muted);margin-bottom:10px">💳 Подключаем онлайн-оплату — бронирование откроется совсем скоро. Можно выбрать номер и посмотреть детали.</div>':'')
+        +'<div class="hp-rooms"></div>';
+      anchor.insertAdjacentElement('afterend',sec);
+      box=sec.querySelector('.hp-rooms');
+    }
+  }
   if(box){
     if(!list.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:16px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте другие даты.</div>';
       try{ hpSumState('empty','Нет номеров на эти даты'); }catch(e){}
     } else {
       try{ hpSumState('ok','Выбрать'); }catch(e){}
+      // Карточка номера в том же виде, что у номеров Островка: фото с галереей,
+      // удобства, описание. Без фото — та же карточка, только без картинки.
+      var n=getNights()||1;
       box.innerHTML=list.map(function(r,i){
-        return '<div class="room hp-room-row" data-ridx="'+i+'" onclick="selRoomPick('+i+')" style="cursor:pointer">'
-          +'<div><div class="rname">'+_esc(r.name)+'</div><div class="rmeta">👥 до '+r.cap+' · 🛏 '+r.beds+' кров.</div></div>'
-          +'<div style="text-align:right;flex-shrink:0"><div class="rprice">'+r.price+' BYN</div><div style="font-size:10px;color:var(--hint);font-weight:400;margin-top:2px">/ночь</div>'
-          +(r.avail<=2?'<div style="font-size:11px;color:#d03;font-weight:700">Осталось '+r.avail+'!</div>':'')
-          +'<button class="btn-select" onclick="event.stopPropagation();selRoomBook('+i+')">Выбрать</button></div></div>';
+        var cover=r.photos.length?'<div class="ostc-img" onclick="event.stopPropagation();openDirectRoomGal('+i+')"><img src="'+zbUrl(r.photos[0])+'" loading="lazy" onerror="this.parentNode.style.display=\'none\'" alt="">'
+          +(r.photos.length>1?'<div class="ostc-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> '+r.photos.length+' фото</div>':'')+'</div>':'';
+        var cap=['👥 до '+r.cap+' '+(r.cap==1?'гостя':'гостей'),'🛏 '+r.beds+' кров.'];
+        if(r.size)cap.push('📐 '+r.size+' м²');
+        var am=r.amen.map(function(a){return DIRECT_ROOM_AMEN[a]||'';}).filter(Boolean);
+        var chips=am.length?'<div class="ostc-chips">'+am.map(function(a){return '<span class="ostc-chip">'+_esc(a)+'</span>';}).join('')+'</div>':'';
+        var desc=r.desc?'<div class="ostc-meta" style="color:var(--ink2);line-height:1.5">'+_esc(r.desc.length>180?r.desc.slice(0,180).replace(/\s+\S*$/,'')+'…':r.desc)+'</div>':'';
+        return '<div class="ostc hp-room-row" data-ridx="'+i+'" onclick="selRoomPick('+i+')">'
+          +cover
+          +'<div class="ostc-body">'
+          +'<div class="ostc-name">'+_esc(r.name)+'</div>'
+          +'<div class="ostc-cap">'+cap.join(' · ')+'</div>'
+          +chips+desc
+          +(r.avail<=2?'<div style="font-size:11.5px;color:#d03;font-weight:700;margin-bottom:8px">Осталось '+r.avail+'!</div>':'')
+          +'<div class="ostc-foot"><div class="ostc-price">'+r.total_price+' BYN<small>'+r.price+' BYN за ночь · '+n+' '+nightsWord(n)+'</small></div>'
+          +'<button class="btn-select" onclick="event.stopPropagation();selRoomBook('+i+')">Выбрать</button></div>'
+          +'</div></div>';
       }).join('');
     }
   }
@@ -6136,7 +6221,7 @@ function ostRenderForm(oldPrice){
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     '+bkArrivalHTML((window._hpTimes&&_hpTimes.ci)||'')+'\
     <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
-    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:14px 0">'+payIconsHTML()+'</div>\
+    '+payGridHTML()+'\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>';
   bkInjectConsent();
@@ -6800,31 +6885,62 @@ function ostFail(e){
 })();
 </script>
 <script>
-// ═ ВОЗВРАТ ИЗ ДОКУМЕНТОВ В ПОДВАЛ (27.09) ═
+// ═ ВОЗВРАТ ИЗ ДОКУМЕНТОВ В ПОДВАЛ (27.09, переделано 01.10) ═
 // Открыл «Публичную оферту» из подвала → нажал «← На сайт» или «Назад» в браузере → попадаешь
 // обратно к подвалу, а не на самый верх. Если документ открыт не из подвала (прямая ссылка) —
 // главная открывается как обычно, сверху. Метка живёт 30 минут и только в этой вкладке.
+//
+// Почему переделано. Раньше страница сначала вставала к подвалу, потом догружались карусели
+// главной, подвал уезжал вниз — и на экране оказывались «Усадьбы»; через долю секунды скрипт
+// возвращал к подвалу. Получался скачок туда-обратно. Теперь страница скрыта, пока её не
+// поставили к подвалу (часть в <head>), а любое изменение высоты сразу, до отрисовки,
+// возвращает её вниз. Держим, пока грузится страница, и отпускаем, как только человек
+// сам начал листать, нажал клавишу или коснулся экрана.
 (function(){
   var KEY='zb_ret_footer';
   document.addEventListener('click',function(e){
     var a=e.target&&e.target.closest?e.target.closest('footer a[href$=".html"]'):null;
     if(a){ try{ sessionStorage.setItem(KEY,String(Date.now())); }catch(_){} }
   },true);
-  var moved=false;
-  function stop(){ moved=true; }
-  function toFooter(){
-    var t=0; try{ t=parseInt(sessionStorage.getItem(KEY)||'0',10); sessionStorage.removeItem(KEY); }catch(_){}
-    if(!t||Date.now()-t>30*60*1000)return;
-    var b=document.body; if(b.classList.contains('on-serp')||b.classList.contains('on-hotel'))return;
-    moved=false;
-    window.addEventListener('wheel',stop,{once:true,passive:true});
-    window.addEventListener('touchmove',stop,{once:true,passive:true});
-    // карусели главной догружаются позже и сдвигают подвал вниз — доводим несколько раз,
-    // пока человек сам не начал листать
-    function go(){ if(moved)return; try{ window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}); }catch(_){ window.scrollTo(0,document.documentElement.scrollHeight); } }
-    go(); [150,500,1200].forEach(function(ms){ setTimeout(go,ms); });
+  var de=document.documentElement;
+  function reveal(){ de.classList.remove('zb-ret'); }
+  function pin(){
+    if(!window.__zbRetFooter){ reveal(); return; }
+    window.__zbRetFooter=false;
+    var b=document.body;
+    if(b.classList.contains('on-serp')||b.classList.contains('on-hotel')){ reveal(); return; }
+    var active=true, ro=null, USER=['wheel','touchstart','keydown','pointerdown'];
+    function bottom(){ return Math.max(0,(de.scrollHeight||0)-(window.innerHeight||de.clientHeight||0)); }
+    function go(){
+      if(!active)return;
+      var y=window.pageYOffset||de.scrollTop||0, want=bottom();
+      if(Math.abs(y-want)>1){ try{ window.scrollTo({top:want,left:0,behavior:'instant'}); }catch(_){ window.scrollTo(0,want); } }
+    }
+    function stop(){
+      if(!active)return; active=false;
+      try{ if(ro)ro.disconnect(); }catch(_){}
+      USER.forEach(function(ev){ window.removeEventListener(ev,stop,true); });
+      window.removeEventListener('scroll',go);
+      reveal();
+    }
+    USER.forEach(function(ev){ window.addEventListener(ev,stop,{capture:true,passive:true}); });
+    // Если чужой код сдвинул прокрутку, пока человек ничего не трогал, — возвращаем
+    window.addEventListener('scroll',go,{passive:true});
+    // Изменение высоты ловим дважды: ResizeObserver срабатывает после раскладки, но до
+    // отрисовки, а проверка на каждом кадре закрывает случаи, когда он промолчал.
+    try{ ro=new ResizeObserver(go); ro.observe(b); ro.observe(de); }catch(_){}
+    (function frame(){ if(!active)return; go(); requestAnimationFrame(frame); })();
+    go();
+    requestAnimationFrame(function(){ go(); reveal(); });
+    // Держим, пока догружаются карусели: 4 секунды после полной загрузки страницы.
+    // Человек начал листать — отпускаем сразу (см. USER выше).
+    function release(){ setTimeout(stop,4000); }
+    if(document.readyState==='complete')release(); else window.addEventListener('load',release,{once:true});
+    setTimeout(stop,8000);   // предохранитель: дольше 8 секунд не держим ни при каких условиях
   }
-  window.addEventListener('pageshow',function(){ setTimeout(toFooter,0); });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',pin,{once:true}); else pin();
+  // Возврат из кэша браузера: страница и так стоит там, где её оставили
+  window.addEventListener('pageshow',function(e){ if(e.persisted){ try{ sessionStorage.removeItem(KEY); }catch(_){} reveal(); } });
 })();
 </script>
 </body>
