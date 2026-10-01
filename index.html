@@ -4753,6 +4753,7 @@ function openHotelApp(){
         <div class="fg"><label>Телефон *</label><input type="tel" id="ap-phone" placeholder="+375 29 000-00-00"></div>
         <div class="fg"><label>Email *</label><input type="email" id="ap-email" placeholder="hotel@mail.ru"></div>
       </div>
+      <div class="fg"><label>УНП <span style="font-weight:400;color:var(--muted)">— если вы ИП или организация</span></label><input type="text" id="ap-unp" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="9 цифр" oninput="apUnpInput()"><div id="ap-unp-info" style="font-size:12px;margin-top:6px;line-height:1.5"></div></div>
       <div class="fg"><label>Система бронирования</label>
         <select id="ap-system" style="width:100%;background:var(--sand);border:1.5px solid var(--sand3);border-radius:11px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);outline:none">
           <option value="">На какой системе бронирования работает ваш сайт?</option>
@@ -4772,6 +4773,33 @@ function openHotelApp(){
   document.getElementById('app-modal').classList.add('open');
 }
 
+// ── УНП в заявке: подставляем наименование и статус из открытого реестра МНС ──
+// Проверка на сервере всё равно повторяется: в заявку записывается то, что в реестре,
+// а не то, что показала страница.
+var _apUnpT=null, _apUnp=null;
+function apUnpInput(){
+  var el=document.getElementById('ap-unp'), box=document.getElementById('ap-unp-info'); if(!el||!box) return;
+  var d=el.value.replace(/\D/g,''); if(el.value!==d) el.value=d;
+  clearTimeout(_apUnpT); _apUnp=null; box.textContent='';
+  if(d.length===9){ box.style.color='var(--muted)'; box.textContent='Ищем в реестре МНС…'; _apUnpT=setTimeout(function(){ apUnpLookup(d); },250); }
+  else if(d.length>9){ box.style.color='#e53935'; box.textContent='УНП — 9 цифр'; }
+}
+async function apUnpLookup(unp){
+  var box=document.getElementById('ap-unp-info'); if(!box) return;
+  try{
+    var r=await fetch(API+'/api/partner/unp/'+unp);
+    var d=await r.json().catch(function(){return {};});
+    if(((document.getElementById('ap-unp')||{}).value||'')!==unp) return;
+    if(r.status===503){ _apUnp={state:'down'}; box.style.color='var(--muted)'; box.textContent='Реестр МНС сейчас не отвечает — заявку можно отправить, проверим сами'; return; }
+    if(!r.ok){ _apUnp=null; box.style.color='#e53935'; box.textContent=d.error||'Не удалось проверить УНП'; return; }
+    if(!d.found){ _apUnp={state:'none'}; box.style.color='#e53935'; box.textContent='Такого УНП нет в реестре МНС — проверьте цифры'; return; }
+    _apUnp={state:'ok',data:d.data};
+    box.style.color='var(--ink)';
+    box.innerHTML='<b>'+zbEsc(d.data.name_short||d.data.name_full||'')+'</b><br><span style="color:var(--muted)">'+zbEsc(d.data.address||'')+'</span><br>'
+      +'<span style="color:'+(d.data.active?'var(--green)':'#e53935')+';font-weight:600">'+(d.data.active?'✓ ':'⚠ ')+zbEsc(d.data.status||'')+'</span>';
+  }catch(e){ _apUnp={state:'down'}; box.style.color='var(--muted)'; box.textContent='Не удалось проверить УНП — заявку можно отправить'; }
+}
+
 async function submitApp(){
   const name=document.getElementById('ap-name')?.value?.trim();
   const city=document.getElementById('ap-city')?.value?.trim();
@@ -4781,12 +4809,15 @@ async function submitApp(){
   const err=document.getElementById('ap-err');
   if(!name||!city||!contact||!phone||!email){err.textContent='Заполните обязательные поля (*)';return;}
   if(!document.getElementById('ap-consent')?.checked){err.textContent='Отметьте согласие на обработку персональных данных';return;}
+  const unp=(document.getElementById('ap-unp')?.value||'').replace(/\D/g,'');
+  if(unp && unp.length!==9){err.textContent='УНП — 9 цифр. Если УНП нет, оставьте поле пустым';return;}
+  if(unp && _apUnp && _apUnp.state==='none'){err.textContent='Такого УНП нет в реестре МНС — проверьте цифры или оставьте поле пустым';return;}
   const btn=document.getElementById('ap-btn');btn.textContent='Отправляем...';btn.disabled=true;
   try{
-    const r=await fetch(API+'/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_name:name,city,contact_name:contact,phone,email,booking_system:document.getElementById('ap-system')?.value||''})});
+    const r=await fetch(API+'/api/applications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hotel_name:name,city,contact_name:contact,phone,email,unp,booking_system:document.getElementById('ap-system')?.value||''})});
     const d=await r.json();
     if(!r.ok){err.textContent=d.error||'Ошибка';btn.disabled=false;btn.textContent='Отправить заявку →';return;}
-    document.getElementById('app-body').innerHTML=`<div style="text-align:center;padding:20px 0"><div style="font-size:3rem;margin-bottom:12px">🎉</div><div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:8px">Заявка принята!</div><div style="font-size:13px;color:var(--muted);margin-bottom:20px">Свяжемся с вами по номеру <b>${phone}</b> в течение 24 часов.</div><button onclick="document.getElementById('app-modal').classList.remove('open')" style="background:var(--green2);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
+    document.getElementById('app-body').innerHTML=`<div style="text-align:center;padding:20px 0"><div style="font-size:3rem;margin-bottom:12px">🎉</div><div style="font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:800;margin-bottom:8px">Заявка принята!</div><div style="font-size:13px;color:var(--muted);margin-bottom:20px">Свяжемся с вами по номеру <b>${zbEsc(phone)}</b> в течение 24 часов.</div><button onclick="document.getElementById('app-modal').classList.remove('open')" style="background:var(--green2);color:#fff;border:none;padding:12px 28px;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>`;
   }catch(e){err.textContent='Ошибка соединения';btn.disabled=false;btn.textContent='Отправить заявку →';}
 }
 
