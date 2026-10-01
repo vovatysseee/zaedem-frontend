@@ -694,15 +694,17 @@ footer .ft-bottom{flex-direction:row;justify-content:space-between;align-items:c
 html.zb-lock,html.zb-lock body{overflow:hidden!important}
 #cs-scroll,#fav-page,#serp-sd-modal,.overlay{overscroll-behavior:contain}
 
-/* ЗНАЧКИ ОПЛАТЫ В ФОРМЕ БРОНИ (01.10): ровная сетка 4×2 — карты сверху, кошельки снизу,
-   все плашки одного размера. В подвале значки по-прежнему идут строкой. */
-.pay-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:14px 0 12px}
-.pay-grid-cap{grid-column:1/-1;text-align:center;font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--hint);margin-bottom:1px}
-.pay-chip{display:flex;align-items:center;justify-content:center;height:34px;padding:0 4px;border:1px solid var(--sand3);border-radius:9px;background:#fff;font:700 11.5px/1.05 Arial,sans-serif;color:#8d8d8d;text-align:center;overflow:hidden;min-width:0}
-.pay-chip.it{font-style:italic;letter-spacing:.4px}
-.pay-chip img{max-height:18px;max-width:100%;width:auto;display:block;filter:grayscale(1) opacity(.55)}
-.pay-chip svg{display:block}
-@media(max-width:360px){.pay-chip{font-size:10.5px;padding:0 2px}}
+/* ЗНАЧКИ ОПЛАТЫ В ФОРМЕ БРОНИ (01.10): подписи без рамок, в две строки по центру.
+   Сверху платёжные системы (5), снизу кошельки (3) — получается «трапеция», а не таблица.
+   У каждой подписи своя ширина. В подвале значки по-прежнему идут одной строкой. */
+.pay-lines{display:flex;flex-direction:column;align-items:center;gap:9px;margin:16px 0 14px}
+.pay-line{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 18px;width:100%}
+.pay-lbl{display:inline-flex;align-items:center;font:700 12.5px/1 Arial,sans-serif;color:#9e9e9e;white-space:nowrap;letter-spacing:.2px}
+.pay-line+.pay-line .pay-lbl{font-size:11.5px;color:#acacac;font-weight:600}
+.pay-lbl.it{font-style:italic;letter-spacing:.5px}
+.pay-lbl img{height:18px;width:auto;display:block;filter:grayscale(1) opacity(.55)}
+.pay-lbl svg{display:block}
+@media(max-width:360px){.pay-line{gap:6px 13px}.pay-lbl{font-size:11.5px}.pay-line+.pay-line .pay-lbl{font-size:10.5px}}
 
 /* ВОЗВРАТ К ПОДВАЛУ (01.10): пока страница не доведена до подвала, её не видно —
    иначе мелькает верх и середина. Класс снимает скрипт в конце страницы
@@ -4335,9 +4337,9 @@ var ZB_PAY_METHODS=[
   {label:'Mastercard',  logo:'', circles:true},
   {label:'БЕЛКАРТ',     logo:''},
   {label:'МИР',         logo:''},
-  {label:'Apple Pay',   logo:''},
-  {label:'Google Pay',  logo:''},
-  {label:'Samsung Pay', logo:''},
+  {label:'Apple Pay',   logo:'', wallet:true},
+  {label:'Google Pay',  logo:'', wallet:true},
+  {label:'Samsung Pay', logo:'', wallet:true},
   {label:'СБП',         logo:'', title:'Система быстрых платежей — для карт банков РФ'}
 ];
 function payIconsHTML(dark){
@@ -4354,16 +4356,18 @@ function payIconsHTML(dark){
     +'</span>';
 }
 
-// Те же способы в форме брони — ровной сеткой: 4 карты в первом ряду, 4 кошелька во втором.
+// Те же способы в форме брони: подписи без рамок, две строки по центру —
+// сверху платёжные системы, снизу кошельки (wallet:true в ZB_PAY_METHODS).
 function payGridHTML(){
-  return '<div class="pay-grid" aria-label="Способы оплаты"><div class="pay-grid-cap">Способы оплаты</div>'
-    +ZB_PAY_METHODS.map(function(m){
-      var tip=' title="'+zbEsc(m.title||m.label)+'"';
-      if(m.logo) return '<span class="pay-chip"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'"></span>';
-      if(m.circles) return '<span class="pay-chip"'+tip+'><svg viewBox="0 0 30 18" width="34" height="20" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="#9a9a9a"/><circle cx="18" cy="9" r="6.5" fill="#9a9a9a" fill-opacity=".5"/></svg></span>';
-      return '<span class="pay-chip'+(m.italic?' it':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
-    }).join('')
-    +'</div>';
+  function it(m){
+    var tip=' title="'+zbEsc(m.title||m.label)+'"';
+    if(m.logo) return '<span class="pay-lbl"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'"></span>';
+    if(m.circles) return '<span class="pay-lbl"'+tip+'><svg viewBox="0 0 30 18" width="30" height="18" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="#9e9e9e"/><circle cx="18" cy="9" r="6.5" fill="#9e9e9e" fill-opacity=".5"/></svg></span>';
+    return '<span class="pay-lbl'+(m.italic?' it':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
+  }
+  var top=ZB_PAY_METHODS.filter(function(m){return !m.wallet;}), bot=ZB_PAY_METHODS.filter(function(m){return m.wallet;});
+  return '<div class="pay-lines" aria-label="Способы оплаты"><div class="pay-line">'+top.map(it).join('')+'</div>'
+    +(bot.length?'<div class="pay-line">'+bot.map(it).join('')+'</div>':'')+'</div>';
 }
 
 // Точка входа оплаты. Сейчас — заглушка (оплата выключена).
