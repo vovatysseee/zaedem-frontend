@@ -694,17 +694,19 @@ footer .ft-bottom{flex-direction:row;justify-content:space-between;align-items:c
 html.zb-lock,html.zb-lock body{overflow:hidden!important}
 #cs-scroll,#fav-page,#serp-sd-modal,.overlay{overscroll-behavior:contain}
 
-/* ЗНАЧКИ ОПЛАТЫ В ФОРМЕ БРОНИ (01.10): подписи без рамок, в две строки по центру.
-   Сверху платёжные системы (5), снизу кошельки (3) — получается «трапеция», а не таблица.
-   У каждой подписи своя ширина. В подвале значки по-прежнему идут одной строкой. */
-.pay-lines{display:flex;flex-direction:column;align-items:center;gap:9px;margin:16px 0 14px}
-.pay-line{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 18px;width:100%}
-.pay-lbl{display:inline-flex;align-items:center;font:700 12.5px/1 Arial,sans-serif;color:#9e9e9e;white-space:nowrap;letter-spacing:.2px}
-.pay-line+.pay-line .pay-lbl{font-size:11.5px;color:#acacac;font-weight:600}
-.pay-lbl.it{font-style:italic;letter-spacing:.5px}
-.pay-lbl img{height:18px;width:auto;display:block;filter:grayscale(1) opacity(.55)}
+/* ЗНАЧКИ ОПЛАТЫ В ФОРМЕ БРОНИ (01.10, вторая редакция): подписи без рамок, две ровные
+   строки одного размера — сверху платёжные системы, снизу кошельки. Над ними тонкая
+   подпись. Размер растёт вместе с экраном: 12 → 13 → 14,5 px. */
+.pay-lines{display:flex;flex-direction:column;align-items:center;gap:9px;margin:18px 0 16px}
+.pay-cap{display:flex;align-items:center;gap:10px;width:100%;max-width:340px;font-size:10.5px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:#a8a39a}
+.pay-cap::before,.pay-cap::after{content:"";flex:1;height:1px;background:var(--sand3)}
+.pay-line{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 22px;width:100%}
+.pay-lbl{display:inline-flex;align-items:center;font:700 14.5px/1 Arial,sans-serif;color:#8c877e;white-space:nowrap;letter-spacing:.2px}
+.pay-lbl.it{font-style:italic;letter-spacing:.6px}
+.pay-lbl img{height:20px;width:auto;display:block;filter:grayscale(1) opacity(.6)}
 .pay-lbl svg{display:block}
-@media(max-width:360px){.pay-line{gap:6px 13px}.pay-lbl{font-size:11.5px}.pay-line+.pay-line .pay-lbl{font-size:10.5px}}
+@media(max-width:600px){.pay-line{gap:6px 16px}.pay-lbl{font-size:13px}.pay-lbl img{height:18px}}
+@media(max-width:360px){.pay-line{gap:6px 12px}.pay-lbl{font-size:12px}}
 
 /* ВОЗВРАТ К ПОДВАЛУ (01.10): пока страница не доведена до подвала, её не видно —
    иначе мелькает верх и середина. Класс снимает скрипт в конце страницы
@@ -4337,22 +4339,26 @@ var ZB_PAY_METHODS=[
   {label:'Mastercard',  logo:'', circles:true},
   {label:'БЕЛКАРТ',     logo:''},
   {label:'МИР',         logo:''},
+  {label:'СБП',         logo:'', title:'Система быстрых платежей — для карт банков РФ'},
   {label:'Apple Pay',   logo:'', wallet:true},
   {label:'Google Pay',  logo:'', wallet:true},
-  {label:'Samsung Pay', logo:'', wallet:true},
-  {label:'СБП',         logo:'', title:'Система быстрых платежей — для карт банков РФ'}
+  {label:'Samsung Pay', logo:'', wallet:true}
 ];
 function payIconsHTML(dark){
   var col=dark?'rgba(255,255,255,.62)':'#9a9a9a';
   var imgFilter=dark?'grayscale(1) brightness(0) invert(1) opacity(.62)':'grayscale(1) opacity(.55)';
   var t='font-family:Arial,sans-serif;font-weight:700;font-size:12px;color:'+col+';white-space:nowrap;display:inline-flex;align-items:center';
-  return '<span class="pay-row" style="display:inline-flex;align-items:center;gap:8px 14px;flex-wrap:wrap">'
-    +ZB_PAY_METHODS.map(function(m){
+  // Две строки, как в форме брони: сверху платёжные системы, снизу кошельки. Размер прежний.
+  function row(list){ return '<span class="pay-row" style="display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap">'+list.map(one).join('')+'</span>'; }
+  function one(m){
       var tip=' title="'+zbEsc(m.title||m.label)+'"';
       if(m.logo) return '<span class="pay-ic"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'" style="height:18px;width:auto;display:block;filter:'+imgFilter+'"></span>';
       if(m.circles) return '<span class="pay-ic" style="'+t+'"'+tip+'><svg viewBox="0 0 30 18" width="28" height="17" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="'+col+'"/><circle cx="18" cy="9" r="6.5" fill="'+col+'" fill-opacity=".5"/></svg></span>';
       return '<span class="pay-ic" style="'+t+(m.italic?';font-style:italic;letter-spacing:.4px':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
-    }).join('')
+  }
+  return '<span class="pay-rows" style="display:inline-flex;flex-direction:column;gap:9px">'
+    +row(ZB_PAY_METHODS.filter(function(m){return !m.wallet;}))
+    +row(ZB_PAY_METHODS.filter(function(m){return m.wallet;}))
     +'</span>';
 }
 
@@ -4362,11 +4368,11 @@ function payGridHTML(){
   function it(m){
     var tip=' title="'+zbEsc(m.title||m.label)+'"';
     if(m.logo) return '<span class="pay-lbl"'+tip+'><img src="img/pay/'+zbEsc(m.logo)+'" alt="'+zbEsc(m.label)+'"></span>';
-    if(m.circles) return '<span class="pay-lbl"'+tip+'><svg viewBox="0 0 30 18" width="30" height="18" aria-label="Mastercard"><circle cx="12" cy="9" r="6.5" fill="#9e9e9e"/><circle cx="18" cy="9" r="6.5" fill="#9e9e9e" fill-opacity=".5"/></svg></span>';
+    if(m.circles) return '<span class="pay-lbl"'+tip+'><svg viewBox="0 0 30 18" width="31" height="19" aria-label="Mastercard"><circle cx="11.5" cy="9" r="7" fill="#8c877e"/><circle cx="18.5" cy="9" r="7" fill="#8c877e" fill-opacity=".45"/></svg></span>';
     return '<span class="pay-lbl'+(m.italic?' it':'')+'"'+tip+'>'+zbEsc(m.label)+'</span>';
   }
   var top=ZB_PAY_METHODS.filter(function(m){return !m.wallet;}), bot=ZB_PAY_METHODS.filter(function(m){return m.wallet;});
-  return '<div class="pay-lines" aria-label="Способы оплаты"><div class="pay-line">'+top.map(it).join('')+'</div>'
+  return '<div class="pay-lines" aria-label="Способы оплаты"><div class="pay-cap">способы оплаты</div><div class="pay-line">'+top.map(it).join('')+'</div>'
     +(bot.length?'<div class="pay-line">'+bot.map(it).join('')+'</div>':'')+'</div>';
 }
 
@@ -4925,11 +4931,11 @@ function openLegal(url){
   if(!ov){
     ov=document.createElement('div'); ov.id='legal-ov';
     ov.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px';
-    ov.innerHTML='<div class="legal-box" style="background:#fff;border-radius:16px;width:min(820px,100%);height:90vh;height:90dvh;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)"><a id="legal-open" target="_blank" rel="noopener" style="position:absolute;top:16px;left:16px;z-index:2;font-size:12.5px;font-weight:600;color:var(--green);background:#fff;border:1px solid var(--sand3);border-radius:50px;padding:6px 12px;text-decoration:none">Открыть отдельной страницей ↗</a><button onclick="closeLegal()" aria-label="Закрыть" style="position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);font-size:17px;cursor:pointer">✕</button><iframe id="legal-frame" title="Документ" style="border:none;width:100%;height:100%"></iframe></div>';
+    ov.innerHTML='<div class="legal-box" style="background:#fff;border-radius:16px;width:min(820px,100%);height:90vh;height:90dvh;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)"><button onclick="closeLegal()" aria-label="Закрыть" style="position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);font-size:17px;cursor:pointer">✕</button><iframe id="legal-frame" title="Документ" style="border:none;width:100%;height:100%"></iframe></div>';
     ov.addEventListener('click',function(e){if(e.target===ov)closeLegal();});
     document.body.appendChild(ov);
   }
-  document.getElementById('legal-frame').src=url;
+  zbLegalLoad(url);
   var _lo=document.getElementById('legal-open'); if(_lo)_lo.href=url;
   ov.style.display='flex';
 }
@@ -4938,6 +4944,82 @@ document.addEventListener('click',function(e){
   var a=e.target&&e.target.closest?e.target.closest('a.legal-link'):null;
   if(a){e.preventDefault();openLegal(a.getAttribute('href'));}
 });
+
+// ═ ДОКУМЕНТ ПОВЕРХ БРОНИ: «← На сайт» и «Назад» больше не выкидывают на главную (01.10) ═
+// Было: в окне с офертой у документа есть ссылка «← На сайт», а она делает history.back().
+// Внутри окна это «Назад» всего сайта: уходила карточка отеля, срабатывал сброс на главную,
+// заполненная бронь пропадала. То же — системный «Назад» (жест на телефоне), пока открыт документ.
+// Ещё одна ловушка — кнопка «Открыть отдельной страницей»: документ открывался в новой вкладке,
+// где «← На сайт» вело на главную, а бронь оставалась в старой вкладке. Кнопку убрали:
+// документ целиком читается и прокручивается в окне.
+// Стало:
+//  • документ в окне грузится без записи в историю браузера (location.replace);
+//  • ссылки внутри документа: на главную («← На сайт») — просто закрывают окно, на другой
+//    документ — открывают его в том же окне, внешние — в новой вкладке;
+//  • «Назад» (кнопка, жест, клавиша) закрывает верхнее окно — документ, потом бронь —
+//    и только потом работает как обычно.
+function zbLegalLoad(url){
+  var fr=document.getElementById('legal-frame'); if(!fr) return;
+  if(!fr._zbHooked){
+    fr._zbHooked=true;
+    fr.addEventListener('load',function(){
+      try{
+        var doc=fr.contentDocument; if(!doc) return;
+        fr._zbLoaded=true;
+        doc.addEventListener('click',function(e){
+          var a=e.target&&e.target.closest?e.target.closest('a[href]'):null; if(!a) return;
+          var href=a.getAttribute('href')||'';
+          if(/^(mailto:|tel:|sms:|#)/i.test(href)) return;
+          var u; try{ u=new URL(a.href, doc.baseURI); }catch(_){ return; }
+          if(u.origin!==location.origin){ a.setAttribute('target','_blank'); a.setAttribute('rel','noopener'); return; }
+          e.preventDefault(); e.stopPropagation();
+          if(u.pathname==='/'||/\/index\.html?$/.test(u.pathname)){ closeLegal(); return; }
+          try{ fr.contentWindow.location.replace(u.href); }catch(_){ fr.src=u.href; }
+          var lo=document.getElementById('legal-open'); if(lo) lo.href=u.pathname.replace(/^\//,'')+u.search+u.hash;
+        },true);
+      }catch(e){}
+    });
+  }
+  try{ if(fr._zbLoaded&&fr.contentWindow){ fr.contentWindow.location.replace(url); return; } }catch(e){}
+  fr.src=url;
+}
+(function(){
+  var stack=[];                       // окна, для которых в истории есть наша запись
+  window._zbOvSkip=0;
+  function push(id){ if(stack.indexOf(id)>=0) return; try{ history.pushState({zbOv:id},'',location.href); stack.push(id); }catch(e){} }
+  function uiClosed(id){
+    var i=stack.lastIndexOf(id); if(i<0) return;
+    stack.splice(i,1);
+    if(i===stack.length){ window._zbOvSkip++; try{ history.back(); }catch(e){ window._zbOvSkip--; } }
+  }
+  function closeById(id){
+    if(id==='legal'){ closeLegal(); }
+    else if(id==='bk'){ var m=document.getElementById('bk-modal'); if(m) m.classList.remove('open'); }
+  }
+  // Регистрируется РАНЬШЕ обработчика маршрутов сайта и перехватывает «Назад», пока открыто окно
+  window.addEventListener('popstate',function(e){
+    if(window._zbOvSkip>0){ window._zbOvSkip--; e.stopImmediatePropagation(); return; }
+    if(stack.length){ var id=stack.pop(); closeById(id); e.stopImmediatePropagation(); }
+  });
+  function watch(id, el, isOpen){
+    if(!el||el._zbOvW) return; el._zbOvW=true;
+    var was=isOpen(el);
+    new MutationObserver(function(){
+      var now=isOpen(el); if(now===was) return; was=now;
+      if(now) push(id); else uiClosed(id);
+    }).observe(el,{attributes:true,attributeFilter:['class','style']});
+    if(was) push(id);
+  }
+  function hook(){
+    watch('bk', document.getElementById('bk-modal'), function(el){ return el.classList.contains('open'); });
+    var lo=document.getElementById('legal-ov');
+    if(lo) watch('legal', lo, function(el){ return el.style.display!=='none'&&el.style.display!==''; });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',hook); else hook();
+  // окно документа создаётся при первом открытии — подцепляем его тогда же
+  var _ol=openLegal;
+  openLegal=function(url){ _ol(url); hook(); var lo=document.getElementById('legal-ov'); if(lo&&lo.style.display==='flex'&&stack.indexOf('legal')<0) push('legal'); };
+})();
 function galNav(d){gIdx=(gIdx+d+gPhotos.length)%gPhotos.length;showG()}
 function showG(){var src=(gPhotos[gIdx]||'');var im=document.getElementById('g-img');try{zbGalReset();}catch(e){}if(im){im.style.opacity='.3';im.src=src;requestAnimationFrame(function(){im.style.opacity='1'});}document.getElementById('g-cnt').textContent=(gIdx+1)+' / '+gPhotos.length;document.getElementById('g-dots').innerHTML=gPhotos.map((_,i)=>`<div class="g-dot${i===gIdx?' on':''}" onclick="gIdx=${i};showG()"></div>`).join('')}
 document.addEventListener('keydown',e=>{if(!document.getElementById('gal-ov').classList.contains('open'))return;if(e.key==='ArrowRight')galNav(1);else if(e.key==='ArrowLeft')galNav(-1);else if(e.key==='Escape')closeGal()});
