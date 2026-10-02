@@ -2136,6 +2136,33 @@ async function hpQaAsk(){
     var _near=(h._nearby||[]).slice(0,12);
     // «Что рядом» тоже с экрана как подстраховка
     try{ document.querySelectorAll('#hp-nearby span').forEach(function(sp){var t=sp.textContent.trim();if(t&&t.length<40&&_near.indexOf(t)<0)_near.push(t);}); }catch(_){}
+    // 02.10: всё, что видно на странице, — номера с ценами на даты гостя, питание, отмена,
+    // сборы на месте, адрес, метро, оценка. Условия проживания (депозит, платные услуги,
+    // бесконтактное заселение) сервер берёт сам из базы.
+    var _n=getNights(), _rooms=[], _fees=[];
+    try{
+      if(h.source==='ostrovok'||h.hid){
+        (_ostRates||[]).slice(0,15).forEach(function(rt){
+          var parts=[cleanRoomName(rt.room_name)||'Номер', rt.price_byn+' BYN за '+_n+' '+nightsWord(_n), ostMeal(rt.meal), ostCancelText(rt.cancellation).replace(/^[^А-Яа-яA-Za-z]+/,'')];
+          if(rt.capacity)parts.push('до '+rt.capacity+' гостей');
+          if(rt.bedrooms)parts.push(rt.bedrooms+' комн.');
+          var am=ostAmenList(rt.room_amenities,6); if(am.length)parts.push(am.join(', '));
+          if(ostFeesTxt(rt))parts.push('на месте отдельно: '+ostFeesTxt(rt));
+          _rooms.push(parts.join(', '));
+          (rt.taxes_on_site||[]).forEach(function(x){ var t=x.label+' '+String(x.amount).replace('.',',')+(x.currency?' '+x.currency:''); if(_fees.indexOf(t)<0)_fees.push(t); });
+        });
+      } else {
+        (h.rooms||[]).slice(0,15).forEach(function(rm){
+          var parts=[rm.name||'Номер', (rm.total_price||rm.price)+' BYN'+(rm.total_price?' за '+_n+' '+nightsWord(_n):' за ночь')];
+          if(rm.cap)parts.push('до '+rm.cap+' гостей'); if(rm.size)parts.push(rm.size+' м²');
+          if(rm.desc)parts.push(String(rm.desc).slice(0,120));
+          _rooms.push(parts.join(', '));
+        });
+      }
+    }catch(_){}
+    var _metro=(h.metro&&h.metro.name)?(h.metro.name+(h.metro.km!=null?' · '+zbDistLabel(h.metro.km):'')):'';
+    var _rate='';
+    try{ var _rv=document.querySelector('#hp-reviews .hp-rev-score'); if(_rv)_rate=_rv.textContent.trim().slice(0,60); }catch(_){}
     var payload={ q:q,
       // Идентификатор объекта — бэкенд проверяет, что объект существует,
       // и берёт описание из базы. Без него ручка отвечает «Объект не найден»:
@@ -2148,7 +2175,11 @@ async function hpQaAsk(){
       desc:_desc.slice(0,3500),
       amenities:_amen.slice(0,60),
       nearby:_near.slice(0,12),
-      checkin:h.check_in||h.checkin||'', checkout:h.check_out||h.checkout||''
+      checkin:h.check_in||h.checkin||'', checkout:h.check_out||h.checkout||'',
+      type:({hotel:'отель или гостиница',apart:'квартира / апартаменты',guest:'загородный дом / усадьба'})[h.category]||'',
+      address:h.address||'', metro:_metro,
+      dates:(typeof fmtBkDates==='function'?fmtBkDates():'')+' · '+_n+' '+nightsWord(_n),
+      rooms:_rooms, fees:_fees, rating:_rate
     }};
     var r=await fetch(API+'/api/ai/hotel-qa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var d=await r.json();
@@ -2818,8 +2849,9 @@ function cleanAddr(addr){
   return zbEsc(out.join(', ')); // результат вставляется в разметку — отдаём безопасным
 }
 function serpCatLabel(h){
-  var parts=cleanAddr(h.address).split(',').map(function(s){return s.trim();}).filter(Boolean);
-  var city = parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
+  // 02.10: город — по названию из адреса, иначе город поиска. Раньше бралась предпоследняя
+  // часть адреса, и при «улица, дом, Минск» вместо города выходил номер дома («• 3»).
+  var city=zbCityFromAddress(cleanAddr(h.address))||String(h.city_ru||'').trim();
   var tail = city ? ' • '+city : '';
   if(h.category==='hotel') return (h.stars ? '★'.repeat(h.stars)+'-звёздочный отель' : 'Бутик-отель')+tail;
   if(h.category==='guest') return 'Агроусадьба / шале'+tail;
