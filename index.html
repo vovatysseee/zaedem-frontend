@@ -306,6 +306,19 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .ostc-price small{display:block;font-size:10px;color:var(--hint);font-weight:400;margin-top:2px}
 .ost-rate-row.ostc.picked{border:2px solid var(--green)!important}
 .hp-times{font-size:13px;color:var(--muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px}
+.hp-pol{border:1px solid var(--sand3);border-radius:14px;padding:14px 16px 6px;margin:0 0 1.5rem;background:#fff}
+.hp-pol-ttl{font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:8px}
+.hp-pol-row{display:flex;gap:14px;padding:8px 0;border-top:1px solid var(--sand2);font-size:13px;line-height:1.5}
+.hp-pol-row:first-of-type{border-top:none}
+.hp-pol-k{flex:0 0 38%;max-width:200px;color:var(--muted)}
+.hp-pol-v{flex:1;min-width:0;color:var(--ink);overflow-wrap:anywhere}
+.hp-pol-more{border:none;background:none;padding:0;color:var(--green);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+@media(max-width:560px){.hp-pol-row{flex-direction:column;gap:2px}.hp-pol-k{max-width:none;flex-basis:auto;font-size:12px}}
+.ostc-fee{font-size:11.5px;color:#9a6b00;margin:-6px 0 10px}
+.bk-onsite{font-size:11.5px;color:#9a6b00;margin-top:6px;text-align:right;line-height:1.4}
+.bk-onsite-box{margin-top:10px;padding:10px 12px;background:#fff8e8;border:1px solid #f3e2b0;border-radius:10px;font-size:12.5px;color:#5c4500;line-height:1.55}
+.bk-onsite-ttl{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.bk-onsite-note{font-size:11.5px;color:#9a7a20;margin-top:4px}
 .hp-rev{margin:1.6rem 0 1rem}
 .hp-rev-head{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
 .hp-rev-score{background:var(--green);color:#fff;font-family:'Unbounded',sans-serif;font-weight:800;font-size:20px;border-radius:14px;padding:11px 14px;line-height:1}
@@ -499,13 +512,13 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .serp-map{flex:0 0 36%;position:sticky;top:0;background:#e8e4dc}
 
 /* Filter bar */
-.serp-filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:nowrap;overflow:visible;padding-bottom:2px;position:relative;z-index:10}
+.serp-filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;overflow:visible;padding-bottom:2px;position:relative;z-index:10}
 .serp-filters::-webkit-scrollbar{display:none}
 .sf-tag{position:relative;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--sand3);color:var(--ink);padding:7px 14px;border-radius:50px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;flex-shrink:0}
 .sf-tag:hover{border-color:var(--green);color:var(--green)}
 .sf-tag.active{background:var(--green);border-color:var(--green);color:#fff}
 .sf-tag-excl{border-color:#d4af37;color:#9a7d1e;background:linear-gradient(#fffdf5,#fff9e6)}
-body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
+body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,body.cat-mode #sft-nodep{display:none}
 .sf-tag-excl.active{background:linear-gradient(135deg,#e8c14a,#d4af37);border-color:#d4af37;color:#3a2e00}
 .sf-tag svg{width:10px;height:10px}
 .sf-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1.5px solid var(--sand3);padding:12px;min-width:220px;z-index:9999}
@@ -565,6 +578,8 @@ body.cat-mode #sft-price,body.cat-mode #sft-free{display:none}
 .sr-rtxt{font-size:12px;color:var(--muted)}
 .sr-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
 .sr-tag{background:var(--sand2);color:var(--muted);font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600}
+.sr-tag.sr-tag-cl{background:#e9f2ec;color:#1a5c38}
+.sr-fee{color:#9a6b00;font-weight:600}
 .sr-foot{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px}
 .sr-price-old{font-size:11px;color:var(--hint);text-decoration:line-through;margin-bottom:2px}
 .sr-price-main{font-family:'Unbounded',sans-serif;font-size:.98rem;font-weight:800;color:var(--green)}
@@ -903,6 +918,8 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
         </div>
         <div class="sf-tag sf-tag-excl" id="sft-excl" onclick="serpToggleTag('sft-excl')">✨ Эксклюзив</div>
         <div class="sf-tag" id="sft-free"  onclick="serpToggleTag('sft-free')">Бесплатная отмена</div>
+        <div class="sf-tag" id="sft-contactless" onclick="serpToggleTag('sft-contactless')">Бесконтактное заселение</div>
+        <div class="sf-tag" id="sft-nodep" onclick="serpToggleTag('sft-nodep')">Без депозита</div>
       </div>
 
       <div id="serp-ai-chips" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
@@ -1429,7 +1446,15 @@ function doSearch(){renderHotels();scrollToHotels()}
 var AI_CITIES=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Мир','Нарочь','Браслав','Беловежская пуща','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк'];
 var AI_CITY_SYN={'мнск':'Минск','минске':'Минск','бресте':'Брест','витебске':'Витебск','гомеле':'Гомель','могилеве':'Могилёв','пинске':'Пинск','нарочи':'Нарочь','браславе':'Браслав','несвиже':'Несвиж'};
 // ключи по КОРНЮ — ловим окончания (баня/баней/бане, кондей/кондеем)
-var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','вайфай':'Wi-Fi','интернет':'Wi-Fi','инет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','сталк':'стиральная машина','кухн':'кухня','кондиц':'кондиционер','кондей':'кондиционер','конде':'кондиционер','балкон':'балкон','террас':'терраса','бан':'баня','саун':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи'};
+var AI_AMEN={'парков':'парковка','стоянк':'парковка','wi-fi':'Wi-Fi','wifi':'Wi-Fi','вай-фай':'Wi-Fi','вайфай':'Wi-Fi','интернет':'Wi-Fi','инет':'Wi-Fi','стиральн':'стиральная машина','стиралк':'стиральная машина','сталк':'стиральная машина','кухн':'кухня','кондиц':'кондиционер','кондей':'кондиционер','конде':'кондиционер','балкон':'балкон','террас':'терраса','бан':'баня','саун':'сауна','бассейн':'бассейн','животн':'можно с животными','питомц':'можно с животными','собак':'можно с животными','мангал':'мангал','барбекю':'мангал','камин':'камин','джакузи':'джакузи',
+  // 02.10: всё, что Островок даёт фильтрами (serp_filters, бесконтактное заселение) — ИИ понимает словами
+  'бесконтакт':'бесконтактное заселение','самозасел':'бесконтактное заселение','самостоятельное засел':'бесконтактное заселение','самостоятельным засел':'бесконтактное заселение','без встреч':'бесконтактное заселение',
+  'гидромасс':'джакузи','зарядк':'зарядка для электромобиля','электромоб':'зарядка для электромобиля','электрокар':'зарядка для электромобиля',
+  'конференц':'конференц-зал','переговорн':'конференц-зал','фитнес':'фитнес','тренаж':'фитнес','спортзал':'фитнес',
+  'пляж':'пляж','горнолыж':'горнолыжный склон','лыж':'горнолыжный склон','ресторан':'ресторан','трансфер':'трансфер',
+  'маломобильн':'для маломобильных','инвалид':'для маломобильных','коляск':'для маломобильных',
+  'можно кур':'можно курить','для курящ':'можно курить','своя ванн':'своя ванная','ванная в номере':'своя ванная','отдельная ванн':'своя ванная',
+  'лифт':'лифт','сейф':'сейф','спа ':'спа','spa':'спа'};
 var AI_NUMWORD={'одного':1,'двое':2,'двоих':2,'вдвоем':2,'пара':2,'пары':2,'трое':3,'троих':3,'втроем':3,'четверо':4,'четверых':4,'вчетвером':4,'пятеро':5,'пятерых':5,'шестеро':6,'шестерых':6};
 // Голосовой ввод для AI-поиска (Web Speech API — без ключей; показываем 🎤 только если поддерживается)
 function aiCancelAuto(){ if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;} }
@@ -1553,6 +1578,8 @@ function aiParse(t){
   else if(/апартамент|квартир|студи|однушк|двушк|трешк/.test(s))r.category='apart';
   else if(/усадьб|агроусадьб|коттедж|шале|дача|дачу|загородн|\sдом(ик)?[\s,]/.test(s))r.category='guest';
   else if(/отел|гостиниц/.test(s))r.category='hotel';
+  // 02.10: «без депозита / без залога» — это ПОЖЕЛАНИЕ (объект без депозита), а не «исключить удобство»
+  if(/без\s+(депозит|залог)/.test(s)&&r.amenities.indexOf('без депозита')<0)r.amenities.push('без депозита');
   // УДОБСТВА + ОТРИЦАНИЯ («без парковки», «не нужен интернет»)
   for(var key in AI_AMEN){
     var idx=s.indexOf(key); if(idx<0)continue;
@@ -1837,7 +1864,25 @@ async function aiSearch(){
 }
 // Применяет разбор (локальный или GPT) и запускает поиск. Вынесено из aiSearch,
 // чтобы параллельный старт мог вызвать это дважды (локально сразу, GPT — если город другой).
+// 02.10: «без депозита» и «бесконтактное заселение» — пожелания из данных Островка.
+// GPT мог положить «депозит» в «без: …» (исключить удобство) — переносим в пожелания;
+// если GPT их потерял, а в запросе они были — возвращаем.
+function aiNormNeeds(p,q){
+  try{
+    var t=' '+String(q||'').toLowerCase().replace(/ё/g,'е')+' ';
+    var am=Array.isArray(p.amenities)?p.amenities.slice():[], av=Array.isArray(p.avoid)?p.avoid.slice():[];
+    var dep=false;
+    av=av.filter(function(a){ if(/депозит|залог/i.test(String(a))){ dep=true; return false; } return true; });
+    if(/без\s+(депозит|залог)/.test(t))dep=true;
+    var has=function(re){ return am.some(function(a){ return re.test(String(a).toLowerCase()); }); };
+    if(dep&&!has(/депозит|залог/))am.push('без депозита');
+    if(/бесконтакт|самозасел|самостоятельн\S* засел/.test(t)&&!has(/бесконтакт|самозасел|самостоятельн/))am.push('бесконтактное заселение');
+    p.amenities=am; p.avoid=av;
+  }catch(e){}
+  return p;
+}
 function aiApplyAndGo(p,q,el){
+  aiNormNeeds(p,q);
   // Санитизация: строки «null/undefined/-» от ИИ = города нет (и никаких null на экране)
   if(p.city&&/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim()))p.city=null;
   if(p.city)p.city=String(p.city).trim();
@@ -1913,6 +1958,7 @@ function aiApplyAndGo(p,q,el){
 // Уточнения GPT «наживую» в уже открытую выдачу: без нового поиска города —
 // обновляем ИИ-фильтры/чипы/снимок и пересортировываем то, что уже на экране.
 function aiApplyRefinements(p,el){
+  aiNormNeeds(p,window._lastAiQuery||'');
   window._aiCategory=p.category||null;
   window._aiPriceMax=p.priceMax||0;
   window._aiAmenities=p.amenities||[];
@@ -2854,7 +2900,13 @@ var ZB_TAG_RU={parking:'парковка стоянка',wifi:'wi-fi вайфа�
   fitness:'фитнес тренажерный зал спортзал',breakfast:'завтрак',restaurant:'ресторан',bar:'бар',
   pets:'животные питомцы собака кошка',kitchen:'кухня',ac:'кондиционер',spa:'спа',transfer:'трансфер',
   laundry:'стиральная машина прачечная',balcony:'балкон терраса',elevator:'лифт',family:'детская семейный дети',
-  smoke_free:'для некурящих',disabled:'для маломобильных',safe:'сейф'};
+  smoke_free:'для некурящих',disabled:'для маломобильных инвалид коляска доступная среда',safe:'сейф',
+  // 02.10: теги из фильтров Островка (serp_filters) и условия заселения
+  conference:'конференц-зал переговорная',ski:'горнолыжный склон лыжи',beach:'пляж',jacuzzi:'джакузи гидромассаж',
+  ev_charger:'зарядка для электромобиля электромобиль электрозарядка',private_bathroom:'своя ванная ванная в номере отдельная ванная',
+  smoking:'можно курить для курящих',
+  contactless:'бесконтактное заселение самостоятельное заселение самозаселение заселение без встречи',
+  no_deposit:'без депозита без залога'};
 function zbTagsHay(h){ return (h&&h.tags||[]).map(function(t){return ZB_TAG_RU[t]||t;}).join(' '); }
 // Город из адреса объекта: «проспект Победителей, д. 20, Минск» → «Минск».
 // Нужен шаринг-ссылкам на отели, открытые из каталога/витрины (там нет города поиска).
@@ -2961,6 +3013,10 @@ function serpRender(){
   if(pr)priceMax=parseInt(pr.value)||0;
   var wantExcl=document.getElementById('sft-excl')&&document.getElementById('sft-excl').classList.contains('active');
   var wantFree=document.getElementById('sft-free')&&document.getElementById('sft-free').classList.contains('active');
+  // 02.10: признаки из данных Островка. Объекты без сведений (неизвестно) в эти фильтры не попадают:
+  // «без депозита» обещаем, только если объект сам так указал.
+  var wantCl=document.getElementById('sft-contactless')&&document.getElementById('sft-contactless').classList.contains('active');
+  var wantNd=document.getElementById('sft-nodep')&&document.getElementById('sft-nodep').classList.contains('active');
   var starsMin=0;
   var sr=document.querySelector('input[name="stars-r"]:checked');
   if(sr)starsMin=parseInt(sr.value)||0;
@@ -2980,6 +3036,8 @@ function serpRender(){
     if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
     if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
     if(wantFree&&!h.cancellation)return false;
+    if(wantCl&&h.contactless!==true)return false;
+    if(wantNd&&h.no_deposit!==true)return false;
     return true;
   });
 
@@ -3026,24 +3084,26 @@ function serpRender(){
   // оставили ноль → ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой «снимите фильтр».
   // Поиск никогда не «умирает» из-за фильтров.
   window._aiRelaxed=null;
-  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0||wantExcl||wantFree)){
+  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0||wantExcl||wantFree||wantCl||wantNd)){
     // 1) отпускаем цену (и ИИ, и ручную) — оставляем категорию/звёзды/теги
     var relaxed=baseList.filter(function(h){
       if(cats.length&&!cats.includes(h.category))return false;
       if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
       if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
       if(wantFree&&!h.cancellation)return false;
+      if(wantCl&&h.contactless!==true)return false;
+      if(wantNd&&h.no_deposit!==true)return false;
       return true; // БЕЗ фильтра цены
     });
     if(relaxed.length&&(window._aiPriceMax>0||priceMax>0)){ list=relaxed; window._aiRelaxed='price'; }
     else {
-      // 2) отпускаем теги «Эксклюзив»/«Бесплатная отмена» — они дают ноль чаще всего
+      // 2) отпускаем теги «Эксклюзив»/«Бесплатная отмена»/«Бесконтактное»/«Без депозита» — они дают ноль чаще всего
       relaxed=baseList.filter(function(h){
         if(cats.length&&!cats.includes(h.category))return false;
         if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
         return true;
       });
-      if(relaxed.length&&(wantExcl||wantFree)){ list=relaxed; window._aiRelaxed=wantExcl?'excl':'free'; }
+      if(relaxed.length&&(wantExcl||wantFree||wantCl||wantNd)){ list=relaxed; window._aiRelaxed=wantExcl?'excl':wantFree?'free':wantCl?'cl':'nd'; }
       else {
         // 3) последний рубеж — оставляем только город (снимаем всё)
         relaxed=baseList.slice();
@@ -3054,7 +3114,7 @@ function serpRender(){
   }
 
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree;
+  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree||wantCl||wantNd;
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -3096,6 +3156,8 @@ function serpRender(){
     else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
     else if(window._aiRelaxed==='excl')meta.textContent='Эксклюзив — это наши собственные объекты, в этом городе их пока нет. Показали все варианты ('+list.length+')';
     else if(window._aiRelaxed==='free')meta.textContent='С бесплатной отменой точных нет — показали похожие ('+list.length+'). Снимите тег';
+    else if(window._aiRelaxed==='cl')meta.textContent='С бесконтактным заселением на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
+    else if(window._aiRelaxed==='nd')meta.textContent='Без депозита на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
     else meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length);
   }
@@ -3139,6 +3201,7 @@ function serpRender(){
     var rn=parseFloat(h.rating||0);var ratLbl=rn>=5?'5 звёзд':rn>=4?'4 звезды':rn>=3?'3 звезды':rn>=2?'2 звезды':'';
     var tags=(h.amenities||[]).slice(0,3).map(function(a){return '<span class="sr-tag">'+(amenIcon(a)||'')+' '+amenName(a)+'</span>';}).join('');
     if(h.metro&&h.metro.name&&h.metro.km!=null&&h.metro.km<=2){ tags='<span class="sr-tag">🚇 '+h.metro.name+' · '+zbDistLabel(h.metro.km)+'</span>'+tags; }
+    if(h.contactless===true){ tags='<span class="sr-tag sr-tag-cl">Бесконтактное заселение</span>'+tags; }   // 02.10, данные Островка
     var dots=photos.length>1?photos.map(function(_,i){return '<div class="sr-dot'+(i===0?' on':'')+'"></div>';}).join(''):'';
 
 
@@ -3159,14 +3222,16 @@ function serpRender(){
        +'<span class="sr-score">★ '+ratNum.toFixed(0)+'</span>'
        +'<span class="sr-rtxt">'+ratLbl+(h.reviews_count?' ('+h.reviews_count+' отзывов)':'')+'</span>'
        +'</div>':'';
+     // 02.10: если у тарифа есть сборы, которые объект берёт на месте, «с налогами» было бы неправдой
+     var feeTxt=(h.fees_on_site&&h.fees_on_site.length)?'<span class="sr-fee" title="'+zbEsc(h.fees_on_site.map(function(t){return t.label+' — '+String(t.amount).replace('.',',')+(t.currency?' '+t.currency:'');}).join('; '))+'">+ сбор на месте</span>':'с налогами';
      var priceBlock=h.catalog
        ? '<div class="sr-price"><div class="sr-price-main" style="font-size:15px">Цена по датам</div><div class="sr-price-sub">выберите даты</div></div>'
        : '<div class="sr-price">'+oldPriceHtml
            +(srPriceMode()==='night'
              ? '<div class="sr-price-main">от '+srNightPrice(h)+' BYN</div>'
-               +'<div class="sr-price-sub">за ночь \u00b7 с налогами</div>'
+               +'<div class="sr-price-sub">за ночь \u00b7 '+feeTxt+'</div>'
              : '<div class="sr-price-main">от '+srTotalPrice(h)+' BYN</div>'
-               +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 с налогами</div>')
+               +'<div class="sr-price-sub">за '+srNightsLabel()+' \u00b7 '+feeTxt+'</div>')
          +'</div>';
      c.innerHTML='<div class="'+imgCls+'">'+imgHtml+freeBadge+favBtn+navHtml+dotsHtml+cntHtml+'</div>'
        +'<div class="sr-body">'
@@ -3242,7 +3307,7 @@ function serpClearFilters(){
   ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
   var pr=document.querySelector('input[name="price-r"][value="0"]');if(pr)pr.checked=true;
   var sr=document.querySelector('input[name="stars-r"][value="0"]');if(sr)sr.checked=true;
-  ['sft-bfast','sft-free','sft-excl'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  ['sft-bfast','sft-free','sft-excl','sft-contactless','sft-nodep'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
   // ГЛАВНОЕ: снимаем и ИИ-фильтры (цена/категория/удобства/«без …»). Раньше они оставались
   // висеть после клика → выдача так и была пустой → кнопка выглядела «некликабельной».
   window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
@@ -6170,6 +6235,9 @@ async function loadOstRates(h){
       }
     }
     window._hpTimes={ci:(data.hotel&&data.hotel.check_in)||'',co:(data.hotel&&data.hotel.check_out)||''};
+    // 02.10: условия проживания от Островка (депозит, платные услуги, бесконтактное заселение)
+    window._hpPolicy=(data.hotel&&data.hotel.policy)||null;
+    try{ hpPolicyRender(window._hpPolicy); }catch(e){}
     _ostRates=(data.rates||[]).filter(function(rt){return rt.book_hash&&rt.price_byn>0;});
     if(!_ostRates.length){
       box.innerHTML='<div style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--muted)">На выбранные даты свободных номеров нет. Попробуйте изменить даты заезда и выезда.</div>';
@@ -6193,6 +6261,7 @@ async function loadOstRates(h){
         +capHtml
         +chipsHtml
         +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+ostCancelText(rt.cancellation)+'</div>'
+        +(ostFeesTxt(rt)?'<div class="ostc-fee">+ на месте: '+zbEsc(ostFeesTxt(rt))+'</div>':'')
         +'<div class="ostc-foot"><div class="ostc-price">'+rt.price_byn+' BYN<small>за '+n+' '+nightsWord(n)+'</small></div>'
         +'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button></div>'
         +'</div></div>';
@@ -6211,12 +6280,56 @@ async function loadOstRates(h){
 // и выключенная кнопка — потому что цифра, оставшаяся от прошлых дат, выглядит живой,
 // а на деле относится к другому запросу. Человек видит сумму, жмёт «Выбрать» —
 // и получает либо тишину, либо другую цену на следующем шаге.
+// ═ 02.10 УСЛОВИЯ ПРОЖИВАНИЯ И СБОРЫ НА МЕСТЕ (данные Островка) ═
+// Сборы с included_by_supplier=false объект берёт сам при заселении: к нашей цене их не
+// прибавляем (правило Островка), но показываем везде, где видна цена.
+function ostFeesTxt(rt){
+  var t=(rt&&Array.isArray(rt.taxes_on_site))?rt.taxes_on_site:[];
+  return t.map(function(x){ return x.label+' '+String(x.amount).replace('.',',')+(x.currency?' '+x.currency:''); }).join(', ');
+}
+function ostOnsiteFormHTML(rt){
+  var lines=[];
+  ((rt&&rt.taxes_on_site)||[]).forEach(function(x){ lines.push(x.label+' — '+String(x.amount).replace('.',',')+(x.currency?' '+x.currency:'')); });
+  var pol=window._hpPolicy;
+  if(pol&&Array.isArray(pol.deposit))pol.deposit.forEach(function(d){ lines.push(d.label+': '+d.text); });
+  if(!lines.length)return '';
+  return '<div class="bk-onsite-box"><div class="bk-onsite-ttl">На месте отдельно</div>'
+    +lines.map(function(l){return '<div>'+zbEsc(l)+'</div>';}).join('')
+    +'<div class="bk-onsite-note">Эти суммы объект берёт сам при заселении. В оплату на сайте они не входят.</div></div>';
+}
+function hpPolicyRender(pol){
+  var hpc=document.getElementById('hp-content'); if(!hpc)return;
+  var old=document.getElementById('hp-policy'); if(old)old.remove();
+  if(!pol)return;
+  var rows=[];
+  var row=function(k,v){ rows.push('<div class="hp-pol-row"><div class="hp-pol-k">'+zbEsc(k)+'</div><div class="hp-pol-v">'+v+'</div></div>'); };
+  if(pol.contactless)row('Заселение','бесконтактное');
+  if(Array.isArray(pol.deposit)){
+    if(!pol.deposit.length)row('Депозит','не требуется');
+    else pol.deposit.forEach(function(d){ row(d.label,zbEsc(d.text)); });
+  }
+  if(Array.isArray(pol.paid)&&pol.paid.length){
+    row('Оплачивается отдельно',pol.paid.map(function(x){return zbEsc(x.label)+' — '+zbEsc(x.text);}).join('<br>'));
+  }
+  if(pol.extra_info){
+    var t=String(pol.extra_info);
+    if(t.length>240){
+      row('Сведения от объекта','<span class="hp-pol-short">'+zbEsc(t.slice(0,220))+'… <button type="button" class="hp-pol-more" onclick="this.parentNode.style.display=\'none\';this.parentNode.nextSibling.style.display=\'inline\'">Показать полностью</button></span><span style="display:none">'+zbEsc(t)+'</span>');
+    } else row('Сведения от объекта',zbEsc(t));
+  }
+  if(!rows.length)return;
+  var b=document.createElement('div'); b.id='hp-policy'; b.className='hp-pol';
+  b.innerHTML='<div class="hp-pol-ttl">Условия проживания</div>'+rows.join('');
+  var anchor=hpc.querySelector('.hp-times')||hpc.querySelector('#hp-amen-sec')||hpc.querySelector('.hp-desc');
+  if(anchor)anchor.insertAdjacentElement('afterend',b); else hpc.appendChild(b);
+}
 function hpSumState(mode, label){
   var pn=document.getElementById('bk-pn'), tot=document.getElementById('bk-tot'), nn=document.getElementById('bk-nights');
   var btn=document.querySelector('.bk-box .btn-pay');
   if(mode!=='ok'){
     if(pn)pn.textContent='—';
     if(tot)tot.textContent='—';
+    var _on=document.getElementById('bk-onsite'); if(_on)_on.style.display='none';
     if(nn)nn.textContent=(typeof getNights==='function'?getNights():'') || '—';
   }
   if(btn){
@@ -6236,6 +6349,12 @@ function ostPickRate(i){
   if(pn)pn.textContent=Math.round(rt.price_byn/Math.max(1,n))+' BYN';
   if(nn)nn.textContent=n;
   if(tot)tot.textContent=rt.price_byn+' BYN';
+  // 02.10: сборы, которые объект берёт на месте — под итогом, мелко
+  try{
+    var sum=document.getElementById('bk-sum'), on=document.getElementById('bk-onsite'), ft=ostFeesTxt(rt);
+    if(sum&&ft){ if(!on){ on=document.createElement('div'); on.id='bk-onsite'; on.className='bk-onsite'; sum.appendChild(on); } on.textContent='+ на месте: '+ft; on.style.display=''; }
+    else if(on){ on.style.display='none'; }
+  }catch(e){}
   // подсветка выбранной строки
   document.querySelectorAll('.ost-rate-row').forEach(function(el){
     el.classList.toggle('picked',String(el.dataset.idx)===String(i));
@@ -6306,7 +6425,7 @@ function ostRenderForm(oldPrice){
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
     '+bkArrivalHTML((window._hpTimes&&_hpTimes.ci)||'')+'\
-    <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div></div>\
+    <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div>'+ostOnsiteFormHTML(rt)+'</div>\
     '+payGridHTML()+'\
     <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
     <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>';
