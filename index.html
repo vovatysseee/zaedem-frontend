@@ -549,6 +549,9 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
 .sr-card{display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--sand3);cursor:pointer;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.04);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .sr-card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,.10);border-color:#d8d3c8}
 .serp-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sr-cl-split{grid-column:1/-1;border-top:1.5px dashed var(--sand3);padding:14px 4px 2px;margin-top:4px}
+.sr-cl-split-t{font-size:14px;font-weight:700;color:var(--ink)}
+.sr-cl-split-s{font-size:12.5px;color:var(--muted);margin-top:3px}
 @media(max-width:1100px){.serp-cards-grid{grid-template-columns:1fr}}
 .sr-card.map-hover{border-color:var(--green);box-shadow:0 0 0 2px var(--green)}
 .sr-img{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;background:var(--sand2)}
@@ -1883,6 +1886,7 @@ function aiNormNeeds(p,q){
 }
 function aiApplyAndGo(p,q,el){
   aiNormNeeds(p,q);
+  try{ zbAiChipsReset(); }catch(e){}
   // Санитизация: строки «null/undefined/-» от ИИ = города нет (и никаких null на экране)
   if(p.city&&/^(null|undefined|none|нет|-+)$/i.test(String(p.city).trim()))p.city=null;
   if(p.city)p.city=String(p.city).trim();
@@ -1959,6 +1963,7 @@ function aiApplyAndGo(p,q,el){
 // обновляем ИИ-фильтры/чипы/снимок и пересортировываем то, что уже на экране.
 function aiApplyRefinements(p,el){
   aiNormNeeds(p,window._lastAiQuery||'');
+  try{ zbAiChipsReset(); }catch(e){}
   window._aiCategory=p.category||null;
   window._aiPriceMax=p.priceMax||0;
   window._aiAmenities=p.amenities||[];
@@ -3045,6 +3050,8 @@ function serpRender(){
   if(pr)priceMax=parseInt(pr.value)||0;
   var wantExcl=document.getElementById('sft-excl')&&document.getElementById('sft-excl').classList.contains('active');
   var wantFree=document.getElementById('sft-free')&&document.getElementById('sft-free').classList.contains('active');
+  // 03.10: «бесконтактное заселение» и «без депозита» из ИИ-поиска — тот же фильтр, что кнопки над выдачей
+  try{ zbAiNeedsToChips(); }catch(e){}
   // 02.10: признаки из данных Островка. Объекты без сведений (неизвестно) в эти фильтры не попадают:
   // «без депозита» обещаем, только если объект сам так указал.
   var wantCl=document.getElementById('sft-contactless')&&document.getElementById('sft-contactless').classList.contains('active');
@@ -3182,6 +3189,18 @@ function serpRender(){
     } else window._serpFavFloated=0;
   }catch(e){ window._serpFavFloated=0; }
 
+  // 03.10: ИИ-пожелание «бесконтактное заселение» — объекты с отметкой первыми (значок на карточке),
+  // остальные ниже, под разделителем. Жёстко не отсеиваем: отметка есть не у всех, кому подходит.
+  // Кнопка «Бесконтактное заселение» над выдачей остаётся жёстким фильтром.
+  var clSplit=-1;
+  if(!wantCl&&!window._catMode&&zbAiWantsCl()){
+    var _cl=[],_ncl=[];
+    list.forEach(function(h){ (h.contactless===true?_cl:_ncl).push(h); });
+    list=_cl.concat(_ncl);
+    clSplit=_cl.length;
+  }
+  window._serpClSplit=clSplit;
+
   var meta=document.getElementById('serp-meta');
   if(meta){
     if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
@@ -3191,6 +3210,8 @@ function serpRender(){
     else if(window._aiRelaxed==='cl')meta.textContent='С бесконтактным заселением на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='nd')meta.textContent='Без депозита на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
+    else if(clSplit>0&&clSplit<list.length)meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length)+' · с бесконтактным заселением — '+clSplit+', они первые';
+    else if(clSplit===0)meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length)+' · с отметкой «бесконтактное заселение» на эти даты нет — уточните у объекта';
     else meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length);
   }
   // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
@@ -3311,7 +3332,10 @@ function serpRender(){
      cardEls.push(c);
   });
   cards.innerHTML='';
-  cardEls.forEach(function(c){cards.appendChild(c);});
+  cardEls.forEach(function(c,i){
+    if(clSplit>0&&i===clSplit&&clSplit<list.length)cards.appendChild(zbClSplitEl(list.length-clSplit));
+    cards.appendChild(c);
+  });
   try{ if(window.ZB_FAV_ENABLED&&typeof zbFavMarkCards==='function')zbFavMarkCards(); }catch(e){}
 
   // Кнопка «Показать ещё»
@@ -3335,11 +3359,48 @@ function serpRender(){
   serpRenderPins(list);
 }
 var PAGE_SIZE=15;
+// 03.10: просил ли гость в ИИ-поиске бесконтактное заселение
+function zbAiWantsCl(){
+  var a=window._aiAmenities; if(!a||!a.length)return false;
+  return a.some(function(x){ return String(x).toLowerCase().trim()==='бесконтактное заселение'; });
+}
+// Разделитель между отмеченными «бесконтактное заселение» и остальными
+function zbClSplitEl(n){
+  var d=document.createElement('div');
+  d.className='sr-cl-split';
+  d.innerHTML='<div class="sr-cl-split-t">Ещё '+n+' '+zbObjWord(n)+' — бесконтактное заселение не указано</div>'
+    +'<div class="sr-cl-split-s">Можно уточнить на странице объекта: кнопка «💬 Спросить об объекте»</div>';
+  return d;
+}
+// 03.10: ИИ-пожелание «без депозита» работает как кнопка над выдачей — жёсткий отсев.
+// Депозит известен почти у всех объектов, и это про деньги: просили «без депозита» —
+// объекты с залогом не показываем. Кнопка горит и снимается одним нажатием; если на даты
+// таких нет — выдача покажет все варианты с пометкой (как при ручной кнопке).
+// «Бесконтактное заселение» сюда НЕ входит: признак есть далеко не у всех объектов, поэтому
+// ИИ ставит отмеченные первыми, а остальные показывает ниже под разделителем (см. serpRender).
+var ZB_AI_CHIP={'без депозита':'sft-nodep'};
+function zbAiNeedsToChips(){
+  var a=window._aiAmenities; if(!a||!a.length)return;
+  if(document.body.classList.contains('cat-mode'))return;   // в каталоге без дат этих кнопок нет
+  var moved=false;
+  for(var i=a.length-1;i>=0;i--){
+    var id=ZB_AI_CHIP[String(a[i]).toLowerCase().trim()];
+    var el=id&&document.getElementById(id);
+    if(el){ el.classList.add('active'); el.dataset.ai='1'; a.splice(i,1); moved=true; }
+  }
+  if(moved){ try{ serpRenderAiChips(); }catch(e){} }
+}
+// Новый ИИ-разбор или ручной поиск — кнопки, включённые прошлым ИИ-запросом, гасим
+// (включённые руками не трогаем). Иначе «бесконтактное» из прошлого запроса тихо
+// фильтровало бы следующий.
+function zbAiChipsReset(){
+  for(var k in ZB_AI_CHIP){ var e=document.getElementById(ZB_AI_CHIP[k]); if(e&&e.dataset.ai==='1'){ e.classList.remove('active'); delete e.dataset.ai; } }
+}
 function serpClearFilters(){
   ['flt-hotel','flt-guest','flt-apart'].forEach(function(id){var e=document.getElementById(id);if(e)e.checked=true;});
   var pr=document.querySelector('input[name="price-r"][value="0"]');if(pr)pr.checked=true;
   var sr=document.querySelector('input[name="stars-r"][value="0"]');if(sr)sr.checked=true;
-  ['sft-bfast','sft-free','sft-excl','sft-contactless','sft-nodep'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  ['sft-bfast','sft-free','sft-excl','sft-contactless','sft-nodep'].forEach(function(id){var e=document.getElementById(id);if(e){e.classList.remove('active');if(e.dataset)delete e.dataset.ai;}});
   // ГЛАВНОЕ: снимаем и ИИ-фильтры (цена/категория/удобства/«без …»). Раньше они оставались
   // висеть после клика → выдача так и была пустой → кнопка выглядела «некликабельной».
   window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
@@ -3487,7 +3548,8 @@ function serpToggleDD(ddId,e){
 }
 function serpToggleTag(tagId){
   var el=document.getElementById(tagId);
-  if(el){el.classList.toggle('active');window._serpReset=true;serpRender();}
+  if(el){ if(el.dataset&&el.dataset.ai)delete el.dataset.ai; // нажали руками — кнопка теперь «своя»
+    el.classList.toggle('active');window._serpReset=true;serpRender();}
 }
 function serpFilterChange(kind){
   // ТОЧЕЧНЫЙ сброс ИИ-фильтров: ручная правка снимает ТОЛЬКО пересекающийся ИИ-фильтр
@@ -5607,6 +5669,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   // capOpen — точка входа с капсулы
   window.capOpen=function(){
     window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; window._aiAvoid=null; // ручной поиск — сбрасываем AI-фильтры
+    try{ zbAiChipsReset(); }catch(e){}
     if(window.innerWidth<=768){
       capSheetOpen();
     } else {
@@ -6217,8 +6280,11 @@ async function loadOstReviews(h){
     revRender();
   }catch(e){}
 }
-async function loadOstRates(h){
+// 03.10: opt.fresh — мимо кэша цен (после «номер заняли»); opt.tries — повторы, когда Островок занят
+async function loadOstRates(h,opt){
+  opt=opt||{};
   try{ loadOstReviews(h); }catch(e){} // отзывы едут параллельно, страницу не тормозят
+  var seq=window._hpSeq=(window._hpSeq||0)+1;
   var box=document.getElementById('ost-rates');
   if(!box)return;
   _ostRates=[];_ostSel=null;
@@ -6233,8 +6299,25 @@ async function loadOstRates(h){
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
     var kids=(window._capState&&window._capState.childAges)||[];
     window._bookChildAges=Array.isArray(kids)?kids.slice():[];  // возрасты, под которые посчитаны цены — их и покажем в брони
-    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid||h.ostId,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY})});
+    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid||h.ostId,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY,fresh:!!opt.fresh})});
     var data=await r.json();
+    // 03.10: Островок ограничил запросы цен (лимит в минуту) — не ошибка, а пауза: ждём и повторяем сами.
+    // Повтор отменяется, если гость сменил даты, гостей или ушёл со страницы объекта.
+    if(r.status===503&&data&&data.busy){
+      var tries=(opt.tries||0)+1;
+      if(tries<=3){
+        var wait=Math.min(30,Math.max(5,parseInt(data.retry_after,10)||15));
+        box.innerHTML='<div class="ost-loading"><div class="ost-spin"></div><div>Уточняем актуальные цены — повторим через '+wait+' с…</div></div>';
+        try{ hpSumState('loading','Уточняем цены…'); }catch(e){}
+        var hk=h.hid||h.ostId;
+        setTimeout(function(){
+          if(window._hpSeq!==seq||!document.getElementById('ost-rates'))return;
+          if(curHotel&&(curHotel.hid||curHotel.ostId)!==hk)return;
+          loadOstRates(h,{fresh:opt.fresh,tries:tries});
+        },wait*1000);
+        return;
+      }
+    }
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
     window._ostBookEnabled=!!data.booking_enabled;
     // Подтягиваем полное описание и реальные удобства на страницу отеля
@@ -6421,7 +6504,7 @@ async function ostSelectRate(i){
     _ostSel={rate:data.rate,roomName:cleanRoomName(rt.room_name||data.rate.room_name||'Номер'),images:rt.images||[],roomAmenities:rt.room_amenities||[]};
     ostRenderForm(data.rate.price_byn!==rt.price_byn?rt.price_byn:null);
   }catch(e){
-    document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">😔</div><div style="font-weight:700;margin-bottom:8px">Номер только что заняли</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Или цена обновилась. Покажем актуальные варианты.</div><button onclick="closeBK();loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные номера</button></div>';
+    document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">😔</div><div style="font-weight:700;margin-bottom:8px">Номер только что заняли</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">Или цена обновилась. Покажем актуальные варианты.</div><button onclick="closeBK();loadOstRates(curHotel,{fresh:true})" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные номера</button></div>';
   }
 }
 
@@ -6574,7 +6657,7 @@ async function ostConfirm(){
 }
 
 function ostFail(e){
-  document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Не получилось</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">'+e.message+'</div><button onclick="closeBK();loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
+  document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Не получилось</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">'+e.message+'</div><button onclick="closeBK();loadOstRates(curHotel,{fresh:true})" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
 }
 
 </script>
