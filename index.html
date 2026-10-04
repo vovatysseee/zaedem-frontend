@@ -39,7 +39,12 @@
 <style>
 :root{--ink:#0c0c0c;--ink2:#1e1e1e;--muted:#6b6b6b;--hint:#aaa;--sand:#faf8f4;--sand2:#f2efe8;--sand3:#e5e0d5;--green:#1a5c38;--green2:#246b44;--lime:#c9f135;--lime2:#d9f554;--green4:#0d3320;--white:#fff;--sh:0 2px 16px rgba(0,0,0,.06);--sh2:0 12px 40px rgba(0,0,0,.12)}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
+/* 04.10 (порция 21): убрано scroll-behavior:smooth. Из-за него каждая смена экрана
+   (открыть объект, назад в выдачу, на главную) не ставила страницу на место, а прокручивала её
+   на глазах: объект открывался посередине и ехал вверх, выдача «ехала» к карточке, главная —
+   к верху. Отсюда рывки и «дёргается». Где плавность нужна (лого внизу, избранное), она задана
+   у самой кнопки (behavior:'smooth') и работает как раньше. */
+html{overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* iOS сам увеличивает страницу, когда фокус попадает в поле со шрифтом меньше 16px.
    Раньше это лечилось щипком обратно, но зум страницы теперь запрещён — и человек
    оставался в увеличенном виде без выхода. Поднимаем шрифт полей на сенсорных
@@ -389,8 +394,11 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .overlay.open .modal{animation:zbModalIn .34s cubic-bezier(.16,1,.3,1) both}
 .hotel-page.open{animation:zbPageIn .34s cubic-bezier(.16,1,.3,1)}
 .serp-page.open{animation:zbPageIn .3s ease}
-/* 04.10: после жеста «Назад» экран появляется сразу, без проявления (иначе — вспышка светлого фона) */
-html.zb-histnav .hotel-page.open,html.zb-histnav .serp-page.open{animation:none}
+/* 04.10 (порция 21): экран, на который вернулись «назад» (кнопкой, жестом, кнопкой браузера), появляется
+   сразу, без проявления из прозрачного — иначе мигает фон. Метка zb-back снимается, когда экран закрывается,
+   поэтому сама анимация не «перезапускается» (в порции 19 метка снималась через 0,6 с на открытом экране —
+   и экран мигал второй раз). Вперёд (новый поиск, открыть объект) — проявление как раньше. */
+.serp-page.open.zb-back,.hotel-page.open.zb-back{animation:none}
 /* 04.10: приложение на iPhone — страница не «пружинит» вбок */
 html.zb-ios-app,html.zb-ios-app body{overscroll-behavior-x:none}
 .sr-card{animation:zbCardIn .35s ease both}
@@ -2365,7 +2373,9 @@ function openHotel(id){
   // документ схлопывается до высоты экрана и браузер обнуляет прокрутку.
   // Снимок, сделанный после этого, всегда возвращал ноль — отсюда «список с начала».
   try{
+    window._serpDomAtOpen=null;   // 04.10 (порция 21): какой отрисовкой выдачи уходим в объект
     var _spNow=document.getElementById('serp-page');
+    if(_spNow&&_spNow.classList.contains('open')) window._serpDomAtOpen=window._serpDomV||0;
     if((_spNow&&_spNow.classList.contains('open'))||window._catMode){
       window._serpScrollY=window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0;
       window._serpShownSaved=window._serpShown||0;
@@ -2569,7 +2579,7 @@ function zbWriteHash(view, hotelId){
       // Раньше «Назад» сам дописывал шаг: на телефоне копились пустые шаги — следующий жест
       // показывал белый экран и возвращал на тот же экран, а после кнопки «← Назад» жест
       // открывал объект заново.
-      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav && !ZB_IOS_APP){  // 04.10: на iPhone-приложении — без новых шагов
+      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav && !ZB_APP_NO_SWIPE){  // 04.10: ZB_APP_NO_SWIPE — выключатель свайпа в приложении на iPhone
         // в шаге помним, какой экран под ним, — по этому «Назад» понимает, можно ли просто шагнуть назад
         history.pushState({zb:_curKind, from:_prevKind, doc:ZB_DOC_ID},'',_newUrl);   // сменили тип экрана — новый шаг
       } else {
@@ -2595,6 +2605,10 @@ var ZB_DOC_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 // Safari-вкладка, Android и компьютер работают по-прежнему (там «назад» — кнопка самого браузера).
 var ZB_IOS_APP = (function(){ try{ return window.navigator.standalone===true; }catch(e){ return false; } })();
 try{ if(ZB_IOS_APP) document.documentElement.classList.add('zb-ios-app'); }catch(e){}
+// 04.10 (порция 21): мигание при «назад» было от самого сайта (см. .zb-back, serpReopen, scroll-behavior),
+// его убрали — свайп в приложении на iPhone снова работает, как в Safari. true — снова выключить свайп
+// только в приложении с иконки (как в порции 20).
+var ZB_APP_NO_SWIPE = false && ZB_IOS_APP;
 function zbHistState(kind){
   // При замене шага: окно поверх (бронь, документ, фото) — не трогаем; свой шаг — тип экрана новый,
   // «что под ним» прежнее (нижний шаг не менялся). Чужой/старый шаг — без пометки, как раньше.
@@ -2840,6 +2854,8 @@ function zbHotelBackUI(){
     window._hpDatesDirty=false; window._hpGuestsDirty=false;
     ['hp-cal-pop','hp-guests-pop'].forEach(function(id){ var e=document.getElementById(id); if(e)e.classList.remove('open'); });
   }catch(e){}
+  // 04.10 (порция 21): если выдачу/каталог придётся открыть заново (поменяли даты, F5) — тоже без проявления
+  try{ var _spb=document.getElementById('serp-page'); if(_spb&&!_spb.classList.contains('open'))_spb.classList.add('zb-back'); }catch(e){}
   {
     hp.classList.remove('open'); document.body.classList.remove('on-hotel');
     // ПРИШЛИ ИЗ ИЗБРАННОГО → возвращаемся в избранное (не на поиск и не на главную)
@@ -3135,6 +3151,7 @@ function aiChipRemove(type,idx){
   try{ serpRender(); }catch(e){}
 }
 function serpRender(){
+  window._serpDomV=(window._serpDomV||0)+1;   // 04.10 (порция 21): номер отрисовки — «Назад» проверяет, менялся ли список
   try{ serpRenderAiChips(); }catch(e){}
   // фильтры
   var cats=[];
@@ -4235,14 +4252,20 @@ function serpReopen(){
     var mp=document.getElementById('main-page'); if(mp)mp.style.display='none';
     var hp=document.getElementById('hotel-page'); if(hp)hp.classList.remove('open');
     document.body.classList.remove('on-hotel');
+    sp.classList.add('zb-back');   // 04.10 (порция 21): вернулись назад — выдача сразу, без проявления
+    try{ sp.style.visibility=''; }catch(e){}
     sp.classList.add('open'); document.body.classList.add('on-serp');
     var nav=document.querySelector('nav'); if(nav)nav.style.display='none';
     window._serpReset=false;
     if(window._serpShownSaved)window._serpShown=Math.max(window._serpShown||0,window._serpShownSaved);
-    // Список рисуется с нуля страницы, поэтому виден рывок «сверху вниз».
-    // Прячем на время расстановки — человек увидит уже готовый экран на нужном месте.
-    try{ sp.style.visibility='hidden'; }catch(e){}
-    serpRender();
+    // 04.10 (порция 21): список, который был на экране до открытия объекта, так и лежит на странице —
+    // объект его только прятал. Если с тех пор его не перерисовывали, показываем как есть.
+    // Раньше список строился заново: фото в карточках на миг становились пустыми (светлые
+    // квадраты), а пока прокрутка «доезжала» до карточки, выдачу прятали — мигал фон.
+    var _intact = window._serpDomAtOpen!=null && window._serpDomAtOpen===window._serpDomV
+                  && document.querySelectorAll('#serp-cards .sr-card').length>0;
+    if(!_intact) serpRender();
+    else { try{ if(typeof zbFavMarkCards==='function')zbFavMarkCards(); }catch(e){} }   // сердечки — если в объекте добавили в избранное
     try{ if(typeof zbSaveRoute==='function')zbSaveRoute('serp'); }catch(e){}
     var y=window._serpScrollY||0;
     // Два кадра: даём разложить карточки, иначе прокрутка упрётся в ещё короткую страницу.
@@ -4255,18 +4278,18 @@ function serpReopen(){
     // из списка — она открывалась бы посередине, на описании.
     zbCancelScrollRestore();
     function _put(){ try{ if(sp.classList.contains('open'))window.scrollTo(0,y); }catch(e){} }
+    // 04.10 (порция 21): позиция ставится сразу, в этом же кадре — страница уже нужной высоты.
+    // Повторы ниже срабатывают, только если позиция всё-таки не совпала.
+    _put();
     requestAnimationFrame(function(){requestAnimationFrame(function(){
       if(!sp.classList.contains('open'))return;
-      _put();
-      try{ sp.style.visibility=''; }catch(e){}
+      if(Math.abs((window.scrollY||0)-y)>4)_put();
       [120,300,600].forEach(function(ms){
         window._zbScrollTimers.push(setTimeout(function(){
           try{ if(sp.classList.contains('open')&&Math.abs((window.scrollY||0)-y)>4)_put(); }catch(e){}
         },ms));
       });
     });});
-    // страховка: что бы ни случилось выше, экран не должен остаться невидимым
-    setTimeout(function(){ try{ sp.style.visibility=''; }catch(e){} },600);
     return true;
   }catch(e){ return false; }
 }
@@ -5247,7 +5270,7 @@ function zbLegalLoad(url){
   var stack=[];                       // окна, для которых в истории есть наша запись
   window._zbOvSkip=0;
   function push(id){
-    if(typeof ZB_IOS_APP!=='undefined'&&ZB_IOS_APP) return;   // 04.10: приложение на iPhone — окна закрываются крестиком/тапом, без шага истории
+    if(typeof ZB_APP_NO_SWIPE!=='undefined'&&ZB_APP_NO_SWIPE) return;   // 04.10: выключатель свайпа в приложении на iPhone (сейчас выключен — окна закрываются и жестом)
     if(stack.indexOf(id)>=0) return; try{ history.pushState({zbOv:id},'',location.href); stack.push(id); }catch(e){} }
   function uiClosed(id){
     var i=stack.lastIndexOf(id); if(i<0) return;
@@ -6124,14 +6147,11 @@ function ddcChG(t,d){
 // Теперь синхронизируем историю браузера с внутренней навигацией через hash. ──
 // 04.10: сюда же приходят кнопка «← Назад» на объекте и стрелка выдачи (через history.back()).
 window.addEventListener('popstate', function(){
-  var own=!!window._zbBackPending; window._zbBackPending=0;   // наша кнопка или жест/кнопка браузера
+  window._zbBackPending=0;                                   // «Назад» пришёл (наша кнопка, жест или кнопка браузера)
   var _was=window._zbHistNav; window._zbHistNav=true;         // 04.10: пока разворачиваем «Назад» — новых шагов не добавляем
   try{
     var h = location.hash || '';
     window._zbLastHash = h;                                   // 04.10: текущий шаг — тот, куда пришли
-    // 04.10: жест — экран без «проявления»: на телефоне жест уже показал снимок экрана,
-    // а проявление из прозрачного давало вспышку светлого фона («белый экран»)
-    if(!own) zbNoAnim();
     var onHotel = document.body.classList.contains('on-hotel');
     var onSerp  = document.body.classList.contains('on-serp');
     // 04.10: С ОБЪЕКТА назад (на выдачу, в каталог, на главную, в избранное) — тот же путь, что
@@ -6151,12 +6171,14 @@ window.addEventListener('popstate', function(){
   }catch(e){}
   finally{ window._zbHistNav=_was; zbEnsureScreen(); }
 });
-function zbNoAnim(){
-  try{
-    var de=document.documentElement; de.classList.add('zb-histnav');
-    clearTimeout(window._zbNoAnimT); window._zbNoAnimT=setTimeout(function(){ de.classList.remove('zb-histnav'); },600);
-  }catch(e){}
-}
+// 04.10 (порция 21): метка «вернулись назад» снимается, как только экран закрылся (см. CSS .zb-back)
+(function(){
+  ['serp-page','hotel-page'].forEach(function(id){
+    var el=document.getElementById(id); if(!el||!window.MutationObserver) return;
+    new MutationObserver(function(){ if(!el.classList.contains('open')&&el.classList.contains('zb-back')) el.classList.remove('zb-back'); })
+      .observe(el,{attributes:true,attributeFilter:['class']});
+  });
+})();
 loadHotels().then(function(){
   var _byLink=false;
   try{ _byLink=zbOpenFromHash(); }catch(e){}
