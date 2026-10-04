@@ -389,6 +389,8 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .overlay.open .modal{animation:zbModalIn .34s cubic-bezier(.16,1,.3,1) both}
 .hotel-page.open{animation:zbPageIn .34s cubic-bezier(.16,1,.3,1)}
 .serp-page.open{animation:zbPageIn .3s ease}
+/* 04.10: после жеста «Назад» экран появляется сразу, без проявления (иначе — вспышка светлого фона) */
+html.zb-histnav .hotel-page.open,html.zb-histnav .serp-page.open{animation:none}
 .sr-card{animation:zbCardIn .35s ease both}
 #g-img{transition:opacity .28s ease}
 .sr-card:nth-child(1){animation-delay:.03s}.sr-card:nth-child(2){animation-delay:.07s}.sr-card:nth-child(3){animation-delay:.11s}.sr-card:nth-child(4){animation-delay:.15s}.sr-card:nth-child(5){animation-delay:.19s}.sr-card:nth-child(6){animation-delay:.23s}.sr-card:nth-child(7){animation-delay:.27s}.sr-card:nth-child(8){animation-delay:.31s}.sr-card:nth-child(9){animation-delay:.35s}.sr-card:nth-child(10){animation-delay:.39s}
@@ -2561,17 +2563,80 @@ function zbWriteHash(view, hotelId){
       var _newUrl = location.pathname + location.search + h;
       var _prevHash = window._zbLastHash || '';
       var _prevKind = _prevHash.slice(0,3), _curKind = h.slice(0,3); // '#s=','#h=','#c='
-      if(_prevKind !== _curKind && !window._zbRestoringRoute){
-        history.pushState(null,'',_newUrl);   // сменили тип экрана — новый шаг
+      // 04.10: пока идёт «Назад» (жест, кнопка) — новых шагов не добавляем, только заменяем текущий.
+      // Раньше «Назад» сам дописывал шаг: на телефоне копились пустые шаги — следующий жест
+      // показывал белый экран и возвращал на тот же экран, а после кнопки «← Назад» жест
+      // открывал объект заново.
+      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav){
+        // в шаге помним, какой экран под ним, — по этому «Назад» понимает, можно ли просто шагнуть назад
+        history.pushState({zb:_curKind, from:_prevKind, doc:ZB_DOC_ID},'',_newUrl);   // сменили тип экрана — новый шаг
       } else {
-        history.replaceState(null,'',_newUrl); // тот же экран — заменяем
+        history.replaceState(zbHistState(_curKind),'',_newUrl); // тот же экран — заменяем
       }
       window._zbLastHash = h;
     }
     else { zbClearHash(); window._zbLastHash=''; }
   }catch(e){}
 }
-function zbClearHash(){ try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); window._zbLastHash=''; }catch(e){} }
+function zbClearHash(){ try{ if(location.hash) history.replaceState(zbHistState(''),'',location.pathname+location.search); window._zbLastHash=''; }catch(e){} }
+
+// ═ «НАЗАД» НА ТЕЛЕФОНЕ: КНОПКА И ЖЕСТ — ОДИН ПУТЬ (04.10) ═
+// Шаг истории, который добавил сайт, помнит свой экран (zb), экран под ним (from) и загрузку
+// страницы (doc). Кнопка «← Назад» на объекте и стрелка в выдаче, если под текущим шагом
+// ровно тот экран, куда они ведут, делают history.back() — как жест. Экран меняет обработчик
+// popstate, тот же, что и для жеста. Иначе (открыли по ссылке, после F5) — как раньше, но без нового шага.
+var ZB_DOC_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+function zbHistState(kind){
+  // При замене шага: окно поверх (бронь, документ, фото) — не трогаем; свой шаг — тип экрана новый,
+  // «что под ним» прежнее (нижний шаг не менялся). Чужой/старый шаг — без пометки, как раньше.
+  try{
+    var s=history.state;
+    if(s&&s.zbOv) return s;
+    if(s&&typeof s.from==='string') return {zb:kind, from:s.from, doc:s.doc};
+  }catch(e){}
+  return null;
+}
+function zbHistNavRun(fn){
+  var was=window._zbHistNav; window._zbHistNav=true;
+  try{ fn(); } finally { window._zbHistNav=was; }
+}
+// true → ушли назад по истории, экран поменяет popstate. false → вызывающий меняет экран сам.
+function zbBackByHistory(target, fallback){
+  try{
+    var s=history.state;
+    if(!s||s.zbOv||s.doc!==ZB_DOC_ID||typeof s.from!=='string') return false;
+    if(s.from!==target||s.zb===target) return false;
+    var t0=Date.now(); window._zbBackPending=t0;
+    var href0=location.href;
+    history.back();
+    // страховка: если браузер не шагнул назад — меняем экран сами, как раньше
+    setTimeout(function(){
+      if(window._zbBackPending!==t0) return;
+      window._zbBackPending=0;
+      if(location.href===href0&&typeof fallback==='function') zbHistNavRun(fallback);
+    },900);
+    return true;
+  }catch(e){ return false; }
+}
+// Куда ведёт «Назад» с объекта — тем же правилом, что и zbHotelBackUI ниже
+function zbHotelBackTarget(){
+  if(window._fromFav) return '';
+  if(window._catMode) return '#c=';
+  if(window._fromSerp) return ((window._capState||{}).city) ? '#s=' : '';
+  return '';
+}
+// Если «Назад» оставил без экрана (ни главной, ни выдачи, ни объекта) — на главную, а не пустая страница
+function zbEnsureScreen(){
+  try{
+    var b=document.body.classList, de=document.documentElement.classList;
+    if(de.contains('zb-restoring')) return;
+    var mp=document.getElementById('main-page'), fav=document.getElementById('fav-page');
+    if(b.contains('on-hotel')||b.contains('on-serp')) return;
+    if(mp&&mp.style.display!=='none') return;
+    if(fav&&fav.classList.contains('open')) return;
+    goHomeReset(); window.scrollTo(0,0); try{fitHeroTitleDeferred();}catch(e){}
+  }catch(e){}
+}
 // Открытие по ссылке. true → hash обработан (восстановление из sessionStorage пропускаем).
 function zbOpenFromHash(){
   var raw=location.hash||''; if(raw.length<4)return false;
@@ -2738,9 +2803,35 @@ function goHomeReset(){
 
 function goBack(){
   var hp=document.getElementById('hotel-page');
-  var nav=document.querySelector('nav');
   // НАЗАД ИЗ ОТЕЛЯ — вернуться туда, откуда пришли
   if(hp && hp.classList.contains('open')){
+    // 04.10: окно поверх (фото, бронь) только что закрылось и ещё убирает свой шаг истории — ждём его
+    if(window._zbOvSkip>0){ setTimeout(goBack,250); return; }
+    // второй тап, пока первый «Назад» ещё в пути, — не уводим на два шага
+    if(window._zbBackPending&&Date.now()-window._zbBackPending<1500) return;
+    // 04.10: под объектом в истории ровно тот экран, куда ведёт «Назад», — шагаем назад, как жест.
+    // Раньше кнопка дописывала новый шаг: после неё жест «Назад» снова открывал объект.
+    if(zbBackByHistory(zbHotelBackTarget(), zbHotelBackUI)) return;
+    zbHistNavRun(zbHotelBackUI); zbEnsureScreen();
+    return;
+  }
+  // ЛОГОТИП из выдачи/каталога/главной → на главную (с плашкой, пустым поиском)
+  goHomeReset();
+  window.scrollTo(0,0); fitHeroTitleDeferred();
+}
+// Экран «назад с объекта» (04.10: вынесено из goBack без изменений — его же зовёт жест «Назад», popstate)
+function zbHotelBackUI(){
+  var hp=document.getElementById('hotel-page');
+  var nav=document.querySelector('nav');
+  if(!hp||!hp.classList.contains('open')) return;
+  // 04.10: календарь/гости в объекте открыты и не применены — просто закрываем.
+  // Раньше после «Назад» срабатывало «применить даты»: адрес снова становился адресом объекта,
+  // и F5 или следующий жест возвращали в объект.
+  try{
+    window._hpDatesDirty=false; window._hpGuestsDirty=false;
+    ['hp-cal-pop','hp-guests-pop'].forEach(function(id){ var e=document.getElementById(id); if(e)e.classList.remove('open'); });
+  }catch(e){}
+  {
     hp.classList.remove('open'); document.body.classList.remove('on-hotel');
     // ПРИШЛИ ИЗ ИЗБРАННОГО → возвращаемся в избранное (не на поиск и не на главную)
     if(window._fromFav){
@@ -2769,9 +2860,6 @@ function goBack(){
     }
     window.scrollTo(0,0); fitHeroTitleDeferred(); return;
   }
-  // ЛОГОТИП из выдачи/каталога/главной → на главную (с плашкой, пустым поиском)
-  goHomeReset();
-  window.scrollTo(0,0); fitHeroTitleDeferred();
 }
 var serpMapOpen = false;
 
@@ -4240,8 +4328,12 @@ function serpOpen(){
 function serpBackBtn(){
   // Если открыта карта (мобайл) — сначала закрываем карту, возвращаем к списку
   if(serpMapOpen){ serpMapToggle(); return; }
-  // Иначе — на главную
-  serpClose();
+  // Иначе — на главную.
+  // 04.10: если выдача открыта с главной — шагом назад по истории, как жест. Раньше стрелка
+  // заменяла шаг выдачи главной, и следующий жест «Назад» на главной ничего не делал.
+  if(window._zbBackPending&&Date.now()-window._zbBackPending<1500) return;
+  if(zbBackByHistory('', serpClose)) return;
+  zbHistNavRun(serpClose);
 }
 function serpClose(){
   serpMapOpen=false;
@@ -5154,11 +5246,13 @@ function zbLegalLoad(url){
   function closeById(id){
     if(id==='legal'){ closeLegal(); }
     else if(id==='bk'){ var m=document.getElementById('bk-modal'); if(m) m.classList.remove('open'); }
+    else if(id==='gal'){ try{ closeGal(); }catch(e){} }        // 04.10: просмотр фото
+    else if(id==='map'){ try{ closeHotelMap(); }catch(e){} }   // 04.10: карта объекта
   }
   // Регистрируется РАНЬШЕ обработчика маршрутов сайта и перехватывает «Назад», пока открыто окно
   window.addEventListener('popstate',function(e){
-    if(window._zbOvSkip>0){ window._zbOvSkip--; e.stopImmediatePropagation(); return; }
-    if(stack.length){ var id=stack.pop(); closeById(id); e.stopImmediatePropagation(); }
+    if(window._zbOvSkip>0){ window._zbOvSkip--; window._zbBackPending=0; e.stopImmediatePropagation(); return; }
+    if(stack.length){ var id=stack.pop(); closeById(id); window._zbBackPending=0; e.stopImmediatePropagation(); }
   });
   function watch(id, el, isOpen){
     if(!el||el._zbOvW) return; el._zbOvW=true;
@@ -5173,11 +5267,19 @@ function zbLegalLoad(url){
     watch('bk', document.getElementById('bk-modal'), function(el){ return el.classList.contains('open'); });
     var lo=document.getElementById('legal-ov');
     if(lo) watch('legal', lo, function(el){ return el.style.display!=='none'&&el.style.display!==''; });
+    // 04.10: просмотр фото и карта объекта — тоже окна: жест «Назад» закрывает их, а не уводит с объекта
+    // (раньше объект за фото закрывался, а фото оставались висеть поверх выдачи)
+    watch('gal', document.getElementById('gal-ov'), function(el){ return el.classList.contains('open'); });
+    var mo=document.getElementById('hmap-ov');
+    if(mo) watch('map', mo, function(el){ return el.classList.contains('open'); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',hook); else hook();
   // окно документа создаётся при первом открытии — подцепляем его тогда же
   var _ol=openLegal;
   openLegal=function(url){ _ol(url); hook(); var lo=document.getElementById('legal-ov'); if(lo&&lo.style.display==='flex'&&stack.indexOf('legal')<0) push('legal'); };
+  // карта объекта тоже создаётся при первом открытии
+  var _om=openHotelMap;
+  openHotelMap=function(){ _om.apply(this,arguments); hook(); var mo=document.getElementById('hmap-ov'); if(mo&&mo.classList.contains('open')&&stack.indexOf('map')<0) push('map'); };
 })();
 function galNav(d){gIdx=(gIdx+d+gPhotos.length)%gPhotos.length;showG()}
 function showG(){var src=(gPhotos[gIdx]||'');var im=document.getElementById('g-img');try{zbGalReset();}catch(e){}if(im){im.style.opacity='.3';im.src=src;requestAnimationFrame(function(){im.style.opacity='1'});}document.getElementById('g-cnt').textContent=(gIdx+1)+' / '+gPhotos.length;document.getElementById('g-dots').innerHTML=gPhotos.map((_,i)=>`<div class="g-dot${i===gIdx?' on':''}" onclick="gIdx=${i};showG()"></div>`).join('')}
@@ -5266,10 +5368,20 @@ function zbGalClamp(){
 // В галерее не вмешиваемся — там свой зум на transform и свой двойной тап.
 (function(){
   function inGal(t){ try{ return !!(t&&t.closest&&t.closest('#gal-ov')); }catch(e){ return false; } }
-  var lt=0;
+  var lt=0, sx=0, sy=0, moved=false;
+  // 04.10: прокрутка — не тап. Раньше конец прокрутки тоже засчитывался как «первый тап», и тап
+  // сразу после неё гасился как двойной: например, «← Назад» на объекте, только что докрутив
+  // до верха, срабатывала со второго раза.
+  document.addEventListener('touchstart',function(e){
+    var t=e.touches&&e.touches[0]; if(t){ sx=t.clientX; sy=t.clientY; } moved=false;
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    var t=e.touches&&e.touches[0]; if(t&&(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10)) moved=true;
+  },{passive:true});
   document.addEventListener('touchend',function(e){
     if(inGal(e.target))return;
     if(e.touches&&e.touches.length)return;          // палец ещё на экране — не двойной тап
+    if(moved){ lt=0; return; }                      // это была прокрутка/жест, а не тап
     var now=Date.now();
     if(now-lt<320){ e.preventDefault(); }
     lt=now;
@@ -5999,34 +6111,41 @@ function ddcChG(t,d){
 
 // ── Браузерный/свайп «Назад» на мобильном: раньше уводил СО ВСЕГО САЙТА (popstate не слушался).
 // Теперь синхронизируем историю браузера с внутренней навигацией через hash. ──
+// 04.10: сюда же приходят кнопка «← Назад» на объекте и стрелка выдачи (через history.back()).
 window.addEventListener('popstate', function(){
+  var own=!!window._zbBackPending; window._zbBackPending=0;   // наша кнопка или жест/кнопка браузера
+  var _was=window._zbHistNav; window._zbHistNav=true;         // 04.10: пока разворачиваем «Назад» — новых шагов не добавляем
   try{
     var h = location.hash || '';
+    window._zbLastHash = h;                                   // 04.10: текущий шаг — тот, куда пришли
+    // 04.10: жест — экран без «проявления»: на телефоне жест уже показал снимок экрана,
+    // а проявление из прозрачного давало вспышку светлого фона («белый экран»)
+    if(!own) zbNoAnim();
     var onHotel = document.body.classList.contains('on-hotel');
     var onSerp  = document.body.classList.contains('on-serp');
+    // 04.10: С ОБЪЕКТА назад (на выдачу, в каталог, на главную, в избранное) — тот же путь, что
+    // и кнопка «← Назад», с её запасными путями. Раньше здесь был свой, урезанный: из избранного
+    // уводил на главную, а если выдачу нельзя было вернуть как была — мог оставить пустой экран.
+    if(onHotel && !/^#h=/.test(h)){ zbHotelBackUI(); return; }
     // Пустой hash → пользователь ушёл в начало истории → на главную (мягкий сброс, без выхода с сайта)
     if(!h || h.length < 4){
-      if(onHotel || onSerp){ goHomeReset(); window.scrollTo(0,0); try{fitHeroTitleDeferred();}catch(e){} }
+      if(onSerp){ serpClose(); window.scrollTo(0,0); try{fitHeroTitleDeferred();}catch(e){} }  // 04.10: serpClose = прежний goHomeReset + закрыть карту выдачи
       return;
     }
     // Есть hash → восстановим состояние, которое он описывает (отель/выдача/каталог)
     var m = h.match(/^#(s|h|c)=/);
     if(!m) return;
-    // Если сейчас на отеле, а hash уже про выдачу/каталог (#s / #c) — это «назад из отеля»
-    if(onHotel && (m[1]==='s' || m[1]==='c')){
-      // Браузерный и свайповый «Назад» — тот же путь, что и кнопка в интерфейсе:
-      // сначала пробуем вернуть выдачу как была. Раньше здесь всегда шёл разбор hash,
-      // а он поднимает поиск заново — список начинался сначала.
-      if(typeof serpReopen==='function' && serpReopen()) return;
-      var hp=document.getElementById('hotel-page');
-      if(hp){ hp.classList.remove('open'); document.body.classList.remove('on-hotel'); }
-      try{ if(typeof zbOpenFromHash==='function') zbOpenFromHash(); }catch(e){}
-      window.scrollTo(0,0); return;
-    }
     // Прочие случаи — просто разворачиваем состояние из hash
     try{ if(typeof zbOpenFromHash==='function') zbOpenFromHash(); }catch(e){}
   }catch(e){}
+  finally{ window._zbHistNav=_was; zbEnsureScreen(); }
 });
+function zbNoAnim(){
+  try{
+    var de=document.documentElement; de.classList.add('zb-histnav');
+    clearTimeout(window._zbNoAnimT); window._zbNoAnimT=setTimeout(function(){ de.classList.remove('zb-histnav'); },600);
+  }catch(e){}
+}
 loadHotels().then(function(){
   var _byLink=false;
   try{ _byLink=zbOpenFromHash(); }catch(e){}
