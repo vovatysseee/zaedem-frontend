@@ -400,7 +400,7 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
    и экран мигал второй раз). Вперёд (новый поиск, открыть объект) — проявление как раньше. */
 .serp-page.open.zb-back,.hotel-page.open.zb-back{animation:none}
 /* 04.10: приложение на iPhone — страница не «пружинит» вбок */
-html.zb-ios-app,html.zb-ios-app body{overscroll-behavior-x:none}
+html.zb-ios-app,html.zb-ios-app body,html.zb-ios,html.zb-ios body{overscroll-behavior-x:none}   /* 04.10 (порция 22): на любом iPhone — не пружинит вбок при листании фото */
 .sr-card{animation:zbCardIn .35s ease both}
 #g-img{transition:opacity .28s ease}
 .sr-card:nth-child(1){animation-delay:.03s}.sr-card:nth-child(2){animation-delay:.07s}.sr-card:nth-child(3){animation-delay:.11s}.sr-card:nth-child(4){animation-delay:.15s}.sr-card:nth-child(5){animation-delay:.19s}.sr-card:nth-child(6){animation-delay:.23s}.sr-card:nth-child(7){animation-delay:.27s}.sr-card:nth-child(8){animation-delay:.31s}.sr-card:nth-child(9){animation-delay:.35s}.sr-card:nth-child(10){animation-delay:.39s}
@@ -2579,7 +2579,7 @@ function zbWriteHash(view, hotelId){
       // Раньше «Назад» сам дописывал шаг: на телефоне копились пустые шаги — следующий жест
       // показывал белый экран и возвращал на тот же экран, а после кнопки «← Назад» жест
       // открывал объект заново.
-      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav && !ZB_APP_NO_SWIPE){  // 04.10: ZB_APP_NO_SWIPE — выключатель свайпа в приложении на iPhone
+      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav && !ZB_APP_NO_SWIPE){  // 04.10 (порция 22): на iPhone/iPad — без новых шагов
         // в шаге помним, какой экран под ним, — по этому «Назад» понимает, можно ли просто шагнуть назад
         history.pushState({zb:_curKind, from:_prevKind, doc:ZB_DOC_ID},'',_newUrl);   // сменили тип экрана — новый шаг
       } else {
@@ -2605,10 +2605,23 @@ var ZB_DOC_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 // Safari-вкладка, Android и компьютер работают по-прежнему (там «назад» — кнопка самого браузера).
 var ZB_IOS_APP = (function(){ try{ return window.navigator.standalone===true; }catch(e){ return false; } })();
 try{ if(ZB_IOS_APP) document.documentElement.classList.add('zb-ios-app'); }catch(e){}
-// 04.10 (порция 21): мигание при «назад» было от самого сайта (см. .zb-back, serpReopen, scroll-behavior),
-// его убрали — свайп в приложении на iPhone снова работает, как в Safari. true — снова выключить свайп
-// только в приложении с иконки (как в порции 20).
-var ZB_APP_NO_SWIPE = false && ZB_IOS_APP;
+// 04.10 (порция 22): iPhone и iPad — ЛЮБОЙ браузер (Safari, Telegram, Instagram, Chrome) и приложение с иконки.
+// Во время свайпа «назад» iPhone сам рисует «снимок» прошлого экрана, и для экранов внутри сайта он
+// выходит белым или старым — мигает. Это рисует iPhone, поправить картинку сайт не может. Поэтому на
+// iPhone/iPad сайт не пишет шаги в историю (как в порции 20 для приложения): свайпу внутри сайта некуда
+// вести. Назад — кнопками «← Назад» и «←», окна — крестиком. Адрес в строке по-прежнему меняется
+// под экран: ссылкой можно поделиться, обновление страницы открывает тот же экран.
+// Android и компьютер — без изменений: там «назад» ведёт по сайту, без бликов (порция 21).
+var ZB_IOS = (function(){
+  try{
+    var ua=navigator.userAgent||'';
+    if(/iP(hone|ad|od)/.test(ua)) return true;                                  // iPhone, iPod, старый iPad; Chrome/Telegram/Instagram на iPhone — тоже
+    if(/Macintosh/.test(ua) && (navigator.maxTouchPoints||0)>1) return true;     // iPad с «полной версией» сайта
+    return window.navigator.standalone===true;                                   // приложение с иконки
+  }catch(e){ return false; }
+})();
+try{ if(ZB_IOS) document.documentElement.classList.add('zb-ios'); }catch(e){}
+var ZB_APP_NO_SWIPE = ZB_IOS;   // false — вернуть свайп на iPhone (как в порции 21)
 function zbHistState(kind){
   // При замене шага: окно поверх (бронь, документ, фото) — не трогаем; свой шаг — тип экрана новый,
   // «что под ним» прежнее (нижний шаг не менялся). Чужой/старый шаг — без пометки, как раньше.
@@ -5270,7 +5283,7 @@ function zbLegalLoad(url){
   var stack=[];                       // окна, для которых в истории есть наша запись
   window._zbOvSkip=0;
   function push(id){
-    if(typeof ZB_APP_NO_SWIPE!=='undefined'&&ZB_APP_NO_SWIPE) return;   // 04.10: выключатель свайпа в приложении на iPhone (сейчас выключен — окна закрываются и жестом)
+    if(typeof ZB_APP_NO_SWIPE!=='undefined'&&ZB_APP_NO_SWIPE) return;   // 04.10 (порция 22): на iPhone/iPad окна без шага истории — закрываются крестиком/тапом
     if(stack.indexOf(id)>=0) return; try{ history.pushState({zbOv:id},'',location.href); stack.push(id); }catch(e){} }
   function uiClosed(id){
     var i=stack.lastIndexOf(id); if(i<0) return;
@@ -5412,6 +5425,9 @@ function zbGalClamp(){
   document.addEventListener('touchmove',function(e){
     var t=e.touches&&e.touches[0]; if(t&&(Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10)) moved=true;
   },{passive:true});
+  // 04.10 (порция 22): касание отменено (iPhone забрал его на свой жест от края) — начинаем с чистого листа,
+  // чтобы следующий тап (например, по крестику) не посчитался «вторым»
+  document.addEventListener('touchcancel',function(){ lt=0; moved=false; },{passive:true});
   document.addEventListener('touchend',function(e){
     if(inGal(e.target))return;
     if(e.touches&&e.touches.length)return;          // палец ещё на экране — не двойной тап
