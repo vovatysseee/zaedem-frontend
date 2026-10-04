@@ -391,6 +391,8 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .serp-page.open{animation:zbPageIn .3s ease}
 /* 04.10: после жеста «Назад» экран появляется сразу, без проявления (иначе — вспышка светлого фона) */
 html.zb-histnav .hotel-page.open,html.zb-histnav .serp-page.open{animation:none}
+/* 04.10: приложение на iPhone — страница не «пружинит» вбок */
+html.zb-ios-app,html.zb-ios-app body{overscroll-behavior-x:none}
 .sr-card{animation:zbCardIn .35s ease both}
 #g-img{transition:opacity .28s ease}
 .sr-card:nth-child(1){animation-delay:.03s}.sr-card:nth-child(2){animation-delay:.07s}.sr-card:nth-child(3){animation-delay:.11s}.sr-card:nth-child(4){animation-delay:.15s}.sr-card:nth-child(5){animation-delay:.19s}.sr-card:nth-child(6){animation-delay:.23s}.sr-card:nth-child(7){animation-delay:.27s}.sr-card:nth-child(8){animation-delay:.31s}.sr-card:nth-child(9){animation-delay:.35s}.sr-card:nth-child(10){animation-delay:.39s}
@@ -2567,7 +2569,7 @@ function zbWriteHash(view, hotelId){
       // Раньше «Назад» сам дописывал шаг: на телефоне копились пустые шаги — следующий жест
       // показывал белый экран и возвращал на тот же экран, а после кнопки «← Назад» жест
       // открывал объект заново.
-      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav){
+      if(_prevKind !== _curKind && !window._zbRestoringRoute && !window._zbHistNav && !ZB_IOS_APP){  // 04.10: на iPhone-приложении — без новых шагов
         // в шаге помним, какой экран под ним, — по этому «Назад» понимает, можно ли просто шагнуть назад
         history.pushState({zb:_curKind, from:_prevKind, doc:ZB_DOC_ID},'',_newUrl);   // сменили тип экрана — новый шаг
       } else {
@@ -2586,6 +2588,13 @@ function zbClearHash(){ try{ if(location.hash) history.replaceState(zbHistState(
 // ровно тот экран, куда они ведут, делают history.back() — как жест. Экран меняет обработчик
 // popstate, тот же, что и для жеста. Иначе (открыли по ссылке, после F5) — как раньше, но без нового шага.
 var ZB_DOC_ID = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+// 04.10 (порция 20): приложение с иконки на iPhone — сайт НЕ добавляет шагов в историю браузера.
+// Системному свайпу «назад» от левого края некуда вести, и iPhone его просто не включает:
+// экраны больше не «скачут». Назад — кнопками «← Назад» на объекте и «←» в выдаче, как раньше.
+// navigator.standalone есть только у Safari на iPhone/iPad и true только в приложении с иконки:
+// Safari-вкладка, Android и компьютер работают по-прежнему (там «назад» — кнопка самого браузера).
+var ZB_IOS_APP = (function(){ try{ return window.navigator.standalone===true; }catch(e){ return false; } })();
+try{ if(ZB_IOS_APP) document.documentElement.classList.add('zb-ios-app'); }catch(e){}
 function zbHistState(kind){
   // При замене шага: окно поверх (бронь, документ, фото) — не трогаем; свой шаг — тип экрана новый,
   // «что под ним» прежнее (нижний шаг не менялся). Чужой/старый шаг — без пометки, как раньше.
@@ -5237,7 +5246,9 @@ function zbLegalLoad(url){
 (function(){
   var stack=[];                       // окна, для которых в истории есть наша запись
   window._zbOvSkip=0;
-  function push(id){ if(stack.indexOf(id)>=0) return; try{ history.pushState({zbOv:id},'',location.href); stack.push(id); }catch(e){} }
+  function push(id){
+    if(typeof ZB_IOS_APP!=='undefined'&&ZB_IOS_APP) return;   // 04.10: приложение на iPhone — окна закрываются крестиком/тапом, без шага истории
+    if(stack.indexOf(id)>=0) return; try{ history.pushState({zbOv:id},'',location.href); stack.push(id); }catch(e){} }
   function uiClosed(id){
     var i=stack.lastIndexOf(id); if(i<0) return;
     stack.splice(i,1);
