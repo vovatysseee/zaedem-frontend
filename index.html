@@ -56,6 +56,9 @@ html{overflow-x:hidden;touch-action:manipulation;-webkit-text-size-adjust:100%}
    Списки (select) не трогаем: барабан выбора страницу не увеличивает, а 16px ломал
    строку фильтров и списки возраста. Флажкам размер шрифта не нужен.
    Без !important: это обычное правило, конкретному полю можно задать своё. */
+/* 11.10: размер поля ИИ-поиска для мыши — здесь, до правила для тача ниже. Раньше 14.5px стоял
+   в атрибуте style и перебивал 16px на телефоне → iPhone увеличивал страницу при тапе в поле. */
+#ai-q{font-size:14.5px}
 @media (pointer:coarse){
   input[type=text],input[type=email],input[type=tel],input[type=number],
   input[type=password],input[type=search],input[type=url],input[type=date],
@@ -799,25 +802,45 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
       <!-- AI-подбор жилья (умный разбор фразы) -->
       <div id="ai-wrap" style="display:none;margin-bottom:12px">
         <style>
-          #ai-mic{position:absolute;right:52px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:transparent;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;color:#8a8a8a;transition:color .15s}
+          /* 11.10: поле ИИ-поиска стало многострочным (textarea): растёт под текст до 5 строк, дальше прокрутка
+             внутри. Кнопки ✕ 🎤 ✨ собраны справа у нижнего края — при росте поля не уезжают и не налезают на текст
+             (отступ справа под три кнопки). Одна строка — прежняя «таблетка» 48px, несколько — скругление 22px.
+             Размер шрифта здесь НЕ задаём: 14.5px для мыши и 16px для тача — в правилах в <head>. */
+          #ai-q{display:block;width:100%;box-sizing:border-box;margin:0;padding:14px 132px 14px 20px;border:none;border-radius:50px;line-height:20px;height:48px;min-height:48px;max-height:128px;resize:none;overflow-x:hidden;overflow-y:hidden;white-space:pre-wrap;overflow-wrap:break-word;font-family:inherit;box-shadow:0 2px 24px rgba(0,0,0,.22);outline:none;color:#111;background:#fff;-webkit-appearance:none;appearance:none}
+          #ai-q.ai-multi{border-radius:22px}
+          /* пустое поле: ✕ скрыта — отступ под две кнопки, подсказка в одну строку (на телефоне при 16px иначе переносится) */
+          #ai-q:placeholder-shown{padding-right:98px}
+          #ai-q::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#8a8a8a}
+          #ai-btns{position:absolute;right:6px;bottom:2px;height:44px;display:flex;align-items:center;gap:2px}
+          #ai-clear{width:30px;height:30px;border-radius:50%;background:#efefef;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;color:#666;padding:0;flex-shrink:0;transition:background .15s,color .15s}
+          #ai-clear:hover{background:#e2e2e2;color:#111}
+          #ai-miss{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+          #ai-miss button{font-family:inherit;font-size:12.5px;font-weight:700;color:#0F2D1D;background:#fff;border:none;border-radius:50px;padding:7px 13px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 6px rgba(0,0,0,.15)}
+          #ai-miss button:hover{background:#c9f135}
+          #ai-mic{position:relative;flex-shrink:0;width:40px;height:40px;border-radius:50%;background:transparent;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;color:#8a8a8a;transition:color .15s;padding:0}
           #ai-mic:hover{color:#0F2D1D}
           #ai-mic.rec{color:#e23b3b}
           #ai-mic.rec::before{content:"";position:absolute;inset:2px;border-radius:50%;border:2px solid rgba(226,59,59,.5);animation:aiPulse 1.1s ease-out infinite}
           @keyframes aiPulse{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.5);opacity:0}}
           @media(prefers-reduced-motion:reduce){#ai-mic.rec::before{animation:none}}
         </style>
-        <div style="position:relative">
-          <input id="ai-q" type="text" autocomplete="off" placeholder="✨ Опиши или скажи, что ищешь…" onkeydown="aiCancelAuto();if(event.key==='Enter'){event.preventDefault();aiSearch();}" style="width:100%;box-sizing:border-box;padding:16px 98px 16px 20px;border:none;border-radius:50px;font-size:14.5px;font-family:inherit;box-shadow:0 2px 24px rgba(0,0,0,.22);outline:none;color:#111">
-          <button id="ai-mic" onclick="aiVoice()" aria-label="Голосовой поиск" type="button">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0"/><path d="M12 17v4"/></svg>
-          </button>
-          <button onclick="aiSearch()" aria-label="Найти по описанию" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.2" stroke-linejoin="round" width="18" height="18"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
-          </button>
+        <div id="ai-box" style="position:relative">
+          <textarea id="ai-q" rows="1" autocomplete="off" enterkeyhint="search" placeholder="✨ Опиши или скажи, что ищешь…" onkeydown="aiCancelAuto();if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSearch();}" oninput="aiCancelAuto();aiQSync()"></textarea>
+          <div id="ai-btns">
+            <button id="ai-clear" onclick="aiClear()" aria-label="Очистить" type="button">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+            <button id="ai-mic" onclick="aiVoice()" aria-label="Голосовой поиск" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0012 0"/><path d="M12 17v4"/></svg>
+            </button>
+            <button onclick="aiSearch()" aria-label="Найти по описанию" style="width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#c9f135" stroke-width="2.2" stroke-linejoin="round" width="18" height="18"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
+            </button>
+          </div>
         </div>
         <div id="ai-understood" style="display:none;margin-top:8px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border-radius:12px;padding:8px 13px;backdrop-filter:blur(8px);text-align:left"></div>
         <div id="ai-last-pill" onclick="aiReplayLast()" style="display:none;margin-top:8px;cursor:pointer;font-size:12.5px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:50px;padding:7px 15px;backdrop-filter:blur(8px);max-width:100%;box-sizing:border-box;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
-        <div style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
+        <div id="ai-hint" style="text-align:center;margin-top:8px;font-size:11.5px;color:rgba(255,255,255,.7)">Напр.: «квартира в Минске на 4 с парковкой до 120»</div>
       </div>
       <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
@@ -1008,7 +1031,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
     <div class="ft-inner">
       <div class="ft-brand">
         <div class="ft-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="cursor:pointer">Заедем<em>.by</em></div>
-        <p class="ft-desc">Технологичный сервис бронирования жилья в Беларуси: отели, апартаменты и агроусадьбы. Умный поиск, цены в белорусских рублях, оплата онлайн.</p>
+        <p class="ft-desc">Белорусская платформа бронирования жилья. Умный поиск, цены в белорусских рублях, оплата онлайн.</p>
         <div class="ft-pay-block"><span id="ft-pay-icons"></span></div>
         <a href="payment.html" class="ft-secure"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Защищённая оплата картой · 3-D Secure</a>
       </div>
@@ -1473,18 +1496,54 @@ var AI_AMEN={'парков':'парковка','стоянк':'парковка'
 var AI_NUMWORD={'одного':1,'двое':2,'двоих':2,'вдвоем':2,'пара':2,'пары':2,'трое':3,'троих':3,'втроем':3,'четверо':4,'четверых':4,'вчетвером':4,'пятеро':5,'пятерых':5,'шестеро':6,'шестерых':6};
 // Голосовой ввод для AI-поиска (Web Speech API — без ключей; показываем 🎤 только если поддерживается)
 function aiCancelAuto(){ if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;} }
+// 11.10: поле ИИ-поиска — textarea. Высота под текст (до 5 строк, дальше прокрутка внутри),
+// скругление «таблетка»/22px и видимость ✕. Звать после любой записи в ai-q из кода (ввод/вставка
+// вызывают сами через oninput). Пока вкладка ИИ скрыта, высоту не мерим (scrollHeight=0) — пересчёт при показе.
+function aiQSync(){
+  var el=document.getElementById('ai-q'); if(!el)return;
+  var cl=document.getElementById('ai-clear'); if(cl)cl.style.display=el.value.length?'flex':'none';
+  if(!el.offsetParent||!el.value){ el.style.height=''; el.style.overflowY='hidden'; el.classList.toggle('ai-multi',el.value.indexOf('\n')>=0); return; } // пусто — всегда одна строка
+  el.style.height='auto';
+  var h=el.scrollHeight, max=128; // 5 строк по 20px + отступы 14+14
+  el.style.height=Math.min(h,max)+'px';
+  el.style.overflowY=h>max?'auto':'hidden';
+  el.classList.toggle('ai-multi',h>50);
+}
+window.addEventListener('resize',function(){ try{aiQSync();}catch(e){} }); // ширина меняет перенос строк
+// 11.10: ✕ в поле — очищает текст, плашку разбора и отменяет автозапуск после голоса
+function aiClear(){
+  var inp=document.getElementById('ai-q');
+  aiCancelAuto();
+  if(window._aiRec){ try{window._aiRec.abort();}catch(e){} } // запись идёт — останавливаем, иначе допишет снова
+  window._aiPending=null; window._aiPick=false;
+  if(inp){ inp.value=''; aiQSync(); try{inp.focus();}catch(e){} }
+  var el=document.getElementById('ai-understood'); if(el){ el.style.display='none'; el.innerHTML=''; el.onclick=null; }
+  aiHintReset();
+}
 function aiVoice(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR)return;
   var mic=document.getElementById('ai-mic'), inp=document.getElementById('ai-q');
   if(window._aiRec){ try{window._aiRec.stop();}catch(e){} return; }
   var rec; try{ rec=new SR(); }catch(e){ return; }
   window._aiRec=rec; rec.lang='ru-RU'; rec.interimResults=true; rec.maxAlternatives=1; rec.continuous=false;
-  aiCancelAuto(); if(mic)mic.classList.add('rec'); if(inp)inp.value='';
-  rec.onresult=function(e){ var t=''; for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript; if(inp)inp.value=t; };
-  rec.onerror=function(){ window._aiRec=null; if(mic)mic.classList.remove('rec'); };
+  // 11.10: голос ДОПИСЫВАЕТ к тому, что уже в поле (раньше поле стиралось). base — текст до записи;
+  // shown — что мы сами показали последним. Значение поля стало другим → человек печатает сам, его ввод не трогаем.
+  var base=inp?inp.value:'', sep=(base&&!/\s$/.test(base))?' ':'', shown=base, typed=false;
+  aiCancelAuto(); if(mic)mic.classList.add('rec');
+  rec.onresult=function(e){
+    if(!inp||typed)return;
+    if(inp.value!==shown){ typed=true; return; }
+    var t=''; for(var i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;
+    shown=base+(t?sep+t:''); inp.value=shown; aiQSync();
+  };
+  rec.onerror=function(){ if(window._aiRec===rec)window._aiRec=null; if(mic)mic.classList.remove('rec'); };
   rec.onend=function(){
-    window._aiRec=null; if(mic)mic.classList.remove('rec');
-    if(inp&&inp.value.trim()){ if(inp)inp.focus(); aiCancelAuto();
+    if(window._aiRec===rec)window._aiRec=null; if(mic)mic.classList.remove('rec');
+    if(inp&&!typed&&inp.value!==shown)typed=true;
+    if(typed)return; // 11.10: человек начал печатать во время записи — не мешаем: без автозапуска и без переноса курсора
+    if(inp&&inp.value.trim()&&inp.value!==base){ // 11.10: автозапуск — только если голос что-то добавил
+      try{ inp.focus(); var L=inp.value.length; inp.setSelectionRange(L,L); }catch(e){}
+      aiQSync(); inp.scrollTop=inp.scrollHeight; aiCancelAuto();
       window._aiVoiceT=setTimeout(function(){ aiSearch(); },1600); } // вариант Б: покажем, автозапуск если не трогаешь
   };
   try{ rec.start(); }catch(e){ window._aiRec=null; if(mic)mic.classList.remove('rec'); }
@@ -1527,8 +1586,10 @@ function switchSearch(mode,noFocus){
     try{ zbRenderAiLast(); }catch(e){}
     if(tA)tA.style.cssText=on;
     if(tN)tN.style.cssText=off;
+    try{ aiQSync(); }catch(e){} // 11.10: поле было скрыто — теперь видно, пересчитываем высоту под текст
     var q=document.getElementById('ai-q'); if(q&&!noFocus)setTimeout(function(){q.focus();},50);
   }else{
+    window._aiPick=false; // 11.10: ушли на обычный поиск — окна дат/гостей больше не «от ИИ»
     if(aiWrap)aiWrap.style.display='none'; if(cap)cap.style.display='flex';
     if(tN)tN.style.cssText=on;
     if(tA)tA.style.cssText=off;
@@ -1792,6 +1853,7 @@ function aiQuickRefine(q,el){
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
+  window._aiPending=null; window._aiPick=false; aiHintReset(); // 11.10: текст изменили и нажали поиск — обычный путь, отложенный разбор не нужен
   window._fromAI=true; window._lastAiQuery=q; window._searchOrigin='ai';
   var p=aiParse(q), el=document.getElementById('ai-understood');
   if(aiQuickRefine(q,el))return; // частое уточнение обработали сами — токены целы
@@ -1914,13 +1976,23 @@ function aiApplyAndGo(p,q,el){
   if(_miss.length){
     if(el){
       el.innerHTML='<span style="color:#FFD54F;font-size:16px;vertical-align:-2px">⚠</span> Уточните, пожалуйста: <b>'+_miss.join(', ')+'</b>. Например: «квартира в Минске 12–15 августа на двоих»';
+      // 11.10: под текстом — кнопки на каждое недостающее. Даты и гости выбираются в тех же окнах,
+      // что у основной строки «Куда едете?»; после выбора поиск продолжается без нового запроса к ИИ.
+      var _mb='<div id="ai-miss">';
+      if(!_datesOk)_mb+='<button type="button" onclick="aiMissPick(event,\'dates\')">📅 Выбрать даты</button>';
+      if(!_guestsOk)_mb+='<button type="button" onclick="aiMissPick(event,\'guests\')">👥 Гости</button>';
+      if(!p.city)_mb+='<button type="button" onclick="aiMissPick(event,\'city\')">📍 Город</button>';
+      el.innerHTML+=_mb+'</div>';
       el.style.display='block'; el.style.cursor='default'; el.onclick=null; el.title='';
       // плашка прозрачная как обычно, заметность даёт жёлтый значок и тонкая жёлтая рамка
       el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff';
       el.style.border='1px solid rgba(255,213,79,.6)';
     }
+    // 11.10: разбор (p, q) храним — кнопки выше дополнят его датами/гостями и продолжат поиск без ИИ
+    window._aiPending={p:p,q:q,needDates:!_datesOk,needGuests:!_guestsOk,needCity:!p.city,gotDates:false};
     return; // поиск не стартует, пока данные не корректны
   }
+  window._aiPending=null; window._aiPick=false; // 11.10: всё есть — отложенный разбор больше не нужен
   if(el){ el.style.background='rgba(255,255,255,.16)'; el.style.color='#fff'; el.style.border='none'; } // обычный разбор — стандартный вид
   window._capState=window._capState||{};
   if(p.city){ var sd=document.getElementById('s-dest'); if(sd)sd.value=p.city; window._capState.city=p.city; }
@@ -1970,6 +2042,68 @@ function aiApplyAndGo(p,q,el){
   if(!p.city)return;
   window._catMode=null;
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
+}
+// 11.10: кнопки «чего не хватает» в плашке ИИ-поиска (📅 даты / 👥 гости / 📍 город).
+// Даты и гости открываются в тех же окнах, что у строки «Куда едете?»: на телефоне — шторка cap-sheet
+// (шаг 2/3), на компьютере — календарь cap-dd-cal под полем ИИ. Флаг _aiPick = «окно открыто из ИИ»:
+// только тогда «Далее»/«Найти жильё» в этих окнах продолжают ИИ-поиск (aiPickNext/aiPickDone).
+// Любое обычное открытие окон (capOpen, capSheetOpen без флага) его снимает — обычный поиск как раньше.
+var AI_HINT0=null;
+function aiHintReset(){ var h=document.getElementById('ai-hint'); if(h&&AI_HINT0!==null){ h.textContent=AI_HINT0; h.style.color=''; } }
+function aiMissPick(ev,what){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); } // иначе этот же клик закроет только что открытое окно
+  var P=window._aiPending; if(!P)return;
+  aiCancelAuto();
+  if(what==='city'){
+    var inp=document.getElementById('ai-q'), h=document.getElementById('ai-hint');
+    if(h){ if(AI_HINT0===null)AI_HINT0=h.textContent; h.textContent='📍 Допишите город, например: «в Минске», «в Бресте», «в Гродно»'; h.style.color='#fff'; }
+    if(inp){ try{ inp.focus(); var L=inp.value.length; inp.setSelectionRange(L,L); inp.scrollTop=inp.scrollHeight; }catch(e){} }
+    return;
+  }
+  if(window.innerWidth<=768){
+    if(typeof capSheetOpen==='function')capSheetOpen(what==='dates'?2:3,true);
+  } else if(typeof window.zbOpenDeskPick==='function'){
+    window.zbOpenDeskPick(what==='guests');
+  }
+}
+// «Далее» после выбора дат. Гостей тоже не хватает — идём на шаг «Гости» как обычно (false).
+// Гости уже известны — закрываем окно и продолжаем ИИ-поиск с этими датами (true).
+function aiPickNext(){
+  var P=window._aiPending; if(!window._aiPick||!P)return false;
+  var cs=window._capState||{}; if(!(cs.din&&cs.dout))return false;
+  P.gotDates=true;
+  if(P.needGuests)return false;
+  aiPickClose(); aiPendingResume(false); return true;
+}
+// «Найти жильё» в окне гостей (или после дат) — продолжаем ИИ-поиск вместо обычного
+function aiPickDone(){
+  if(!window._aiPick||!window._aiPending)return false;
+  aiPickClose(); aiPendingResume(true); return true;
+}
+// Десктоп: календарь из ИИ закрыт кликом мимо, даты выбраны. На шаге дат — считаем их выбранными
+// и продолжаем (гостей не хватает — плашка покажет только 👥). На шаге гостей без «Найти» — гостей не берём.
+function aiPickOutside(datesStep){
+  var P=window._aiPending; window._aiPick=false; if(!P)return;
+  if(datesStep)P.gotDates=true;
+  if(P.gotDates)aiPendingResume(false);
+}
+function aiPickClose(){
+  window._aiPick=false;
+  var cal=document.getElementById('cap-dd-cal'); if(cal){ cal.style.display='none'; cal.style.top='-9999px'; }
+  try{ if(typeof capSheetClose==='function')capSheetClose(); }catch(e){}
+}
+// Дополняет сохранённый разбор выбранным в окне и вызывает aiApplyAndGo — без запроса к /api/ai/search.
+// Не хватает ещё чего-то — aiApplyAndGo снова покажет плашку с оставшимися кнопками.
+function aiPendingResume(withGuests){
+  var P=window._aiPending; if(!P)return;
+  var cs=window._capState||{}, p=P.p;
+  if(P.needDates&&P.gotDates&&cs.din&&cs.dout){ p._din=new Date(cs.din); p._dout=new Date(cs.dout); }
+  if(P.needGuests&&withGuests){
+    p.adults=parseInt(cs.adults)||2; p.kids=parseInt(cs.kids)||0;
+    p.childAges=(cs.childAges||[]).slice(0,p.kids);
+  }
+  window._aiPending=null; window._fromAI=true; window._searchOrigin='ai';
+  aiApplyAndGo(p,P.q,document.getElementById('ai-understood'));
 }
 // Уточнения GPT «наживую» в уже открытую выдачу: без нового поиска города —
 // обновляем ИИ-фильтры/чипы/снимок и пересортировываем то, что уже на экране.
@@ -2829,6 +2963,7 @@ function goHomeReset(){
   try{ zbSnapshotAiPill(); }catch(e){}               // 1б) снимок ИИ-поиска — тоже с учётом всех правок по пути
   try{ zbResetCapsule(); }catch(e){}                 // 2) потом капсула → «Куда едете?» (готова к новому)
   var aq=document.getElementById('ai-q'); if(aq)aq.value='';  // поле ИИ → пустое, готово к новому
+  try{ aiQSync(); aiHintReset(); }catch(e){} window._aiPending=null; window._aiPick=false; // 11.10: высота/✕ поля и недостроенный ИИ-поиск — тоже с нуля
   var au=document.getElementById('ai-understood'); if(au){au.style.display='none';au.innerHTML='';au.onclick=null;} // живой разбор → в плашку
   try{ zbRenderLast(); }catch(e){}                   // 3) показать плашку-памятку
   try{ zbRenderAiLast(); }catch(e){}                 // 3б) и плашку ИИ (видна только на табе ИИ)
@@ -5636,6 +5771,8 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
 
   // Позиционирование под капсулой (position:fixed — координаты от viewport)
   function getAnchor(){
+    // 11.10: окно открыто кнопкой из плашки ИИ-поиска — капсула скрыта, ставим окно под полем ИИ
+    if(window._aiPick){ var _aw=document.getElementById('ai-wrap'), _ab=document.getElementById('ai-box'); if(_aw&&_ab&&_aw.style.display==='block')return _ab; }
     // Если на SERP — позиционируем под pill, иначе под капсулой
     var serp=document.getElementById('serp-page');
     if(serp&&serp.classList.contains('open')){
@@ -5821,6 +5958,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
 
 
   window.ddcSearch=function(){
+    if(typeof aiPickDone==='function'&&aiPickDone())return; // 11.10: окно открыто из ИИ-поиска — продолжаем его
     var cal=document.getElementById('cap-dd-cal');if(cal)cal.style.display='none';
     if(ddcDin)dIn=ddcDin;if(ddcDout)dOut=ddcDout;
     var sd=document.getElementById('s-dest');if(sd&&csCity)sd.value=csCity;
@@ -5828,8 +5966,23 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     serpOpen();
   };
 
+  // 11.10: открыть календарь (или сразу шаг «Гости») по кнопке из плашки ИИ-поиска — то же окно, что у капсулы
+  window.zbOpenDeskPick=function(guests){
+    window._aiPick=true;
+    openDeskCal(null);
+    if(guests){
+      var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';
+      var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';
+      var sb=document.getElementById('ddc-search');if(sb)sb.style.display='block';
+      var dl=document.getElementById('ddc-dates-label');if(dl)dl.textContent=(ddcDin&&ddcDout)?ddcFmt(ddcDin)+' — '+ddcFmt(ddcDout):'';
+      window._capState=window._capState||{};window._capState.gDone=true;
+      if(typeof ddcSyncGuests==='function')ddcSyncGuests();
+    }
+  };
+
   // capOpen — точка входа с капсулы
   window.capOpen=function(){
+    window._aiPick=false; // 11.10: обычное открытие — окна работают на обычный поиск
     window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; window._aiAvoid=null; // ручной поиск — сбрасываем AI-фильтры
     try{ zbAiChipsReset(); }catch(e){}
     if(window.innerWidth<=768){
@@ -5871,15 +6024,19 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
         window._capState=window._capState||{};window._capState.din=ddcDin;window._capState.dout=ddcDout;
         if(typeof updCapDisplay==='function')try{updCapDisplay();}catch(_){}
         var _sp=document.getElementById('serp-page');
-        if(_sp&&_sp.classList.contains('open')&&typeof serpOpen==='function')serpOpen();
+        // 11.10: календарь открыт из ИИ-поиска — выбранные даты идут в него, а не в обычный поиск
+        if(window._aiPick&&window._aiPending&&typeof aiPickOutside==='function'){ var _cse=document.getElementById('ddc-cal-section'); aiPickOutside(!!(_cse&&_cse.style.display!=='none')); }
+        else if(_sp&&_sp.classList.contains('open')&&typeof serpOpen==='function')serpOpen();
       }
+      window._aiPick=false; // 11.10: окно закрыто — дальше оно снова для обычного поиска
     }
   });
 
   // ---- MOBILE SHEET ----
-  window.capSheetOpen=function(startStep){
+  window.capSheetOpen=function(startStep,fromAI){
     var sheet=document.getElementById('cap-sheet');
     if(!sheet)return;
+    window._aiPick=!!fromAI; // 11.10: true — открыто кнопкой из плашки ИИ-поиска (см. aiMissPick)
     // Синхронизируем шит с ТЕКУЩИМ поиском (правка с выдачи): раньше показывал старые/пустые
     // даты, а календарь открывался на текущем месяце вместо месяца заезда.
     try{
@@ -6041,6 +6198,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   };
 
   window.capSheetSearch=function(){
+    if(typeof aiPickDone==='function'&&aiPickDone())return; // 11.10: шторка открыта из ИИ-поиска — продолжаем его
     capSheetClose();
     var sd=document.getElementById('s-dest');if(sd&&csCity)sd.value=csCity;
     if(csDin)dIn=csDin;if(csDout)dOut=csDout;gCnt=csAdults;
@@ -6851,7 +7009,7 @@ function ostFail(e){
     </div>
     <div id="ddc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
     <div id="ddc-hint" style="font-size:12px;color:#aaa;text-align:center;margin-top:10px;min-height:16px">Выберите дату заезда</div>
-    <button id="ddc-next-btn" style="display:none;width:100%;margin-top:12px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer" onclick="(function(){var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';var s=document.getElementById('ddc-search');if(s)s.style.display='block';var dl=document.getElementById('ddc-dates-label');var h=document.getElementById('ddc-hint');if(dl&&h)dl.textContent=h.textContent;window._capState=window._capState||{};window._capState.gDone=true;if(typeof ddcSyncGuests==='function')ddcSyncGuests();if(typeof updCapDisplay==='function')updCapDisplay();})()">Далее</button>
+    <button id="ddc-next-btn" style="display:none;width:100%;margin-top:12px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer" onclick="if(typeof aiPickNext==='function'&&aiPickNext())return;(function(){var c=document.getElementById('ddc-cal-section');if(c)c.style.display='none';var g=document.getElementById('ddc-guests-section');if(g)g.style.display='block';var s=document.getElementById('ddc-search');if(s)s.style.display='block';var dl=document.getElementById('ddc-dates-label');var h=document.getElementById('ddc-hint');if(dl&&h)dl.textContent=h.textContent;window._capState=window._capState||{};window._capState.gDone=true;if(typeof ddcSyncGuests==='function')ddcSyncGuests();if(typeof updCapDisplay==='function')updCapDisplay();})()">Далее</button>
   </div>
   <!-- Гости — появляются после выбора дат -->
   <div id="ddc-guests-section" style="display:none">
@@ -6928,7 +7086,7 @@ function ostFail(e){
               </div>
               <div id="cs-cgrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>
               <div id="cs-chint" style="font-size:13px;color:#aaa;text-align:center;margin-top:16px;min-height:18px">Выберите дату заезда</div>
-              <button id="cs-next-btn" onclick="csStep(3)" style="display:none;width:100%;margin-top:18px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Далее</button>
+              <button id="cs-next-btn" onclick="if(typeof aiPickNext==='function'&&aiPickNext())return;csStep(3)" style="display:none;width:100%;margin-top:18px;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">Далее</button>
             </div>
           </div>
 
