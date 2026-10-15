@@ -655,11 +655,20 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
 .zb-res-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 4px;border-top:1px solid #f0f0f0;margin-top:4px}
 .zb-res-lbl{font-size:13px;font-weight:600;color:#111}
 .zb-res-sub{font-size:11px;color:#aaa}
-.zb-res-sel{max-width:58%;border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff;color:#111}
+/* 15.10: гражданство — поле с поиском по вводу вместо короткого select; список стран под строкой */
+.zb-res-inp{width:58%;max-width:200px;min-width:0;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff;color:#111;outline:none;text-overflow:ellipsis}
+.zb-res-inp:focus{border-color:#0F2D1D}
+.zb-res-list{margin:6px 0 2px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1.5px solid #eee;border-radius:10px;background:#fff}
+.zb-res-opt{padding:8px 12px;font-size:13.5px;color:#111;cursor:pointer;border-bottom:1px solid #f6f4f0}
+.zb-res-opt:hover,.zb-res-opt.hl{background:#f7f5f0}
+.zb-res-opt.cur{font-weight:700;color:#0F2D1D}
+.zb-res-sep{padding:6px 12px 4px;font-size:10.5px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px;background:#fbfaf7}
+.zb-res-none{padding:10px 12px;font-size:12.5px;color:#999}
+@media (max-width:768px){.zb-res-inp{font-size:16px}.zb-res-opt{padding:11px 12px;font-size:15px}}
 #cs-step3 .zb-res-row{padding:18px 0 4px}
 #cs-step3 .zb-res-lbl{font-size:16px}
 #cs-step3 .zb-res-sub{font-size:13px}
-#cs-step3 .zb-res-sel{font-size:16px;padding:9px 10px}
+#cs-step3 .zb-res-inp{font-size:16px;padding:9px 10px}
 .ost-cx-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
 .ost-cx-tbl td{padding:4px 0;border-top:1px solid rgba(0,0,0,.07);vertical-align:top}
 .ost-cx-tbl td:first-child{white-space:nowrap}
@@ -869,6 +878,9 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
       <div id="cap-main" onclick="capOpen()" style="display:flex;align-items:center;background:#fff;border-radius:50px;padding:6px 6px 6px 22px;box-shadow:0 2px 24px rgba(0,0,0,.22);cursor:pointer">
         <div style="flex:1;min-width:0">
           <div id="cap-top" style="font-size:14.5px;font-weight:600;color:#9a9a9a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Куда едете?</div>
+          <!-- 15.10: на компьютере город печатают прямо здесь, в строке «Куда едете?» (раньше — во втором поле «Введите город…» в панели под ней) -->
+          <input id="cap-city-inp" type="text" placeholder="Куда едете?" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Куда едете? Город" role="combobox" aria-autocomplete="list" aria-controls="cap-dd" aria-expanded="false"
+            style="display:none;width:100%;box-sizing:border-box;border:none;outline:none;background:transparent;padding:0;margin:0;font-family:inherit;font-size:14.5px;font-weight:600;color:#111;line-height:1.2">
           <div id="cap-bot" style="display:none;font-size:12px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Выберите даты · Количество гостей</div>
         </div>
         <button id="cap-search-btn" onclick="event.stopPropagation();capSearch()" style="width:44px;height:44px;border-radius:50%;background:#0F2D1D;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -1090,13 +1102,63 @@ const API = CFG.API;
 // 15.10: гражданство гостей выбирается в поиске (раньше всегда шло CFG.RESIDENCY='by').
 // Островок считает цену по гражданству, поэтому оно уходит в /search и /hp, а в форме
 // брони только показывается. Запоминаем на устройстве; нет записи или она битая — Беларусь.
-const ZB_COUNTRIES=[
-  ['by','Беларусь'],['ru','Россия'],['ua','Украина'],['kz','Казахстан'],['az','Азербайджан'],['am','Армения'],
-  ['ge','Грузия'],['uz','Узбекистан'],['kg','Киргизия'],['tj','Таджикистан'],['md','Молдова'],['lt','Литва'],
-  ['lv','Латвия'],['ee','Эстония'],['pl','Польша'],['de','Германия'],['tr','Турция'],['il','Израиль'],
-  ['cn','Китай'],['us','США'],['gb','Великобритания'],['fr','Франция'],['it','Италия'],['es','Испания'],
-  ['ae','ОАЭ'],['in','Индия']
-];
+// 15.10: что и почему — в списке было 26 стран, гость из другой страны не мог выбрать свою.
+// Теперь все коды ISO 3166-1 alpha-2 (249, тот же список, что normResidency у бэкенда).
+// Названия по-русски даёт браузер (Intl.DisplayNames); старый браузер — встроенные названия ниже.
+// Сверху — частые страны, дальше все по алфавиту. В Островок уходит код маленькими буквами, как раньше.
+var ZB_RES_FALLBACK=(
+  'ad:Андорра|ae:ОАЭ|af:Афганистан|ag:Антигуа и Барбуда|ai:Ангилья|al:Албания|am:Армения|ao:Ангола|'+
+  'aq:Антарктида|ar:Аргентина|as:Американское Самоа|at:Австрия|au:Австралия|aw:Аруба|ax:Аландские о-ва|az:Азербайджан|'+
+  'ba:Босния и Герцеговина|bb:Барбадос|bd:Бангладеш|be:Бельгия|bf:Буркина-Фасо|bg:Болгария|bh:Бахрейн|bi:Бурунди|'+
+  'bj:Бенин|bl:Сен-Бартелеми|bm:Бермудские о-ва|bn:Бруней|bo:Боливия|bq:Бонэйр, Синт-Эстатиус и Саба|br:Бразилия|bs:Багамы|'+
+  'bt:Бутан|bv:о-в Буве|bw:Ботсвана|by:Беларусь|bz:Белиз|ca:Канада|cc:Кокосовые о-ва|cd:Конго - Киншаса|'+
+  'cf:Центрально-Африканская Республика|cg:Конго - Браззавиль|ch:Швейцария|ci:Кот-д’Ивуар|ck:о-ва Кука|cl:Чили|cm:Камерун|cn:Китай|'+
+  'co:Колумбия|cr:Коста-Рика|cu:Куба|cv:Кабо-Верде|cw:Кюрасао|cx:о-в Рождества|cy:Кипр|cz:Чехия|'+
+  'de:Германия|dj:Джибути|dk:Дания|dm:Доминика|do:Доминиканская Республика|dz:Алжир|ec:Эквадор|ee:Эстония|'+
+  'eg:Египет|eh:Западная Сахара|er:Эритрея|es:Испания|et:Эфиопия|fi:Финляндия|fj:Фиджи|fk:Фолклендские о-ва|'+
+  'fm:Федеративные Штаты Микронезии|fo:Фарерские о-ва|fr:Франция|ga:Габон|gb:Великобритания|gd:Гренада|ge:Грузия|gf:Французская Гвиана|'+
+  'gg:Гернси|gh:Гана|gi:Гибралтар|gl:Гренландия|gm:Гамбия|gn:Гвинея|gp:Гваделупа|gq:Экваториальная Гвинея|'+
+  'gr:Греция|gs:Южная Георгия и Южные Сандвичевы о-ва|gt:Гватемала|gu:Гуам|gw:Гвинея-Бисау|gy:Гайана|hk:Гонконг (САР)|hm:о-ва Херд и Макдональд|'+
+  'hn:Гондурас|hr:Хорватия|ht:Гаити|hu:Венгрия|id:Индонезия|ie:Ирландия|il:Израиль|im:о-в Мэн|'+
+  'in:Индия|io:Британская территория в Индийском океане|iq:Ирак|ir:Иран|is:Исландия|it:Италия|je:Джерси|jm:Ямайка|'+
+  'jo:Иордания|jp:Япония|ke:Кения|kg:Киргизия|kh:Камбоджа|ki:Кирибати|km:Коморы|kn:Сент-Китс и Невис|'+
+  'kp:КНДР|kr:Республика Корея|kw:Кувейт|ky:о-ва Кайман|kz:Казахстан|la:Лаос|lb:Ливан|lc:Сент-Люсия|'+
+  'li:Лихтенштейн|lk:Шри-Ланка|lr:Либерия|ls:Лесото|lt:Литва|lu:Люксембург|lv:Латвия|ly:Ливия|'+
+  'ma:Марокко|mc:Монако|md:Молдова|me:Черногория|mf:Сен-Мартен|mg:Мадагаскар|mh:Маршалловы о-ва|mk:Северная Македония|'+
+  'ml:Мали|mm:Мьянма (Бирма)|mn:Монголия|mo:Макао (САР)|mp:Северные Марианские о-ва|mq:Мартиника|mr:Мавритания|ms:Монтсеррат|'+
+  'mt:Мальта|mu:Маврикий|mv:Мальдивы|mw:Малави|mx:Мексика|my:Малайзия|mz:Мозамбик|na:Намибия|'+
+  'nc:Новая Каледония|ne:Нигер|nf:о-в Норфолк|ng:Нигерия|ni:Никарагуа|nl:Нидерланды|no:Норвегия|np:Непал|'+
+  'nr:Науру|nu:Ниуэ|nz:Новая Зеландия|om:Оман|pa:Панама|pe:Перу|pf:Французская Полинезия|pg:Папуа — Новая Гвинея|'+
+  'ph:Филиппины|pk:Пакистан|pl:Польша|pm:Сен-Пьер и Микелон|pn:о-ва Питкэрн|pr:Пуэрто-Рико|ps:Палестинские территории|pt:Португалия|'+
+  'pw:Палау|py:Парагвай|qa:Катар|re:Реюньон|ro:Румыния|rs:Сербия|ru:Россия|rw:Руанда|'+
+  'sa:Саудовская Аравия|sb:Соломоновы о-ва|sc:Сейшельские о-ва|sd:Судан|se:Швеция|sg:Сингапур|sh:о-в Св. Елены|si:Словения|'+
+  'sj:Шпицберген и Ян-Майен|sk:Словакия|sl:Сьерра-Леоне|sm:Сан-Марино|sn:Сенегал|so:Сомали|sr:Суринам|ss:Южный Судан|'+
+  'st:Сан-Томе и Принсипи|sv:Сальвадор|sx:Синт-Мартен|sy:Сирия|sz:Эсватини|tc:Тёркс и Кайкос|td:Чад|tf:Французские Южные территории|'+
+  'tg:Того|th:Таиланд|tj:Таджикистан|tk:Токелау|tl:Восточный Тимор|tm:Туркменистан|tn:Тунис|to:Тонга|'+
+  'tr:Турция|tt:Тринидад и Тобаго|tv:Тувалу|tw:Тайвань|tz:Танзания|ua:Украина|ug:Уганда|um:Внешние малые о-ва (США)|'+
+  'us:Соединенные Штаты|uy:Уругвай|uz:Узбекистан|va:Ватикан|vc:Сент-Винсент и Гренадины|ve:Венесуэла|vg:Виргинские о-ва (Великобритания)|vi:Виргинские о-ва (США)|'+
+  'vn:Вьетнам|vu:Вануату|wf:Уоллис и Футуна|ws:Самоа|ye:Йемен|yt:Майотта|za:Южно-Африканская Республика|zm:Замбия|'+
+  'zw:Зимбабве|'+
+  '').split('|').filter(Boolean).map(function(x){ var i=x.indexOf(':'); return [x.slice(0,i),x.slice(i+1)]; });
+var ZB_RES_TOP=['by','ru','kz','ua','pl','lt','lv','uz','am','ge','az','kg','tj','md','de','cn'];
+// 15.10: «Кыргызстан» — как в списке частых стран (Intl называет «Киргизия»; по «кирг» тоже найдётся)
+var ZB_RES_NAME_FIX={kg:'Кыргызстан'};
+// 15.10: другие названия для поиска по вводу («сша», «англия», «киргизия»)
+var ZB_RES_ALIAS={us:'сша америка соединенные штаты',gb:'англия британия великобритания',ae:'оаэ эмираты',kg:'киргизия киргизстан кыргызстан',
+  kr:'южная корея корея',kp:'северная корея кндр',cz:'чехия чешская',nl:'голландия нидерланды',md:'молдавия молдова',by:'белоруссия беларусь',
+  ci:'кот дивуар',mk:'македония',sz:'свазиленд эсватини',mm:'бирма мьянма',tr:'турция турецкая',de:'германия фрг'};
+const ZB_COUNTRIES=(function(){
+  var dn=null; try{ if(typeof Intl!=='undefined'&&Intl.DisplayNames)dn=new Intl.DisplayNames(['ru'],{type:'region'}); }catch(e){ dn=null; }
+  var all=ZB_RES_FALLBACK.map(function(p){
+    var nm=''; try{ if(dn){ nm=dn.of(p[0].toUpperCase())||''; if(nm.toUpperCase()===p[0].toUpperCase())nm=''; } }catch(e){ nm=''; }
+    return [p[0], ZB_RES_NAME_FIX[p[0]]||nm||p[1]];
+  });
+  var byCode={}; all.forEach(function(c){ byCode[c[0]]=c; });
+  var top=ZB_RES_TOP.filter(function(c){ return byCode[c]; }).map(function(c){ return byCode[c]; });
+  var rest=all.filter(function(c){ return ZB_RES_TOP.indexOf(c[0])<0; });
+  try{ rest.sort(function(a,b){ return a[1].localeCompare(b[1],'ru'); }); }catch(e){ rest.sort(function(a,b){ return a[1]<b[1]?-1:a[1]>b[1]?1:0; }); }
+  return top.concat(rest);
+})();
 function zbResName(code){ for(var i=0;i<ZB_COUNTRIES.length;i++){ if(ZB_COUNTRIES[i][0]===code)return ZB_COUNTRIES[i][1]; } return ''; }
 function zbResidency(){
   var v=''; try{ v=String(localStorage.getItem('zb_residency')||'').toLowerCase(); }catch(e){}
@@ -1105,17 +1167,95 @@ function zbResidency(){
 function zbSetResidency(code){
   code=String(code||'').toLowerCase(); if(!zbResName(code))return;
   try{ localStorage.setItem('zb_residency',code); }catch(e){}
-  try{ document.querySelectorAll('select.zb-res-sel').forEach(function(s){ s.value=code; }); }catch(e){}
+  // 15.10: вместо select — поле с поиском; обновляем все такие поля на странице
+  try{ document.querySelectorAll('input.zb-res-inp').forEach(function(s){ s.value=zbResName(code); s.dataset.code=code; }); }catch(e){}
   // на странице объекта цены пересчитаются при закрытии окошка гостей, как при смене числа гостей
   try{ if(document.getElementById('hp-guests-pop'))window._hpGuestsDirty=true; }catch(e){}
 }
 // Компактная строка «Гражданство» для панелей гостей (главная, телефон, выдача, страница объекта)
+// 15.10: поле с поиском по вводу («узб» → Узбекистан) и списком под строкой (в потоке панели,
+// а не поверх — так его не обрезают окна с overflow:hidden).
 function zbResRowHTML(){
   var cur=zbResidency();
-  return '<div class="zb-res-row"><div><div class="zb-res-lbl">Гражданство</div><div class="zb-res-sub">цена зависит от него</div></div>'
-    +'<select class="zb-res-sel" aria-label="Гражданство гостей" onclick="event.stopPropagation()" onchange="zbSetResidency(this.value)">'
-    +ZB_COUNTRIES.map(function(c){ return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>'; }).join('')
-    +'</select></div>';
+  return '<div class="zb-res-wrap" onclick="event.stopPropagation()"><div class="zb-res-row"><div><div class="zb-res-lbl">Гражданство</div><div class="zb-res-sub">цена зависит от него</div></div>'
+    +'<input class="zb-res-inp" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="Гражданство гостей" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done"'
+    +' value="'+zbEsc(zbResName(cur))+'" data-code="'+cur+'" onfocus="zbResOpen(this)" onclick="zbResOpen(this)" oninput="zbResFilter(this)" onkeydown="zbResKey(event,this)" onblur="zbResBlur(this)">'
+    +'</div><div class="zb-res-list" role="listbox" aria-label="Страны" style="display:none"></div></div>';
+}
+function zbResNorm(s){ return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[’'`]/g,'').replace(/[-–—().,]/g,' ').replace(/\s+/g,' ').trim(); }
+// Подходящие страны: пусто — весь список (частые сверху); иначе сначала совпадение с начала слова, потом внутри
+function zbResMatches(q){
+  q=zbResNorm(q);
+  if(!q)return ZB_COUNTRIES.slice();
+  var a=[],b=[];
+  ZB_COUNTRIES.forEach(function(c){
+    var hay=zbResNorm(c[1]+' '+(ZB_RES_ALIAS[c[0]]||''));
+    if(q.length===2&&c[0]===q){ a.unshift(c); return; }
+    if(hay.indexOf(q)===0||hay.indexOf(' '+q)>=0)a.push(c);
+    else if(hay.indexOf(q)>=0)b.push(c);
+  });
+  return a.concat(b);
+}
+function zbResList(inp){ var w=inp&&inp.closest('.zb-res-wrap'); return w&&w.querySelector('.zb-res-list'); }
+function zbResRender(inp,q){
+  var box=zbResList(inp); if(!box)return;
+  var m=zbResMatches(q), cur=inp.dataset.code||zbResidency(), nq=zbResNorm(q), h='';
+  if(!m.length)h='<div class="zb-res-none">Ничего не нашли — проверьте написание</div>';
+  m.forEach(function(c,i){
+    if(!nq&&i===ZB_RES_TOP.length)h+='<div class="zb-res-sep">Все страны</div>';
+    h+='<div class="zb-res-opt'+(c[0]===cur?' cur':'')+(i===0&&nq?' hl':'')+'" role="option" data-code="'+c[0]+'" onmousedown="event.preventDefault()" onclick="zbResPick(this)">'+zbEsc(c[1])+'</div>';
+  });
+  box.innerHTML=h;
+}
+function zbResOpen(inp){
+  var box=zbResList(inp); if(!box)return;
+  if(box.style.display!=='none')return;
+  clearTimeout(inp._zbBlurT);
+  zbResRender(inp,'');
+  box.style.display='block'; inp.setAttribute('aria-expanded','true');
+  try{ inp.select(); }catch(e){}
+  // высота списка — сколько есть места до низа экрана (панели гостей бывают position:fixed)
+  try{
+    var r=box.getBoundingClientRect(), vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+    var av=Math.floor(vh-r.top-12); box.style.maxHeight=Math.max(150,Math.min(240,av))+'px';
+    if(av<150)inp.scrollIntoView({block:'start',behavior:'smooth'});
+    var c=box.querySelector('.zb-res-opt.cur'); if(c)box.scrollTop=Math.max(0,c.offsetTop-box.offsetTop-60);
+  }catch(e){}
+}
+function zbResFilter(inp){
+  var box=zbResList(inp); if(box&&box.style.display==='none'){ box.style.display='block'; inp.setAttribute('aria-expanded','true'); }
+  zbResRender(inp,inp.value); if(box)box.scrollTop=0;
+}
+function zbResClose(inp,restore){
+  var box=zbResList(inp); if(box){ box.style.display='none'; box.innerHTML=''; }
+  inp.setAttribute('aria-expanded','false');
+  if(restore)inp.value=zbResName(inp.dataset.code||zbResidency());
+}
+function zbResPick(opt){
+  var w=opt.closest('.zb-res-wrap'), inp=w&&w.querySelector('.zb-res-inp'); if(!inp)return;
+  zbSetResidency(opt.dataset.code);
+  inp.dataset.code=opt.dataset.code; inp.value=zbResName(opt.dataset.code);
+  zbResClose(inp,false);
+  try{ inp.blur(); }catch(e){}
+}
+function zbResBlur(inp){
+  // выбор пункта списка приходит щелчком после blur — даём ему сработать
+  clearTimeout(inp._zbBlurT);
+  inp._zbBlurT=setTimeout(function(){ if(document.activeElement!==inp)zbResClose(inp,true); },200);
+}
+function zbResKey(e,inp){
+  var box=zbResList(inp); if(!box)return;
+  if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); zbResClose(inp,true); try{inp.blur();}catch(_){} return; }
+  var opts=[].slice.call(box.querySelectorAll('.zb-res-opt'));
+  var i=opts.findIndex(function(o){ return o.classList.contains('hl'); });
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault(); if(box.style.display==='none'){ zbResOpen(inp); return; }
+    if(i>=0)opts[i].classList.remove('hl');
+    i=e.key==='ArrowDown'?Math.min(opts.length-1,i+1):Math.max(0,i-1);
+    if(opts[i]){ opts[i].classList.add('hl'); try{ opts[i].scrollIntoView({block:'nearest'}); }catch(_){} }
+    return;
+  }
+  if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); var o=opts[i>=0?i:0]; if(o&&zbResNorm(inp.value))zbResPick(o); else { zbResClose(inp,true); try{inp.blur();}catch(_){} } }
 }
 function zbResFill(){
   try{ document.querySelectorAll('.zb-res-slot').forEach(function(el){ el.innerHTML=zbResRowHTML(); }); }catch(e){}
@@ -1940,6 +2080,14 @@ function zbRunLast(){
 // Кнопка-лупа капсулы: запускает поиск по текущему состоянию (город/даты/гости)
 function capSearch(){
   window._fromAI=false; window._searchOrigin='normal';
+  // 15.10: город набран в строке «Куда едете?», но не выбран из подсказок — берём первую подсказку
+  try{
+    var _ci=document.getElementById('cap-city-inp');
+    if(_ci&&_ci.style.display!=='none'&&_ci.value.trim()&&typeof window.zbCityMatches==='function'){
+      var _cm=window.zbCityMatches(_ci.value);
+      if(_cm.length){ window._capState=window._capState||{}; window._capState.city=_cm[0].name; var _sd0=document.getElementById('s-dest'); if(_sd0)_sd0.value=_cm[0].name; try{ zbRememberCity(_cm[0].name); }catch(_){} }
+    }
+  }catch(e){}
   try{ zbPersistPills(); }catch(e){}
   try{
     var _sd=document.getElementById('s-dest');
@@ -1969,8 +2117,9 @@ function aiReplayLast(){
   try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
   window._aiCategory=R.category||null;
   window._aiPriceMax=R.priceMax||0;
-  window._aiAmenities=R.amenities||[];
+  window._aiAmenities=(R.amenities||[]).slice();
   window._aiAvoid=R.avoid||[];
+  window._aiStars=R.stars||0; window._aiMeal=R.meal||null; // 15.10
   window._aiArea=R.area||null;   // район/улица/метро с координатами — сортировка «что рядом»
   window._aiName=R.name||null;   // упомянутое название объекта — поднимаем его наверх
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
@@ -2018,6 +2167,26 @@ function aiQuickRefine(q,el){
   try{ if(document.getElementById('serp')&&document.getElementById('serp').style.display!=='none'){serpRender();} else {serpOpen();} }catch(e){}
   return true;
 }
+// 15.10: объединение списков пожеланий без повторов (без учёта регистра и «ё»)
+function aiUnion(a,b){
+  var out=[], seen={};
+  [].concat(Array.isArray(a)?a:[],Array.isArray(b)?b:[]).forEach(function(x){ var k=String(x||'').toLowerCase().replace(/ё/g,'е').trim(); if(k&&!seen[k]){ seen[k]=1; out.push(x); } });
+  return out;
+}
+// 15.10: ИИ иногда отвечает областью/районом («Минская область»). Островок тогда ищет по всей области —
+// это и «больше 500». Знакомый город — как есть; область/район — город фразы или город по названию области.
+function aiNormCity(c,localCity){
+  var cs=String(c||'').trim(); if(!cs)return localCity||null;
+  var n=cs.toLowerCase().replace(/ё/g,'е');
+  var list=(typeof ZB_CITY_LIST!=='undefined'?ZB_CITY_LIST:[]).concat(AI_CITIES);
+  for(var i=0;i<list.length;i++){ if(list[i].toLowerCase().replace(/ё/g,'е')===n)return list[i]; }
+  if(!/област|район|регион|(?:^|\s)обл\.?(?:\s|$)|р-н/.test(n))return cs; // другой город — ищем как назвал ИИ
+  if(localCity)return localCity;
+  var w=n.split(/\s+/)[0];
+  for(var j=0;j<AI_CITIES.length;j++){ var cn=AI_CITIES[j].toLowerCase().replace(/ё/g,'е'); var st=cn.slice(0,Math.max(4,cn.length-1)); if(w.indexOf(st)===0)return AI_CITIES[j]; }
+  return cs;
+}
+function zbMealLabel(m){ return {breakfast:'с завтраком',half:'полупансион',full:'полный пансион',all:'всё включено',any:'с питанием',none:'без питания'}[m]||String(m); }
 async function aiSearch(){
   if(window._aiVoiceT){clearTimeout(window._aiVoiceT);window._aiVoiceT=null;}
   var inp=document.getElementById('ai-q'); var q=inp?inp.value:''; if(!q||!q.trim())return;
@@ -2093,15 +2262,17 @@ async function aiSearch(){
         if(a.childAges.length<_ag0)a.kids=Math.max(a.childAges.length,parseInt(p.kids)||0,1); // дети названы, но без «лишних» возрастов-дат
       }
       var _prevCity=_localReady?String(p.city||''):null;
-      if(a.city)p.city=a.city;
+      if(a.city)p.city=aiNormCity(a.city,p.city); // 15.10: «Минская область» → Минск, а не поиск по всей области
       if(a.category)p.category=a.category;
       if(a.adults)p.adults=parseInt(a.adults)||p.adults;
       if(a.kids!=null){ var _gk=parseInt(a.kids)||0; if(_gk>0||!(parseInt(p.kids)>0))p.kids=_gk; } // ноль от GPT не стирает найденных локально детей
       if(Array.isArray(a.childAges)&&a.childAges.length)p.childAges=a.childAges;
       if(Array.isArray(p.childAges)&&p.childAges.length>(parseInt(p.kids)||0))p.kids=p.childAges.length; // возрастов больше, чем детей → детей столько, сколько возрастов
       if(a.priceMax)p.priceMax=a.priceMax;
-      if(Array.isArray(a.amenities)&&a.amenities.length)p.amenities=a.amenities;
-      if(Array.isArray(a.avoid)&&a.avoid.length)p.avoid=a.avoid;
+      // 15.10: удобства и «без …» — объединяем свои и ИИ. Раньше ответ ИИ ЗАМЕНЯЛ найденное на сайте, а бэкенд
+      // отдаёт ИИ только первые 300 знаков фразы — пожелания из хвоста длинной фразы терялись.
+      if(Array.isArray(a.amenities)&&a.amenities.length)p.amenities=aiUnion(p.amenities,a.amenities);
+      if(Array.isArray(a.avoid)&&a.avoid.length)p.avoid=aiUnion(p.avoid,a.avoid);
       if(a.din)p._din=new Date(a.din+'T00:00:00');
       if(a.dout)p._dout=new Date(a.dout+'T00:00:00');
       // ЛОКАЦИЯ ВНУТРИ ГОРОДА: район/улица/метро/ориентир. Бэк геокодирует (areaGeo с lat/lng);
@@ -2138,10 +2309,41 @@ async function aiSearch(){
 // 02.10: «без депозита» и «бесконтактное заселение» — пожелания из данных Островка.
 // GPT мог положить «депозит» в «без: …» (исключить удобство) — переносим в пожелания;
 // если GPT их потерял, а в запросе они были — возвращаем.
+// 15.10: звёзды, питание и бесплатная отмена — раньше их не разбирал ни сайт, ни ИИ (в ответе ИИ таких
+// полей нет), и «4 звезды с завтраком и бесплатной отменой» искало всё подряд. Разбираем из фразы сами.
+// stars — «от N★» (как кнопка «Звёзды» над выдачей); meal — 'breakfast' (завтрак или больше), 'half',
+// 'full', 'all', 'any' (любое питание), 'none' (без питания); freeCancel — кнопка «Бесплатная отмена».
+function aiParseExtras(q){
+  var t=' '+String(q||'').toLowerCase().replace(/ё/g,'е')+' ', r={};
+  var ms=t.match(/(?:^|[^\d.,])([1-5])\s*(?:-?\s*(?:х|ти|ех|ух|и)\s*)?(?:\*|★|звезд|зв\.)/);
+  if(ms)r.stars=+ms[1];
+  else { var mw=t.match(/(одно|двух|трех|четырех|пяти)\s*-?\s*звезд/); if(mw)r.stars={'одно':1,'двух':2,'трех':3,'четырех':4,'пяти':5}[mw[1]]; }
+  if(/все\s*включено|всё\s*включено|all\s*inclusive|олл?\s*инклюзив/.test(t))r.meal='all';
+  else if(/полный\s+пансион|трехразов|3-?х?\s*разов/.test(t))r.meal='full';
+  else if(/полупансион|двухразов|2-?х?\s*разов|завтрак\S*\s+и\s+ужин/.test(t))r.meal='half';
+  else if(/(?:без|не\s+нужен|не\s+надо)\s+(?:завтрак|питани)/.test(t))r.meal='none';
+  else if(/завтрак/.test(t))r.meal='breakfast';
+  else if(/с\s+питанием|питание\s+включ|включая\s+питание/.test(t))r.meal='any';
+  if(!/невозвратн/.test(t)&&/бесплатн\S*\s+отмен|отмен\S*\s+бесплатн|без\s+штраф|можно\s+отменить|с\s+возможностью\s+отмен|с\s+отменой/.test(t))r.freeCancel=true;
+  return r;
+}
 function aiNormNeeds(p,q){
   try{
     var t=' '+String(q||'').toLowerCase().replace(/ё/g,'е')+' ';
     var am=Array.isArray(p.amenities)?p.amenities.slice():[], av=Array.isArray(p.avoid)?p.avoid.slice():[];
+    // 15.10: звёзды/питание/отмена из фразы; и то же самое, если ИИ положил это в «удобства» или «без: …»
+    var ex=aiParseExtras(q);
+    var mealOf=function(x){ var e=aiParseExtras(x); return e.meal; };
+    am=am.filter(function(a){ var s0=String(a).toLowerCase();
+      var e=aiParseExtras(s0); if(e.stars&&!ex.stars)ex.stars=e.stars;
+      if(/завтрак|питани|пансион|включено/.test(s0)){ if(!ex.meal)ex.meal=mealOf(s0)||'breakfast'; return false; }
+      if(e.stars)return false;
+      if(/отмен/.test(s0)){ ex.freeCancel=true; return false; }
+      return true; });
+    av=av.filter(function(a){ if(/завтрак|питани/.test(String(a).toLowerCase())){ if(!ex.meal)ex.meal='none'; return false; } return true; });
+    if(ex.stars>=1&&ex.stars<=5)p.stars=ex.stars;
+    if(ex.meal)p.meal=ex.meal;
+    if(ex.freeCancel&&!am.some(function(a){ return String(a).toLowerCase()==='бесплатная отмена'; }))am.push('бесплатная отмена');
     var dep=false;
     av=av.filter(function(a){ if(/депозит|залог/i.test(String(a))){ dep=true; return false; } return true; });
     if(/без\s+(депозит|залог)/.test(t))dep=true;
@@ -2213,8 +2415,10 @@ function aiApplyAndGo(p,q,el){
   try{ dIn=din; dOut=dout; }catch(e){}
   try{ if(typeof gCnt!=='undefined')gCnt=parseInt(window._capState.adults)||2; }catch(e){} // страница отеля читает gCnt — иначе там старое число гостей
   window._aiPriceMax=p.priceMax||0;
-  window._aiAmenities=p.amenities||[];
+  window._aiAmenities=(p.amenities||[]).slice(); // 15.10: копия — кнопки над выдачей забирают из неё пункты, снимок ИИ не трогаем
   window._aiCategory=p.category||null;
+  window._aiStars=p.stars||0;     // 15.10: «4 звезды» → от 4★
+  window._aiMeal=p.meal||null;    // 15.10: «с завтраком», «всё включено»…
   // синхронизируем галочки категорий с выбором ИИ (чтобы UI отражал)
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
   window._aiAvoid=p.avoid||[];
@@ -2222,7 +2426,8 @@ function aiApplyAndGo(p,q,el){
   window._aiName=p.name||null;
   // СНИМОК разбора ИИ — чтобы повтор по плашке шёл ИЗ ПАМЯТИ, без нового запроса к ИИ (без токенов)
   window._lastAiResult={ city:p.city, category:p.category||null, priceMax:p.priceMax||0,
-    amenities:p.amenities||[], avoid:p.avoid||[], area:p.area||null, name:p.name||null,
+    amenities:(p.amenities||[]).slice(), avoid:(p.avoid||[]).slice(), area:p.area||null, name:p.name||null,
+    stars:p.stars||0, meal:p.meal||null,
     din:din?din.getTime():null, dout:dout?dout.getTime():null,
     adults:parseInt(p.adults)||parseInt(window._capState.adults)||2, kids:parseInt(p.kids)||0,
     childAges:(window._capState.childAges||[]).slice(),
@@ -2230,7 +2435,7 @@ function aiApplyAndGo(p,q,el){
   try{ window._lastAiResult.label=zbPillLabel(window._lastAiResult.city,din,dout,window._lastAiResult.adults,window._lastAiResult.kids); }catch(e){}
   try{ zbPersistPills(); }catch(e){} // происхождение + снимок ИИ переживают F5 сразу, не дожидаясь возврата домой
   var _fd=function(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');};
-  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); if(p.area)parts.push('📍 рядом: '+p.area.label); if(p.name)parts.push('🔎 '+p.name); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
+  if(el){ var parts=[]; if(p.city)parts.push('📍 '+p.city); if(p.category)parts.push('🏠 '+(p.category==='apart'?'Апартаменты':p.category==='guest'?'Усадьба':'Отель')); if(p.adults)parts.push('👥 '+p.adults); if(p.kids)parts.push('🧒 '+p.kids); parts.push('📅 '+_fd(din)+'→'+_fd(dout)+' ('+nn+' ноч.)'); if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN'); if(p.stars)parts.push('★ от '+p.stars); if(p.meal)parts.push('🍳 '+zbMealLabel(p.meal)); if(p.area)parts.push('📍 рядом: '+p.area.label); if(p.name)parts.push('🔎 '+p.name); (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);}); (p.avoid||[]).forEach(function(a){parts.push('✕ без: '+a);});
     el.innerHTML=(p.city?'Понял: ':'⚠ Уточни город (Минск, Брест…). ')+parts.join(' · '); el.style.display='block';
     if(p.city){ el.style.cursor='pointer'; el.title='Повторить поиск (из памяти, без ИИ)'; el.onclick=function(){ aiReplayLast(); }; } else { el.style.cursor='default'; el.onclick=null; } }
   if(!p.city)return;
@@ -2310,10 +2515,12 @@ function aiApplyRefinements(p,el){
   window._aiAvoid=p.avoid||[];
   window._aiArea=p.area||null;
   window._aiName=p.name||null;
+  window._aiStars=p.stars||0; window._aiMeal=p.meal||null; // 15.10
+  window._aiAmenities=(p.amenities||[]).slice();
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=p.category?(c===p.category):true;});
   try{
     var R=window._lastAiResult;
-    if(R){ R.category=window._aiCategory; R.priceMax=window._aiPriceMax; R.amenities=(p.amenities||[]).slice();
+    if(R){ R.category=window._aiCategory; R.priceMax=window._aiPriceMax; R.amenities=(p.amenities||[]).slice(); R.stars=p.stars||0; R.meal=p.meal||null;
       R.avoid=(p.avoid||[]).slice(); R.area=p.area||null; R.name=p.name||null; zbPersistPills(); }
   }catch(e){}
   // плашка разбора перестраивается ЦЕЛИКОМ (дописывание дублировало то, что нашёл и локальный разбор)
@@ -2327,6 +2534,8 @@ function aiApplyRefinements(p,el){
       if(_cs.kids)parts.push('🧒 '+_cs.kids);
       if(_cs.din&&_cs.dout){var _nn2=Math.max(1,Math.round((new Date(_cs.dout)-new Date(_cs.din))/86400000));parts.push('📅 '+_fd2(_cs.din)+'→'+_fd2(_cs.dout)+' ('+_nn2+' ноч.)');}
       if(p.priceMax)parts.push('💰 до '+p.priceMax+' BYN');
+      if(p.stars)parts.push('★ от '+p.stars);
+      if(p.meal)parts.push('🍳 '+zbMealLabel(p.meal));
       if(p.area)parts.push('📍 рядом: '+p.area.label);
       if(p.name)parts.push('🔎 '+p.name);
       (p.amenities||[]).forEach(function(a){parts.push('✓ '+a);});
@@ -2660,24 +2869,102 @@ async function loadWeather(){
     box.style.display='flex';
   }catch(e){ box.style.display='none'; }
 }
+// 15.10: «Что рядом» — что и почему. Данные даёт наш /api/nearby (бэкенд спрашивает OpenStreetMap
+// через Overpass). Блок стал пропадать: (1) ошибку и пустой ответ сайт молча прятал; (2) бэкенд перебирает
+// 3 зеркала по 25 с — гость мог ждать больше минуты; (3) когда Overpass не успевает, он отвечает 200 с
+// пустым списком и пометкой remark, бэкенд считает это «рядом ничего нет» и держит в кэше сутки.
+// Теперь: ждём бэкенд не дольше 20 с; ошибка или пусто — спрашиваем Overpass сами (2 зеркала, по 12 с,
+// тот же набор мест и радиус 1,5 км); не вышло — «Не удалось загрузить» и кнопка «Повторить».
+// Бэкенд при этом не трогаем (причины и строки — в описании PR).
+var ZB_NEAR_WANT=[
+  {k:'natural',v:'water',label:'Вода/озеро',icon:'🌊'},{k:'leisure',v:'park',label:'Парк',icon:'🌳'},
+  {k:'natural',v:'beach',label:'Пляж',icon:'🏖'},{k:'shop',v:'supermarket',label:'Магазин',icon:'🛒'},
+  {k:'amenity',v:'pharmacy',label:'Аптека',icon:'💊'},{k:'amenity',v:'cafe',label:'Кафе',icon:'☕'},
+  {k:'amenity',v:'restaurant',label:'Ресторан',icon:'🍽'},{k:'highway',v:'bus_stop',label:'Остановка',icon:'🚌'},
+  {k:'natural',v:'wood',label:'Лес',icon:'🌲'}];
+var ZB_OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+function zbFetchTO(url,opt,ms){
+  var ac=null; try{ ac=new AbortController(); }catch(e){}
+  var o=Object.assign({},opt||{}); if(ac)o.signal=ac.signal;
+  return new Promise(function(res,rej){
+    var t=setTimeout(function(){ try{ if(ac)ac.abort(); }catch(e){} rej(new Error('timeout '+ms+' ms')); },ms);
+    fetch(url,o).then(function(r){ clearTimeout(t); res(r); },function(e){ clearTimeout(t); rej(e); });
+  });
+}
+function zbNearDist(lat1,lon1,lat2,lon2){
+  var R=6371000,rd=function(x){return x*Math.PI/180;},dLa=rd(lat2-lat1),dLo=rd(lon2-lon1);
+  var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(rd(lat1))*Math.cos(rd(lat2))*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+function zbNearFmt(m){ return m<1000?m+' м':(m/1000).toFixed(1).replace('.0','')+' км'; }
+// Запасной путь: Overpass напрямую из браузера. Каждый вид мест — своим out (раньше один «out 80»
+// на всё: в городе сотня остановок и кафе вытесняла парки и воду).
+async function zbNearbyOverpass(lat,lon){
+  var la=(+lat).toFixed(5), lo=(+lon).toFixed(5);
+  var ql='[out:json][timeout:12];'+ZB_NEAR_WANT.map(function(w){ return 'nwr['+w.k+'='+w.v+'](around:1500,'+la+','+lo+');out center 30;'; }).join('');
+  var last='';
+  for(var i=0;i<ZB_OVERPASS.length;i++){
+    try{
+      var r=await zbFetchTO(ZB_OVERPASS[i],{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(ql)},12000);
+      if(!r.ok){ last=ZB_OVERPASS[i]+' → HTTP '+r.status; continue; }
+      var d=await r.json();
+      var els=(d&&d.elements)||[];
+      // «не успел» Overpass отдаёт кодом 200: пустой список и remark с runtime error — это сбой, а не «рядом ничего»
+      if(!els.length&&d&&d.remark&&/error|timed out|out of memory/i.test(String(d.remark))){ last=ZB_OVERPASS[i]+' → '+String(d.remark).slice(0,80); continue; }
+      var best={};
+      els.forEach(function(el){
+        var ela=el.lat!=null?el.lat:(el.center&&el.center.lat), elo=el.lon!=null?el.lon:(el.center&&el.center.lon);
+        if(ela==null||elo==null)return;
+        var tg=el.tags||{};
+        ZB_NEAR_WANT.forEach(function(w){ if(tg[w.k]===w.v){ var m=zbNearDist(+lat,+lon,ela,elo); if(!best[w.label]||m<best[w.label].m)best[w.label]={m:m,icon:w.icon,label:w.label}; } });
+      });
+      return Object.keys(best).map(function(k){return best[k];}).sort(function(a,b){return a.m-b.m;}).slice(0,6)
+        .map(function(x){ return {icon:x.icon,label:x.label,dist:zbNearFmt(x.m),meters:x.m}; });
+    }catch(e){ last=ZB_OVERPASS[i]+' → '+(e&&e.message||e); }
+  }
+  throw new Error(last||'Overpass недоступен');
+}
+function zbNearbyRetry(){
+  try{ var h=curHotel; if(h&&h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude); }catch(e){}
+}
 async function loadNearby(lat,lon){
   var box=document.getElementById('hp-nearby'); if(!box)return;
+  var tok=box._zbNear=(box._zbNear||0)+1;
+  var alive=function(){ return box.isConnected&&box._zbNear===tok; }; // ушли на другой объект — старый ответ не рисуем
+  box.style.display='';
   box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">🚶 Смотрим, что рядом…</div>';
+  var list=null, failed=false, outOfArea=false;
   try{
-    var r=await fetch(API+'/api/nearby?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon));
+    var r=await zbFetchTO(API+'/api/nearby?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon),{},20000);
+    if(!r.ok)throw new Error('HTTP '+r.status);
     var d=await r.json();
-    var list=(d&&d.nearby)||[];
-    // Сохраняем POI в объект — чтобы консьерж отвечал на «что рядом / есть кафе / далеко ли аптека»
-    try{
-      var _near=list.map(function(x){return String(x.label)+' '+String(x.dist);});
-      if(curHotel){curHotel._nearby=_near;}
-    }catch(_){}
-    if(!list.length){ box.style.display='none'; return; }
-    box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
-      +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
-      +list.map(function(x){return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink);background:var(--sand2);border-radius:10px;padding:7px 11px">'+x.icon+' '+x.label+' <span style="color:var(--muted);font-weight:500">'+x.dist+'</span></span>';}).join('')
-      +'</div>';
-  }catch(e){ box.style.display='none'; }
+    if(d&&d.error)throw new Error('бэкенд: Overpass не ответил');
+    outOfArea=!!(d&&d.out_of_area);
+    list=(d&&d.nearby)||[];
+  }catch(e){ failed=true; console.warn('nearby:',e&&e.message||e); }
+  if(!alive())return;
+  if((!list||!list.length)&&!outOfArea){
+    try{ list=await zbNearbyOverpass(lat,lon); failed=false; }
+    catch(e){ failed=true; console.warn('nearby (запасной путь):',e&&e.message||e); }
+    if(!alive())return;
+  }
+  list=list||[];
+  // Сохраняем POI в объект — чтобы консьерж отвечал на «что рядом / есть кафе / далеко ли аптека»
+  try{
+    var _near=list.map(function(x){return String(x.label)+' '+String(x.dist);});
+    if(curHotel){curHotel._nearby=_near;}
+  }catch(_){}
+  if(!list.length&&failed){
+    box.innerHTML='<div id="hp-nearby-err" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;font-size:12.5px;color:var(--muted)">'
+      +'<span>🚶 Не удалось загрузить, что рядом.</span>'
+      +'<button type="button" onclick="zbNearbyRetry()" style="border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:5px 12px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green);cursor:pointer">Повторить</button></div>';
+    return;
+  }
+  if(!list.length){ box.style.display='none'; return; }
+  box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+    +list.map(function(x){return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink);background:var(--sand2);border-radius:10px;padding:7px 11px">'+zbEsc(x.icon)+' '+zbEsc(x.label)+' <span style="color:var(--muted);font-weight:500">'+zbEsc(x.dist)+'</span></span>';}).join('')
+    +'</div>';
 }
 // Поиск объекта для открытия. Раньше здесь было HOTELS.find(h=>h.id===id) — строгое сравнение,
 // и клик молча не срабатывал в двух случаях:
@@ -3414,6 +3701,46 @@ var ZB_TAG_RU={parking:'парковка стоянка',wifi:'wi-fi вайфа�
   contactless:'бесконтактное заселение самостоятельное заселение самозаселение заселение без встречи',
   no_deposit:'без депозита без залога'};
 function zbTagsHay(h){ return (h&&h.tags||[]).map(function(t){return ZB_TAG_RU[t]||t;}).join(' '); }
+// 15.10: удобства из ИИ-фразы, по которым у объектов ЕСТЬ данные (теги Островка, удобства своих объектов), —
+// теперь фильтр, а не только сортировка: «с парковкой и бассейном» показывает объекты с парковкой и бассейном,
+// и «Найдено: N» считает только их. Слова без данных («центр», «камин», «у озера») — по-прежнему мягко.
+// «Бесконтактное заселение» — мягко, как решено 03.10 (признак есть не у всех): отмеченные первыми.
+var ZB_AMEN_TAG=[
+  [/парков|стоянк/,'parking'],[/wi-?fi|вай-?фай|интернет/,'wifi'],[/бассейн/,'pool'],[/бан[яиюе]|саун/,'sauna'],
+  [/фитнес|тренаж|спортзал/,'fitness'],[/ресторан/,'restaurant'],[/(?:^|\s)бар(?:$|\s)/,'bar'],[/животн|питомц|собак|кошк/,'pets'],
+  [/кухн/,'kitchen'],[/кондиц|кондей/,'ac'],[/(?:^|\s)спа(?:$|\s)|(?:^|\s)spa/,'spa'],[/трансфер/,'transfer'],
+  [/стиральн|прачечн/,'laundry'],[/балкон|террас/,'balcony'],[/лифт/,'elevator'],[/для детей|детск|семейн/,'family'],
+  [/некурящ/,'smoke_free'],[/маломобильн|инвалид|коляск/,'disabled'],[/сейф/,'safe'],[/конференц|переговорн/,'conference'],
+  [/горнолыж|лыж/,'ski'],[/пляж/,'beach'],[/джакузи|гидромасс/,'jacuzzi'],[/зарядк|электромоб|электрокар/,'ev_charger'],
+  [/своя ванн|ванная в номере|отдельная ванн/,'private_bathroom'],[/можно кур|для курящ/,'smoking']];
+function zbAiHardAmen(arr){
+  var out=[], seen={};
+  (Array.isArray(arr)?arr:[]).forEach(function(a){
+    var t=String(a||'').toLowerCase().replace(/ё/g,'е').trim();
+    if(!t||/бесконтакт|депозит|залог|отмен/.test(t))return;
+    for(var i=0;i<ZB_AMEN_TAG.length;i++){ if(ZB_AMEN_TAG[i][0].test(' '+t+' ')){ var tg=ZB_AMEN_TAG[i][1]; if(!seen[tg]){ seen[tg]=1; out.push({tag:tg,re:ZB_AMEN_TAG[i][0],label:String(a)}); } return; } }
+  });
+  return out;
+}
+function zbHasAmen(h,x){
+  if((h.tags||[]).indexOf(x.tag)>=0)return true;
+  var hay=' '+(h.amenities||[]).map(function(a){ return (a&&typeof a==='object')?(String(a.n||a.name||'')+' '+String(a.key||'')):String(a); }).join(' | ').toLowerCase().replace(/ё/g,'е')+' ';
+  return x.re.test(hay);
+}
+// район/улица/метро из ИИ — объекты не дальше 3 км (раньше только сортировка ближайших первыми)
+var ZB_AI_AREA_KM=3;
+function zbHotelDistKm(h,ar){
+  var la=(h.latitude!=null?h.latitude:h.lat), ln=(h.longitude!=null?h.longitude:h.lng);
+  if(la==null||ln==null||isNaN(parseFloat(la))||isNaN(parseFloat(ln)))return null;
+  return zbDistKm(ar.lat,ar.lng,parseFloat(la),parseFloat(ln));
+}
+// питание тарифа из выдачи Островка (meal самого дешёвого тарифа): nomeal, breakfast…, half-board…, full-board…, all-inclusive…
+function zbMealRank(m){ m=String(m||'').toLowerCase(); if(!m||m==='nomeal')return 0; if(/all-inclusive/.test(m))return 4; if(/full-board/.test(m))return 3; if(/half-board/.test(m))return 2; if(/breakfast/.test(m))return 1; return 0.5; }
+function zbMealOk(meal,want){
+  var r=zbMealRank(meal);
+  if(want==='none')return r===0; if(want==='any')return r>0;
+  return r>=({breakfast:1,half:2,full:3,all:4}[want]||1);
+}
 // Город из адреса объекта: «проспект Победителей, д. 20, Минск» → «Минск».
 // Нужен шаринг-ссылкам на отели, открытые из каталога/витрины (там нет города поиска).
 var ZB_CITY_LIST=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Нарочь','Браслав','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк','Мир','Логойск'];
@@ -3474,6 +3801,8 @@ function serpRenderAiChips(){
     chips.push(chip('🏠 '+cl,'aiChipRemove(\'cat\')'));
   }
   if(window._aiPriceMax>0)chips.push(chip('💰 до '+window._aiPriceMax+' BYN','aiChipRemove(\'price\')'));
+  if(window._aiStars>0)chips.push(chip('★ от '+window._aiStars,'aiChipRemove(\'stars\')'));           // 15.10
+  if(window._aiMeal)chips.push(chip('🍳 '+zbMealLabel(window._aiMeal),'aiChipRemove(\'meal\')'));  // 15.10
   if(window._aiArea&&window._aiArea.label)chips.push(chip('📍 рядом: '+window._aiArea.label,'aiChipRemove(\'area\')'));
   if(window._aiName)chips.push(chip('🔎 '+window._aiName,'aiChipRemove(\'name\')'));
   (window._aiAmenities||[]).forEach(function(a,i){chips.push(chip('✓ '+a,'aiChipRemove(\'amen\','+i+')'));});
@@ -3488,6 +3817,8 @@ function aiChipRemove(type,idx){
   }
   else if(type==='price'){ window._aiPriceMax=0; }
   else if(type==='area'){ window._aiArea=null; }
+  else if(type==='stars'){ window._aiStars=0; }   // 15.10
+  else if(type==='meal'){ window._aiMeal=null; }  // 15.10
   else if(type==='name'){ window._aiName=null; }
   else if(type==='amen'&&window._aiAmenities){ window._aiAmenities.splice(idx,1); }
   else if(type==='avoid'&&window._aiAvoid){ window._aiAvoid.splice(idx,1); }
@@ -3501,6 +3832,7 @@ function aiChipRemove(type,idx){
       R.avoid=(window._aiAvoid||[]).slice();
       R.area=window._aiArea||null;
       R.name=window._aiName||null;
+      R.stars=window._aiStars||0; R.meal=window._aiMeal||null;
       zbPersistPills();
     }
   }catch(e){}
@@ -3538,19 +3870,64 @@ function serpRender(){
     return (h.address||'').toLowerCase().indexOf(city)!==-1||(h.name_ru||'').toLowerCase().indexOf(city)!==-1;
   }):hotels;
   var baseList=cityFiltered.length?cityFiltered:hotels;
-  var list=baseList.filter(function(h){
-    if(cats.length&&!cats.includes(h.category))return false;
-    if(priceMax>0&&h.price>priceMax)return false;
-    if(window._aiPriceMax>0&&h.price>window._aiPriceMax)return false; // AI: цена из фразы
-    if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
-    if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
-    if(wantFree&&!h.cancellation)return false;
-    if(wantCl&&h.contactless!==true)return false;
-    if(wantNd&&h.no_deposit!==true)return false;
-    return true;
-  });
+  // 15.10: все жёсткие фильтры — списком в порядке «что снимать первым», если вместе они дают ноль.
+  // Раньше страховка от пустой выдачи на третьем шаге снимала ВСЁ сразу (цену, тип, звёзды, теги) и
+  // показывала весь город — с ИИ-фразой на много условий это и давало «найдено 500+». Удобства и район
+  // из ИИ раньше вообще не фильтровали (только сортировали), звёзды/питание из фразы не разбирались.
+  // Теперь каждое условие применяется, а при нуле снимаются по одному, пока что-то не найдётся, —
+  // и над выдачей честно написано, какие условия сняты.
+  var aiStars=parseInt(window._aiStars)||0, aiMeal=window._aiMeal||null;
+  var aiHard=zbAiHardAmen(window._aiAmenities);   // удобства, которые есть в данных объектов (парковка, бассейн…)
+  var aiArea=(window._aiArea&&window._aiArea.lat!=null&&window._aiArea.lng!=null)?window._aiArea:null;
+  var F=[];
+  if(aiHard.length)F.push({k:'amen',label:aiHard.map(function(x){return x.label;}).join(', '),fn:function(h){ return aiHard.every(function(x){ return zbHasAmen(h,x); }); }});
+  if(aiArea)F.push({k:'area',label:'рядом с «'+aiArea.label+'»',fn:function(h){ var d=zbHotelDistKm(h,aiArea); return d!=null&&d<=ZB_AI_AREA_KM; }});
+  if(priceMax>0||window._aiPriceMax>0)F.push({k:'price',label:'цена',fn:function(h){ return !(priceMax>0&&h.price>priceMax)&&!(window._aiPriceMax>0&&h.price>window._aiPriceMax); }});
+  if(wantExcl)F.push({k:'excl',label:'эксклюзив',fn:function(h){ return !!(h.exclusive||h.source==='direct'); }});
+  if(wantFree)F.push({k:'free',label:'бесплатная отмена',fn:function(h){ return !!h.cancellation; }});
+  if(wantCl)F.push({k:'cl',label:'бесконтактное заселение',fn:function(h){ return h.contactless===true; }});
+  if(wantNd)F.push({k:'nd',label:'без депозита',fn:function(h){ return h.no_deposit===true; }});
+  if(aiMeal)F.push({k:'meal',label:zbMealLabel(aiMeal),fn:function(h){ return zbMealOk(h.meal,aiMeal); }});
+  if(starsMin>0||aiStars>0)F.push({k:'stars',label:'звёзды',fn:function(h){ var r=parseFloat(h.rating)||0; return r>=Math.max(starsMin,aiStars); }});
+  // тип жилья снимается страховкой, только если его выбрали (ИИ или галочками); все три галочки — как раньше, без снятия
+  if(cats.length&&(window._aiCategory||cats.length<3))F.push({k:'cat',label:'тип жилья',fn:function(h){ return cats.includes(h.category); }});
+  else if(cats.length)baseList=baseList.filter(function(h){ return cats.includes(h.category); });
+  var applyF=function(arr,from){ return arr.filter(function(h){ for(var i=from;i<F.length;i++){ if(!F[i].fn(h))return false; } return true; }); };
+  var list=applyF(baseList,0);
+
+  // AI: «без X» — исключаем только если у объекта ЯВНО есть это удобство (данные есть)
+  // 15.10: удобства объекта Островка в выдаче лежат в tags (amenities там пустой) — смотрим и туда
+  var _avoidF=function(arr){
+    if(!(window._aiAvoid&&window._aiAvoid.length))return arr;
+    var _av=window._aiAvoid.map(function(a){return String(a).toLowerCase();});
+    return arr.filter(function(h){
+      var names=((h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ')+' '+zbTagsHay(h).toLowerCase()).trim();
+      if(!names)return true; // нет данных об удобствах — не выкидываем
+      return !_av.some(function(a){return names.indexOf(a)>=0;});
+    });
+  };
+  list=_avoidF(list);
+  // СТРАХОВКА ОТ ПУСТОЙ ВЫДАЧИ (15.10: по одному условию, см. выше). Поиск никогда не «умирает» из-за фильтров.
+  window._aiRelaxed=null; window._aiRelaxedLabels=[];
+  if(!list.length&&F.length&&baseList.length){
+    for(var _k=1;_k<=F.length;_k++){
+      var _rl=_avoidF(applyF(baseList,_k));
+      if(_rl.length){
+        list=_rl;
+        window._aiRelaxedLabels=F.slice(0,_k).map(function(f){return f.label;});
+        var _ks=F.slice(0,_k).map(function(f){return f.k;});
+        // прежние тексты — когда снято ровно то же, что снимала прежняя страховка
+        if(_k===F.length&&_ks.indexOf('cat')>=0)window._aiRelaxed='cat';
+        else if(_k===1&&/^(price|excl|free|cl|nd)$/.test(_ks[0]))window._aiRelaxed=_ks[0];
+        else window._aiRelaxed='some';
+        break;
+      }
+    }
+  }
 
   // AI: удобства и слова-пожелания («центр», «у озера», «баня») — МЯГКО.
+  // 15.10: очки считаем по ИТОГОВОЙ выдаче (после страховки), удобства из данных уже отфильтрованы выше,
+  // мягкими остаются слова без данных («центр», «у озера», «камин»).
   // Не выкидываем объекты (иначе пусто), а считаем очки совпадения → они поднимаются выше.
   if(window._aiAmenities&&window._aiAmenities.length){
     var _am=window._aiAmenities.map(function(a){return String(a).toLowerCase();});
@@ -3569,8 +3946,8 @@ function serpRender(){
       if(hn&&(hn.indexOf(_nm)>=0||_nm.indexOf(hn)>=0))h._aiScore=(h._aiScore||0)+100;
     });
   }
-  // ИИ: ЛОКАЦИЯ (район/улица/метро) — считаем расстояние до неё. НИКОГДА не фильтруем
-  // (поиск всегда даёт результат) — просто сортируем ближайшие первыми и показываем км.
+  // ИИ: ЛОКАЦИЯ (район/улица/метро) — считаем расстояние до неё, ближайшие первыми, на карточке км.
+  // 15.10: дальше 3 км отсеивает фильтр выше (F, 'area'); ноль — страховка снимет это условие.
   if(window._aiArea&&window._aiArea.lat!=null&&window._aiArea.lng!=null){
     list.forEach(function(h){
       var la=(h.latitude!=null?h.latitude:h.lat), ln=(h.longitude!=null?h.longitude:h.lng);
@@ -3580,50 +3957,8 @@ function serpRender(){
     var _al=String(window._aiArea.label).toLowerCase();
     list.forEach(function(h){ if(String(h.address||'').toLowerCase().indexOf(_al)>=0)h._aiScore=(h._aiScore||0)+3; });
   } else { list.forEach(function(h){ h._dist=null; }); }
-  // AI: «без X» — исключаем только если у объекта ЯВНО есть это удобство (данные есть)
-  if(window._aiAvoid&&window._aiAvoid.length){
-    var _av=window._aiAvoid.map(function(a){return String(a).toLowerCase();});
-    list=list.filter(function(h){
-      var names=(h.amenities||[]).map(function(x){return String(x&&x.n||x).toLowerCase();}).join(' ');
-      if(!names.trim())return true; // нет данных об удобствах — не выкидываем
-      return !_av.some(function(a){return names.indexOf(a)>=0;});
-    });
-  }
-  // СТРАХОВКА ОТ ПУСТОЙ ВЫДАЧИ: жёсткие фильтры (цена/категория/звёзды) — хоть ИИ, хоть выставленные руками —
-  // оставили ноль → ослабляем по очереди и показываем, что ЕСТЬ в городе, с честной пометкой «снимите фильтр».
-  // Поиск никогда не «умирает» из-за фильтров.
-  window._aiRelaxed=null;
-  if(!list.length&&(window._aiPriceMax>0||window._aiCategory||priceMax>0||starsMin>0||wantExcl||wantFree||wantCl||wantNd)){
-    // 1) отпускаем цену (и ИИ, и ручную) — оставляем категорию/звёзды/теги
-    var relaxed=baseList.filter(function(h){
-      if(cats.length&&!cats.includes(h.category))return false;
-      if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
-      if(wantExcl&&!(h.exclusive||h.source==='direct'))return false;
-      if(wantFree&&!h.cancellation)return false;
-      if(wantCl&&h.contactless!==true)return false;
-      if(wantNd&&h.no_deposit!==true)return false;
-      return true; // БЕЗ фильтра цены
-    });
-    if(relaxed.length&&(window._aiPriceMax>0||priceMax>0)){ list=relaxed; window._aiRelaxed='price'; }
-    else {
-      // 2) отпускаем теги «Эксклюзив»/«Бесплатная отмена»/«Бесконтактное»/«Без депозита» — они дают ноль чаще всего
-      relaxed=baseList.filter(function(h){
-        if(cats.length&&!cats.includes(h.category))return false;
-        if(starsMin>0&&(parseFloat(h.rating)||0)<starsMin)return false;
-        return true;
-      });
-      if(relaxed.length&&(wantExcl||wantFree||wantCl||wantNd)){ list=relaxed; window._aiRelaxed=wantExcl?'excl':wantFree?'free':wantCl?'cl':'nd'; }
-      else {
-        // 3) последний рубеж — оставляем только город (снимаем всё)
-        relaxed=baseList.slice();
-        if(relaxed.length){ list=relaxed; window._aiRelaxed='cat'; }
-      }
-    }
-    if(window._aiRelaxed)list.forEach(function(h){ if(h._aiScore==null)h._aiScore=0; });
-  }
-
   // Активны ли какие-то фильтры (для кнопки сброса)
-  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree||wantCl||wantNd;
+  var anyFilter=cats.length<3||priceMax>0||starsMin>0||wantExcl||wantFree||wantCl||wantNd||aiStars>0||!!aiMeal; // 15.10: и звёзды/питание из ИИ
   var clearBtn=document.getElementById('sf-clear');
   if(clearBtn)clearBtn.style.display=anyFilter?'inline':'none';
 
@@ -3680,6 +4015,7 @@ function serpRender(){
     else if(window._aiRelaxed==='cl')meta.textContent='С бесконтактным заселением на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='nd')meta.textContent='Без депозита на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cat')meta.textContent='Точных совпадений нет — показали всё жильё города ('+list.length+'). Снимите часть фильтров';
+    else if(window._aiRelaxed==='some')meta.textContent='Со всеми условиями точных нет — без условий «'+window._aiRelaxedLabels.join('», «')+'» найдено: '+list.length+' '+zbObjWord(list.length)+'. Снимите их или измените поиск'; // 15.10
     else if(clSplit>0&&clSplit<list.length)meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length)+' · с бесконтактным заселением — '+clSplit+', они первые';
     else if(clSplit===0)meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length)+' · с отметкой «бесконтактное заселение» на эти даты нет — уточните у объекта';
     else meta.textContent='Найдено: '+list.length+' '+zbObjWord(list.length);
@@ -3852,7 +4188,7 @@ function zbClSplitEl(n){
 // таких нет — выдача покажет все варианты с пометкой (как при ручной кнопке).
 // «Бесконтактное заселение» сюда НЕ входит: признак есть далеко не у всех объектов, поэтому
 // ИИ ставит отмеченные первыми, а остальные показывает ниже под разделителем (см. serpRender).
-var ZB_AI_CHIP={'без депозита':'sft-nodep'};
+var ZB_AI_CHIP={'без депозита':'sft-nodep','бесплатная отмена':'sft-free'}; // 15.10: и «бесплатная отмена» — кнопкой над выдачей
 function zbAiNeedsToChips(){
   var a=window._aiAmenities; if(!a||!a.length)return;
   if(document.body.classList.contains('cat-mode'))return;   // в каталоге без дат этих кнопок нет
@@ -3878,8 +4214,8 @@ function serpClearFilters(){
   // ГЛАВНОЕ: снимаем и ИИ-фильтры (цена/категория/удобства/«без …»). Раньше они оставались
   // висеть после клика → выдача так и была пустой → кнопка выглядела «некликабельной».
   window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
-  window._aiArea=null; window._aiName=null;
-  try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; _R.area=null; _R.name=null; zbPersistPills(); } }catch(e){}
+  window._aiArea=null; window._aiName=null; window._aiStars=0; window._aiMeal=null;
+  try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; _R.area=null; _R.name=null; _R.stars=0; _R.meal=null; zbPersistPills(); } }catch(e){}
   window._serpReset=true;serpRender();
 }
 
@@ -4405,6 +4741,10 @@ async function serpLoadOstrovok(){
 
   window._catMode=null; document.body.classList.remove('cat-mode'); // обычный поиск — выходим из режима каталога
   window._ostrovokLoading=true;
+  // 15.10: номер поиска. serpOpen сбрасывает флаг загрузки, поэтому второй поиск (ИИ поправил даты/гостей,
+  // пока шёл первый) стартовал параллельно, и ОБА ответа дописывались в HOTELS: выдачи складывались
+  // (350 + 350 → «больше 500»). Теперь в выдачу попадает только ответ последнего поиска.
+  var _ostSeq=window._ostSearchSeq=(window._ostSearchSeq||0)+1;
 
   // Убираем старые карточки и показываем шиммер-скелетон на их месте
   var sp=document.getElementById('serp-page');
@@ -4435,13 +4775,18 @@ async function serpLoadOstrovok(){
     });
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     var data=await resp.json();
+    if(_ostSeq!==window._ostSearchSeq)return; // 15.10: пока ждали, начался другой поиск — этот ответ не нужен
 
     if(data.hotels&&data.hotels.length){
-      HOTELS=[...data.hotels,...HOTELS];
+      // 15.10: заменяем выдачу Островка целиком (а не дописываем) и убираем повторы по id
+      var _seen={}, _fresh=data.hotels.filter(function(h){ var k=String(h&&h.id); if(_seen[k])return false; _seen[k]=1; return true; });
+      HOTELS=_fresh.concat(HOTELS.filter(function(h){ return h.source!=='ostrovok'&&!_seen[String(h&&h.id)]; }));
     }
   }catch(e){
+    if(_ostSeq!==window._ostSearchSeq)return;
     console.warn('Ostrovok search error:',e.message);
   }finally{
+    if(_ostSeq!==window._ostSearchSeq)return; // 15.10: устаревший поиск не снимает загрузку и не рисует выдачу
     window._ostrovokLoading=false;
     // Убираем скелетон
     var skWrap=document.getElementById('serp-skeleton');
@@ -4683,6 +5028,7 @@ function serpOpen(){
     if(typeof closeAll==='function') closeAll();
     var _cd=document.getElementById('city-drop'); if(_cd)_cd.style.display='none';
     ['cap-dd','cap-dd-cal'].forEach(function(id){var e=document.getElementById(id);if(e){e.style.display='none';e.style.top='-9999px';}});
+    try{ if(typeof window.capCityInpHide==='function')window.capCityInpHide(); }catch(_){} // 15.10: строка ввода города → надпись
     document.querySelectorAll('.gpop').forEach(function(g){ g.classList.remove('open'); g.style.display='none'; });
   }catch(_e){}
   window._ostrovokLoading=false; // сбрасываем флаг при каждом новом поиске
@@ -6039,6 +6385,48 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   }
 
   // --- Список городов ---
+  // 15.10: подбор города — общий для компьютера (строка «Куда едете?») и телефона (шторка).
+  // Раньше искалась только подстрока точного названия. Теперь ещё: «е» вместо «ё» (Могилев),
+  // склонения и опечатки из словаря ИИ-поиска (AI_CITY_SYN: «в минске», «мнск»), латиница
+  // (minsk, hrodna) и набор в английской раскладке («vbycr» → Минск). Сначала — совпадения с начала.
+  var ZB_CITY_LAT={'minsk':'Минск','brest':'Брест','grodno':'Гродно','hrodna':'Гродно','vitebsk':'Витебск','viciebsk':'Витебск',
+    'gomel':'Гомель','homel':'Гомель','mogilev':'Могилёв','mahilyow':'Могилёв','mogilyov':'Могилёв','pinsk':'Пинск','nesvizh':'Несвиж',
+    'mir':'Мир','naroch':'Нарочь','braslav':'Браслав','bobruisk':'Бобруйск','babruysk':'Бобруйск','baranovichi':'Барановичи',
+    'borisov':'Борисов','barysaw':'Борисов','orsha':'Орша','mozyr':'Мозырь','soligorsk':'Солигорск','novopolotsk':'Новополоцк',
+    'molodechno':'Молодечно','lida':'Лида','polotsk':'Полоцк','zhlobin':'Жлобин','rechitsa':'Речица','slutsk':'Слуцк',
+    // по-белорусски
+    'гродна':'Гродно','віцебск':'Витебск','магілёў':'Могилёв','магилеу':'Могилёв','мазыр':'Мозырь','баранавічы':'Барановичи','барысау':'Борисов','нясвіж':'Несвиж','нясвиж':'Несвиж'};
+  var ZB_KB_EN='qwertyuiop[]asdfghjkl;\'zxcvbnm,.`', ZB_KB_RU='йцукенгшщзхъфывапролджэячсмитьбюё';
+  function zbCityNorm(v){ return String(v||'').toLowerCase().replace(/ё/g,'е').replace(/\s+/g,' ').trim(); }
+  function zbKbFix(v){ return String(v||'').toLowerCase().split('').map(function(ch){ var i=ZB_KB_EN.indexOf(ch); return i>=0?ZB_KB_RU.charAt(i):ch; }).join(''); }
+  function zbCityByName(n){ var nn=zbCityNorm(n); for(var i=0;i<CITIES_LIST.length;i++){ if(zbCityNorm(CITIES_LIST[i].name)===nn)return CITIES_LIST[i]; } return null; }
+  window.zbCityMatches=function(val){
+    var q=zbCityNorm(val).replace(/^(в|во|г\.?|город)\s+/,''); if(!q)return [];
+    var out=[], seen={};
+    function add(c){ if(c&&!seen[c.name]){ seen[c.name]=1; out.push(c); } }
+    function scan(qq){
+      CITIES_LIST.forEach(function(c){ var n=zbCityNorm(c.name); if(n.indexOf(qq)===0||n.indexOf(' '+qq)>=0)add(c); });
+      CITIES_LIST.forEach(function(c){ if(zbCityNorm(c.name).indexOf(qq)>=0)add(c); });
+    }
+    scan(q);
+    var syn=function(dict,qq){ for(var k in dict){ var kk=zbCityNorm(k); if(kk.indexOf(qq)===0||(qq.length>=4&&qq.indexOf(kk)===0))add(zbCityByName(dict[k])); } };
+    try{ syn(typeof AI_CITY_SYN==='object'?AI_CITY_SYN:{},q); }catch(e){}
+    syn(ZB_CITY_LAT,q);
+    if(/[a-z\[\];',.`]/.test(q)){ var fx=zbKbFix(q); if(fx!==q){ scan(fx); try{ syn(typeof AI_CITY_SYN==='object'?AI_CITY_SYN:{},fx); }catch(e){} } }
+    return out;
+  };
+  // Недавние города — что человек сам выбирал (до 5, на этом устройстве)
+  window.zbRecentCities=function(){
+    var a=[]; try{ a=JSON.parse(localStorage.getItem('zb_recent_cities')||'[]'); }catch(e){ a=[]; }
+    if(!Array.isArray(a))a=[];
+    try{ if(!a.length&&window._lastReg&&window._lastReg.city)a=[window._lastReg.city]; }catch(e){}
+    return a.filter(function(n){ return typeof n==='string'&&n.trim(); }).slice(0,5);
+  };
+  window.zbRememberCity=function(name){
+    if(!name)return;
+    try{ var a=zbRecentCities().filter(function(n){ return zbCityNorm(n)!==zbCityNorm(name); }); a.unshift(String(name)); localStorage.setItem('zb_recent_cities',JSON.stringify(a.slice(0,5))); }catch(e){}
+  };
+  function zbCityEmoji(n){ var c=zbCityByName(n); return c?c.emoji:'📍'; }
   window.buildCityDD=function buildCityDD(){
     var list=document.getElementById('cap-dd-list');
     if(!list)return;
@@ -6049,44 +6437,101 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     list.querySelectorAll('.dsk-city-item').forEach(function(el){
       el.addEventListener('mouseenter',function(){this.style.background='#f7f5f0';});
       el.addEventListener('mouseleave',function(){this.style.background='';});
+      el.addEventListener('mousedown',function(e){e.preventDefault();}); // 15.10: фокус остаётся в строке «Куда едете?»
       el.addEventListener('click',function(e){
         e.stopPropagation();
-        openDeskCal(this.dataset.city);
+        capDeskPick(this.dataset.city);
       });
     });
-  }
-
-  // Поиск в desktop dropdown input
-  document.addEventListener('DOMContentLoaded',function(){
-    var ddInput=document.getElementById('cap-dd-input');
-    var ddSuggest=document.getElementById('cap-dd-suggest');
-    var ddList=document.getElementById('cap-dd-list');
-    if(ddInput){
-      ddInput.addEventListener('click',function(e){e.stopPropagation();});
-      ddInput.addEventListener('input',function(){
-        var v=this.value.trim();
-        if(!v){if(ddSuggest)ddSuggest.style.display='none';if(ddList)ddList.style.display='grid';return;}
-        var matches=CITIES_LIST.filter(function(c){return c.name.toLowerCase().indexOf(v.toLowerCase())!==-1;});
-        if(!ddSuggest)return;
-        if(!matches.length){ddSuggest.style.display='none';return;}
-        ddSuggest.innerHTML=matches.map(function(m){
-          return '<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;cursor:pointer;font-size:14px;font-weight:600;color:#111;border-radius:8px" class="ddi-item" data-city="'+m.name+'"><span>'+m.emoji+'</span>'+m.name+'</div>';
-        }).join('');
-        ddSuggest.style.display='block';
-        if(ddList)ddList.style.display='none';
-        ddSuggest.querySelectorAll('.ddi-item').forEach(function(el){
-          el.addEventListener('mouseenter',function(){this.style.background='#f7f5f0';});
-          el.addEventListener('mouseleave',function(){this.style.background='';});
-          el.addEventListener('click',function(e){
-            e.stopPropagation();
-            openDeskCal(this.dataset.city);
-            ddInput.value='';
-            ddSuggest.style.display='none';
-            if(ddList)ddList.style.display='grid';
-          });
-        });
+    // 15.10: недавние города — над популярными
+    var rw=document.getElementById('cap-dd-recent-wrap'), rb=document.getElementById('cap-dd-recent');
+    var rec=zbRecentCities();
+    if(rw&&rb){
+      rb.innerHTML=rec.map(function(n){ return '<button type="button" class="dsk-rec-item" data-city="'+zbEsc(n)+'" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f5f3ee;border:none;border-radius:50px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:inherit">'+zbCityEmoji(n)+' '+zbEsc(n)+'</button>'; }).join('');
+      rw.style.display=rec.length?'block':'none';
+      rb.querySelectorAll('.dsk-rec-item').forEach(function(el){
+        el.addEventListener('mousedown',function(e){e.preventDefault();});
+        el.addEventListener('click',function(e){ e.stopPropagation(); capDeskPick(this.dataset.city); });
       });
     }
+  }
+
+  // 15.10: ввод города в основной строке «Куда едете?» (компьютер). Под ней — подсказки по набранному;
+  // пока ничего не набрано — недавние и популярные. Стрелки ↑/↓ и Enter выбирают, Esc закрывает.
+  var capHl=-1;
+  function capDdRender(v){
+    var ddSuggest=document.getElementById('cap-dd-suggest'), pop=document.getElementById('cap-dd-pop'), rw=document.getElementById('cap-dd-recent-wrap');
+    if(!ddSuggest)return;
+    capHl=-1;
+    if(!zbCityNorm(v)){
+      ddSuggest.style.display='none'; ddSuggest.innerHTML='';
+      if(pop)pop.style.display='block';
+      if(rw)rw.style.display=zbRecentCities().length?'block':'none';
+      return;
+    }
+    var matches=zbCityMatches(v);
+    if(rw)rw.style.display='none';
+    if(!matches.length){
+      ddSuggest.innerHTML='<div style="padding:8px 6px;font-size:13px;color:#999">Такого города нет в списке — выберите из популярных</div>';
+      ddSuggest.style.display='block'; if(pop)pop.style.display='block';
+      return;
+    }
+    capHl=0;
+    ddSuggest.innerHTML=matches.map(function(m,i){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 6px;cursor:pointer;font-size:14px;font-weight:600;color:#111;border-radius:8px;'+(i===0?'background:#f7f5f0':'')+'" class="ddi-item" role="option" data-city="'+m.name+'"><span>'+m.emoji+'</span>'+m.name+'</div>';
+    }).join('');
+    ddSuggest.style.display='block';
+    if(pop)pop.style.display='none';
+    ddSuggest.querySelectorAll('.ddi-item').forEach(function(el,i){
+      el.addEventListener('mouseenter',function(){ capHlSet(i); });
+      el.addEventListener('mousedown',function(e){e.preventDefault();});
+      el.addEventListener('click',function(e){ e.stopPropagation(); capDeskPick(this.dataset.city); });
+    });
+  }
+  function capHlSet(i){
+    var items=document.querySelectorAll('#cap-dd-suggest .ddi-item'); if(!items.length)return;
+    capHl=Math.max(0,Math.min(items.length-1,i));
+    items.forEach(function(el,k){ el.style.background=k===capHl?'#f7f5f0':''; });
+  }
+  function capDeskPick(city){
+    try{ zbRememberCity(city); }catch(e){}
+    capCityInpHide();
+    openDeskCal(city);
+  }
+  window.capCityInpShow=function(){
+    var inp=document.getElementById('cap-city-inp'), top=document.getElementById('cap-top');
+    if(!inp)return;
+    if(top)top.style.display='none';
+    inp.style.display='block';
+    var cur=(window._capState&&window._capState.city)||'';
+    inp.value=cur;
+    inp.setAttribute('aria-expanded','true');
+    try{ inp.focus(); if(cur)inp.select(); }catch(e){}
+  };
+  window.capCityInpHide=function(){
+    var inp=document.getElementById('cap-city-inp'), top=document.getElementById('cap-top');
+    if(!inp||inp.style.display==='none')return;
+    inp.style.display='none'; inp.value=''; inp.setAttribute('aria-expanded','false');
+    if(top)top.style.display='';
+    try{ updCapDisplay(); }catch(e){}
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    var inp=document.getElementById('cap-city-inp');
+    if(!inp)return;
+    inp.addEventListener('click',function(e){ e.stopPropagation(); var dd=document.getElementById('cap-dd'); if(dd&&dd.style.display!=='block')openDeskCities(); });
+    inp.addEventListener('input',function(){ capDdRender(this.value); });
+    inp.addEventListener('keydown',function(e){
+      var items=document.querySelectorAll('#cap-dd-suggest .ddi-item');
+      if(e.key==='ArrowDown'){ e.preventDefault(); capHlSet(capHl+1); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); capHlSet(capHl-1); }
+      else if(e.key==='Enter'){ e.preventDefault(); if(items.length&&capHl>=0&&items[capHl])capDeskPick(items[capHl].dataset.city); }
+      else if(e.key==='Escape'){ e.preventDefault(); var dd=document.getElementById('cap-dd'); if(dd){dd.style.display='none';dd.style.top='-9999px';} capCityInpHide(); }
+    });
+    // ушли из строки (Tab, щелчок по странице) — панель закрывает общий обработчик щелчка; здесь — только Tab
+    inp.addEventListener('blur',function(){ setTimeout(function(){
+      var dd=document.getElementById('cap-dd');
+      if(document.activeElement!==inp&&dd&&dd.style.display!=='block')capCityInpHide();
+    },200); });
   });
 
   // --- Открыть список городов ---
@@ -6096,9 +6541,11 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     if(!dd)return;
     if(cal)cal.style.display='none';
     buildCityDD();
+    capDdRender('');
     posUnder(dd);
     dd.style.display='block';
     dd.style.visibility='visible';
+    capCityInpShow(); // 15.10: печатают сразу в строке «Куда едете?»
   }
 
   // --- Открыть десктоп-календарь ---
@@ -6222,6 +6669,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   window.capOpen=function(){
     window._aiPick=false; // 11.10: обычное открытие — окна работают на обычный поиск
     window._aiAmenities=null; window._aiPriceMax=0; window._aiCategory=null; window._aiAvoid=null; // ручной поиск — сбрасываем AI-фильтры
+    window._aiStars=0; window._aiMeal=null; window._aiArea=null; window._aiName=null; // 15.10: и звёзды/питание/район ИИ
     try{ zbAiChipsReset(); }catch(e){}
     if(window.innerWidth<=768){
       capSheetOpen();
@@ -6230,6 +6678,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
       var isOpen=dd&&dd.style.display==='block';
       if(isOpen){
         dd.style.display='none';
+        capCityInpHide(); // 15.10: строка ввода города снова становится надписью
       } else {
         openDeskCities();
       }
@@ -6253,7 +6702,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     var pill=document.querySelector('.serp-sticky-pill');
     var serpDD=document.getElementById('serp-search-dd');
     var inAnchor=(cm&&cm.contains(e.target))||(pill&&pill.contains(e.target))||(serpDD&&serpDD.contains(e.target));
-    if(dd&&dd.style.display==='block'&&!dd.contains(e.target)&&!inAnchor){dd.style.display='none';dd.style.top='-9999px';}
+    if(dd&&dd.style.display==='block'&&!dd.contains(e.target)&&!inAnchor){dd.style.display='none';dd.style.top='-9999px';capCityInpHide();} // 15.10: и строку ввода города
     if(cal&&cal.style.display==='block'&&!cal.contains(e.target)&&!inAnchor){
       cal.style.display='none';cal.style.top='-9999px';
       // применяем выбранные даты при закрытии «в край» — чтобы не терялись
@@ -6289,6 +6738,11 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     sheet.style.display='flex';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
     csStep(startStep||1);
+    // 15.10: шаг «Куда едете?» — курсор сразу в поле города (одно поле на экране), недавние над популярными
+    if((startStep||1)===1){
+      try{ csRenderRecent(); }catch(e){}
+      try{ var _ci=document.getElementById('cs-city-input'); if(_ci){ _ci.value=''; csMobileSearch(''); _ci.focus(); } }catch(e){}
+    }
   };
 
   window.capSheetClose=function(){
@@ -6330,6 +6784,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   window.csGoBack=function(){if(csCurrentStep>1)csStep(csCurrentStep-1);};
 
   window.csPickCity=function(name){
+    try{ zbRememberCity(name); }catch(e){} // 15.10: недавние города
     csCity=name;
     window._capState.city=name;
     updCapDisplay();
@@ -6444,18 +6899,36 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   };
 
   // Мобильный поиск с автодополнением
+  // 15.10: тот же подбор, что на компьютере (zbCityMatches: «ё», склонения, латиница, раскладка).
+  // Старый второй обработчик поля («автодополнение в шторке») убран: он искал поле до того, как оно
+  // появлялось на странице, и ни разу не подключался — мёртвый код.
+  window.csRenderRecent=function(){
+    var w=document.getElementById('cs-recent-wrap'), b=document.getElementById('cs-recent-pills');
+    if(!w||!b)return;
+    var rec=zbRecentCities();
+    b.innerHTML=rec.map(function(n){ return '<button type="button" data-city="'+zbEsc(n)+'" style="padding:8px 14px;background:#f5f3ee;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">'+zbCityEmoji(n)+' '+zbEsc(n)+'</button>'; }).join('');
+    b.querySelectorAll('button').forEach(function(el){ el.addEventListener('click',function(){ csPickCity(this.dataset.city); }); });
+    w.style.display=rec.length?'block':'none';
+  };
   window.csMobileSearch=function(val){
     var sug=document.getElementById('cs-city-suggest');
-    var pop=document.getElementById('cs-popular-pills');
+    var pop=document.getElementById('cs-popular-pills'), popL=document.getElementById('cs-pop-lbl'), recW=document.getElementById('cs-recent-wrap');
     if(!val||!val.trim()){
       if(sug)sug.style.display='none';
       if(pop)pop.style.display='flex';
+      if(popL)popL.style.display='';
+      try{ csRenderRecent(); }catch(e){}
       return;
     }
-    var matches=CITIES_LIST.filter(function(c){return c.name.toLowerCase().indexOf(val.toLowerCase())!==-1;});
-    if(pop)pop.style.display='none';
+    var matches=zbCityMatches(val);
+    if(recW)recW.style.display='none';
     if(!sug)return;
-    if(!matches.length){sug.style.display='none';return;}
+    if(!matches.length){
+      sug.innerHTML='<div style="padding:13px 16px;font-size:14px;color:#999">Такого города нет в списке — выберите из популярных</div>';
+      sug.style.display='block'; if(pop)pop.style.display='flex'; if(popL)popL.style.display='';
+      return;
+    }
+    if(pop)pop.style.display='none'; if(popL)popL.style.display='none';
     sug.innerHTML=matches.map(function(m){
       return '<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;font-size:15px;font-weight:500;color:#111;border-bottom:1px solid #f5f5f5" data-city="'+m.name+'"><span style="font-size:18px">'+m.emoji+'</span>'+m.name+'</div>';
     }).join('');
@@ -6466,36 +6939,18 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
         var inp=document.getElementById('cs-city-input');
         if(inp)inp.value=this.dataset.city;
         if(sug)sug.style.display='none';
-        if(pop)pop.style.display='flex';
+        if(pop)pop.style.display='flex'; if(popL)popL.style.display='';
       });
     });
   };
-
-  // Автодополнение в шторке (старый инпут — оставляем для совместимости)
-  var csCityInput=document.getElementById('cs-city-input');
-  var csCitySuggest=document.getElementById('cs-city-suggest');
-  if(csCityInput){
-    csCityInput.addEventListener('input',function(){
-      var v=this.value.trim();
-      if(!v){if(csCitySuggest)csCitySuggest.style.display='none';return;}
-      var matches=CITIES_LIST.filter(function(c){return c.name.toLowerCase().indexOf(v.toLowerCase())===0;});
-      if(!csCitySuggest||!matches.length){if(csCitySuggest)csCitySuggest.style.display='none';return;}
-      csCitySuggest.innerHTML=matches.map(function(m){
-        return '<div style="padding:10px 14px;cursor:pointer;font-size:14px;color:#111;border-bottom:1px solid #f5f5f5" data-city="'+m.name+'">'+m.emoji+' '+m.name+'</div>';
-      }).join('');
-      csCitySuggest.style.display='block';
-      csCitySuggest.querySelectorAll('div').forEach(function(el){
-        el.addEventListener('mousedown',function(e){
-          e.preventDefault();
-          csCity=this.dataset.city;
-          csCityInput.value=csCity;
-          csCitySuggest.style.display='none';
-          updCapDisplay();
-          setTimeout(function(){csStep(2);},180);
-        });
-      });
+  // Enter на клавиатуре телефона — первая подсказка
+  document.addEventListener('DOMContentLoaded',function(){
+    var ci=document.getElementById('cs-city-input');
+    if(ci)ci.addEventListener('keydown',function(e){
+      if(e.key!=='Enter')return; e.preventDefault();
+      var m=zbCityMatches(this.value); if(m.length){ this.value=m[0].name; csPickCity(m[0].name); var sg=document.getElementById('cs-city-suggest'); if(sg)sg.style.display='none'; }
     });
-  }
+  });
 
   updCapDisplay();
   var mp=document.getElementById('main-page');if(mp)mp.style.display='block';
@@ -7232,7 +7687,7 @@ function ostResChange(){
       btn.scrollIntoView({behavior:'smooth',block:'center'});
       var pop=document.getElementById('hp-guests-pop');
       if(pop&&!pop.classList.contains('open'))hpOpenGuests();
-      setTimeout(function(){ var s=document.querySelector('#hp-guests-pop select.zb-res-sel'); if(s)try{s.focus();}catch(e){} },350);
+      setTimeout(function(){ var s=document.querySelector('#hp-guests-pop input.zb-res-inp'); if(s)try{s.focus();}catch(e){} },350);
       return;
     }
   }catch(e){}
@@ -7407,14 +7862,18 @@ function ostFail(e){
 </script>
 
 <!-- DESKTOP: список городов (position:fixed, корень body) -->
+<!-- 15.10: второго поля «Введите город…» здесь больше нет — печатают в самой строке «Куда едете?» (#cap-city-inp),
+     а панель показывает подсказки по набранному, недавние и популярные города -->
 <div id="cap-dd" style="display:none;position:fixed;top:0;left:0;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.22);border:1.5px solid #e8e4dc;z-index:99999;padding:10px 0;overflow:hidden;min-width:280px">
-  <div style="padding:12px 14px 8px">
-    <input id="cap-dd-input" type="text" placeholder="Введите город..." autocomplete="off"
-      style="width:100%;border:none;border-bottom:2px solid #0F2D1D;padding:8px 0;font-size:14px;outline:none;background:transparent;color:#111;box-sizing:border-box">
-    <div id="cap-dd-suggest" style="display:none;margin-top:4px"></div>
+  <div id="cap-dd-suggest" role="listbox" aria-label="Подсказки городов" style="display:none;padding:4px 10px 6px"></div>
+  <div id="cap-dd-recent-wrap" style="display:none">
+    <div style="padding:6px 16px 6px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Недавние</div>
+    <div id="cap-dd-recent" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px"></div>
   </div>
-  <div style="padding:4px 16px 8px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Популярные города</div>
-  <div id="cap-dd-list" style="display:grid;grid-template-columns:1fr 1fr;max-height:320px;overflow-y:auto"></div>
+  <div id="cap-dd-pop">
+    <div style="padding:4px 16px 8px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Популярные города</div>
+    <div id="cap-dd-list" style="display:grid;grid-template-columns:1fr 1fr;max-height:320px;overflow-y:auto"></div>
+  </div>
 </div>
 <!-- DESKTOP: календарь (position:fixed, корень body) -->
 <div id="cap-dd-cal" style="display:none;position:fixed;top:0;left:0;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.22);border:1.5px solid #e8e4dc;z-index:99999;padding:18px 20px;width:300px">
@@ -7478,7 +7937,12 @@ function ostFail(e){
                 style="width:100%;box-sizing:border-box;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px 16px;font-size:16px;outline:none;background:#fff;color:#111"
                 oninput="csMobileSearch(this.value)">
               <div id="cs-city-suggest" style="display:none;background:#fff;border:1.5px solid #f0f0f0;border-radius:12px;overflow:hidden;margin-top:8px;box-shadow:0 4px 16px rgba(0,0,0,.1)"></div>
-              <div style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Популярные</div>
+              <!-- 15.10: недавние города (что выбирали на этом устройстве) — как на компьютере -->
+              <div id="cs-recent-wrap" style="display:none">
+                <div style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Недавние</div>
+                <div id="cs-recent-pills" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
+              </div>
+              <div id="cs-pop-lbl" style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Популярные</div>
               <div id="cs-popular-pills" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
                 <button onclick="csPickCity('Минск')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏙 Минск</button>
                 <button onclick="csPickCity('Брест')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏰 Брест</button>
