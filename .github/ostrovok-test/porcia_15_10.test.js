@@ -281,6 +281,17 @@ async function run(browser, base, vp) {
   await page.waitForSelector('#bm-body .ost-review', { timeout: 3000 });
   check('«требует проверки» (29 А: processing + needs_check:true) → сразу «Бронь проверяется, мы напишем вам на почту»', /Бронь проверяется[\s\S]*напишем вам на почту/.test(await page.locator('#bm-body').innerText()));
   await shot('9_proveryaetsya');
+  // порция 30: order/status отдаёт сам статус needs_check
+  S.status = () => ({ status: 200, body: { ok: true, status: 'needs_check', partner_order_id: 'ZB-TEST00001' } });
+  await fillOk(); await page.evaluate(() => ostConfirm());
+  await page.waitForSelector('#bm-body .ost-review', { timeout: 3000 });
+  check('«требует проверки» (порция 30: status needs_check) → сразу «Бронь проверяется»', /Бронь проверяется[\s\S]*напишем вам на почту/.test(await page.locator('#bm-body').innerText()));
+  // прежние догадки больше не включают «проверяется»: неизвестный статус — опрос продолжается
+  S.status = () => ({ status: 200, body: { ok: true, status: 'review', partner_order_id: 'ZB-TEST00001' } });
+  await fillOk(); await page.evaluate(() => ostConfirm());
+  await page.waitForTimeout(1500);
+  check('статус review (не наш) — не «проверяется», ждём дальше', await page.locator('#bm-body .ost-review').count() === 0 && /Проверяем бронь/.test(await page.locator('#bm-body').innerText()));
+  await page.evaluate(() => { window._ostBookSeq++; closeBK(); });
   // расписание опроса: 4 с первые 2 минуты, потом 15 с, всего до 15 минут
   await fillOk();
   const sched = await page.evaluate(async () => {
@@ -342,10 +353,12 @@ async function run(browser, base, vp) {
     { booking_num: 'ZB-FAILED001', status: 'failed', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
     { booking_num: 'ZB-FAILED002', status: 'cancelled', error_code: 'soldout', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
     { booking_num: 'ZB-CANCEL003', status: 'cancelled', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
+    { booking_num: 'ZB-NEEDCHK05', status: 'needs_check', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-12-10', check_out: '2026-12-12', total_price: 200 },
     { booking_num: 'ZB-NEEDCHK04', status: 'pending', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
   ]));
   t = await page.locator('#cabinet-body').innerText();
   check('«Мои брони»: бронь «требует проверки» (29 А оставляет pending) — «Ожидает», без кнопки отмены', /ZB-NEEDCHK04[\s\S]*Ожидает/.test(t));
+  check('«Мои брони»: status needs_check (порция 30) — «Проверяется», без кнопки отмены', /ZB-NEEDCHK05[\s\S]*Проверяется/.test(t) && !/needs_check/.test(t) && (t.match(/Отменить бронь/g) || []).length === 0);
   check('«Мои брони»: при status failed или error_code — «Не подтверждена»', (t.match(/Не подтверждена/g) || []).length === 2);
   check('«Мои брони»: настоящая отмена — по-прежнему «Отменено»', (t.match(/Отменено/g) || []).length === 1);
   await shot('12_moi_broni');

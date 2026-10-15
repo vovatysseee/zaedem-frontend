@@ -5305,7 +5305,7 @@ async function hotelLogin(){
 
 // 15.10: статус брони для «Моих броней». Бронь, которую отель не подтвердил, — «Не подтверждена»,
 // а не «Отменено»: гость ничего не отменял. Узнаём по статусу failed (и похожим) или по error_code
-// у отменённой брони. Статус «требует проверки» — «Проверяется». Остальное — как было.
+// у отменённой брони. Статус «требует проверки» (needs_check) — «Проверяется». Остальное — как было.
 function zbBkStatus(bk){
   var s=String((bk&&bk.status)||'').toLowerCase();
   if(['failed','not_confirmed','unconfirmed','rejected'].indexOf(s)>=0)return 'failed';
@@ -7297,8 +7297,9 @@ function ostValidateForm(){
 // Сырой текст вроде «Ostrovok order/finish error» гостю не показываем.
 // 15.10 (по 29 А): окончательные отказы order/status — ещё 3ds и итог order/info после отсечки (order_*)
 var OST_NOT_CONFIRMED=['book_limit','not_allowed','provider','block','charge','booking_finish_did_not_succeed','3ds','order_cancelled','order_failed','order_rejected'];
-// «требует проверки»: бэкенд 29 А отдаёт status:'processing' + needs_check:true (значения ниже — запас)
-var OST_REVIEW_ST=['needs_check','review','needs_review','manual_review','check','checking'];
+// «требует проверки»: статус needs_check — так он называется в bookings.status, order/status и «Моих бронях»
+// (порция 30); в 29 А order/status отдаёт status:'processing' + флаг needs_check:true — его ловим отдельно
+var OST_REVIEW_ST=['needs_check'];
 function ostErr(code,msg){ var e=new Error(msg||''); e.code=code||''; return e; }
 function ostErrView(e){
   var code=String((e&&e.code)||'').toLowerCase(), msg=String((e&&e.message)||'');
@@ -7387,7 +7388,7 @@ async function ostConfirm(){
         return;
       }
       var code=sd?String(sd.error_code||sd.error||'').toLowerCase():'';
-      if(sd&&(sd.needs_check===true||sd.needs_review===true||OST_REVIEW_ST.indexOf(String(sd.status||'').toLowerCase())>=0)){ ostReviewView(pid,email); return; }
+      if(sd&&(sd.needs_check===true||OST_REVIEW_ST.indexOf(String(sd.status||'').toLowerCase())>=0)){ ostReviewView(pid,email); return; }
       if(sd&&sd.status==='failed'&&code!=='processing'){ ostFail(ostErr(code,'')); return; }
       var el=Date.now()-t0;
       if(el>=15*60*1000){ ostReviewView(pid,email); return; } // 15 минут прошло — бронь досверит сервер, итог придёт письмом
