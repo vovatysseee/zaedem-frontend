@@ -651,6 +651,27 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
   .serp-list{padding:12px;max-width:100vw;overflow-x:hidden}
   .serp-sticky{padding:0 1rem}
 }
+/* 15.10: строка «Гражданство» в панелях гостей и таблица штрафов отмены */
+.zb-res-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 4px;border-top:1px solid #f0f0f0;margin-top:4px}
+.zb-res-lbl{font-size:13px;font-weight:600;color:#111}
+.zb-res-sub{font-size:11px;color:#aaa}
+.zb-res-sel{max-width:58%;border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff;color:#111}
+#cs-step3 .zb-res-row{padding:18px 0 4px}
+#cs-step3 .zb-res-lbl{font-size:16px}
+#cs-step3 .zb-res-sub{font-size:13px}
+#cs-step3 .zb-res-sel{font-size:16px;padding:9px 10px}
+.ost-cx-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.ost-cx-tbl td{padding:4px 0;border-top:1px solid rgba(0,0,0,.07);vertical-align:top}
+.ost-cx-tbl td:first-child{white-space:nowrap}
+.ost-cx-tbl td:last-child{text-align:right;font-weight:700;padding-left:10px}
+.ost-cx-note{font-size:11px;color:var(--muted);margin-top:4px;font-weight:400}
+.ost-cx-box{background:#f6f4ee;border:1px solid #e6e1d5;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#3b3b3b;margin-bottom:14px}
+.ost-cx-box b{font-weight:700}
+.ostc-cx{margin:4px 0 2px}
+.ost-g-err{color:#c62828;font-size:12px;margin-top:4px;min-height:0}
+.ost-g-inp.bad{border-color:#e53935!important}
+.ost-res-ro{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--sand2);border-radius:12px;padding:11px 14px;font-size:14px}
+.ost-res-ro a{color:var(--green);font-weight:700;text-decoration:underline;cursor:pointer;font-size:13px;white-space:nowrap}
 </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1066,6 +1087,40 @@ const CFG = {
   BRAND:    'Заедем.by',
 };
 const API = CFG.API;
+// 15.10: гражданство гостей выбирается в поиске (раньше всегда шло CFG.RESIDENCY='by').
+// Островок считает цену по гражданству, поэтому оно уходит в /search и /hp, а в форме
+// брони только показывается. Запоминаем на устройстве; нет записи или она битая — Беларусь.
+const ZB_COUNTRIES=[
+  ['by','Беларусь'],['ru','Россия'],['ua','Украина'],['kz','Казахстан'],['az','Азербайджан'],['am','Армения'],
+  ['ge','Грузия'],['uz','Узбекистан'],['kg','Киргизия'],['tj','Таджикистан'],['md','Молдова'],['lt','Литва'],
+  ['lv','Латвия'],['ee','Эстония'],['pl','Польша'],['de','Германия'],['tr','Турция'],['il','Израиль'],
+  ['cn','Китай'],['us','США'],['gb','Великобритания'],['fr','Франция'],['it','Италия'],['es','Испания'],
+  ['ae','ОАЭ'],['in','Индия']
+];
+function zbResName(code){ for(var i=0;i<ZB_COUNTRIES.length;i++){ if(ZB_COUNTRIES[i][0]===code)return ZB_COUNTRIES[i][1]; } return ''; }
+function zbResidency(){
+  var v=''; try{ v=String(localStorage.getItem('zb_residency')||'').toLowerCase(); }catch(e){}
+  return zbResName(v)?v:CFG.RESIDENCY;
+}
+function zbSetResidency(code){
+  code=String(code||'').toLowerCase(); if(!zbResName(code))return;
+  try{ localStorage.setItem('zb_residency',code); }catch(e){}
+  try{ document.querySelectorAll('select.zb-res-sel').forEach(function(s){ s.value=code; }); }catch(e){}
+  // на странице объекта цены пересчитаются при закрытии окошка гостей, как при смене числа гостей
+  try{ if(document.getElementById('hp-guests-pop'))window._hpGuestsDirty=true; }catch(e){}
+}
+// Компактная строка «Гражданство» для панелей гостей (главная, телефон, выдача, страница объекта)
+function zbResRowHTML(){
+  var cur=zbResidency();
+  return '<div class="zb-res-row"><div><div class="zb-res-lbl">Гражданство</div><div class="zb-res-sub">цена зависит от него</div></div>'
+    +'<select class="zb-res-sel" aria-label="Гражданство гостей" onclick="event.stopPropagation()" onchange="zbSetResidency(this.value)">'
+    +ZB_COUNTRIES.map(function(c){ return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>'; }).join('')
+    +'</select></div>';
+}
+function zbResFill(){
+  try{ document.querySelectorAll('.zb-res-slot').forEach(function(el){ el.innerHTML=zbResRowHTML(); }); }catch(e){}
+}
+document.addEventListener('DOMContentLoaded',zbResFill);
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DW=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const GL=['','1 гость','2 гостя','3 гостя','4 гостя','5 гостей','6 гостей','7 гостей','8 гостей'];
@@ -2433,7 +2488,7 @@ async function hpQaAsk(){
     try{
       if(h.source==='ostrovok'||h.hid){
         (_ostRates||[]).slice(0,15).forEach(function(rt){
-          var parts=[cleanRoomName(rt.room_name)||'Номер', rt.price_byn+' BYN за '+_n+' '+nightsWord(_n), ostMeal(rt.meal), ostCancelText(rt.cancellation).replace(/^[^А-Яа-яA-Za-z]+/,'')];
+          var parts=[cleanRoomName(rt.room_name)||'Номер', rt.price_byn+' BYN за '+_n+' '+nightsWord(_n), ostMeal(rt.meal), ostCancelText(rt.cancellation,rt.price_byn).replace(/^[^А-Яа-яA-Za-z]+/,'')];
           if(rt.capacity)parts.push('до '+rt.capacity+' гостей');
           if(rt.bedrooms)parts.push(rt.bedrooms+' комн.');
           var am=ostAmenList(rt.room_amenities,6); if(am.length)parts.push(am.join(', '));
@@ -2527,6 +2582,7 @@ function hpBuildGuests(){
     }
     html+='</div>';
   }
+  html+=zbResRowHTML(); // 15.10: гражданство — смена пересчитает цены по «Готово»
   html+='<button onclick="hpApplyGuests(event)" style="width:100%;margin-top:10px;background:var(--green);color:#fff;border:none;padding:11px;border-radius:12px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer">Готово</button>';
   html+='</div>';
   pop.innerHTML=html;
@@ -4277,6 +4333,7 @@ function serpEditSearch(){
         '</div>'+
       '</div>'+
       '<div id="ssd-ages"></div>'+
+      zbResRowHTML()+'<div style="height:12px"></div>'+ // 15.10: гражданство гостей
       // Размеры выровнены с такой же кнопкой на главной (#ddc-search): там
       // padding:12px и font-size:14px. Здесь было 14px и 15px — кнопка выглядела
       // тяжелее, хотя делает то же самое.
@@ -4369,6 +4426,7 @@ async function serpLoadOstrovok(){
       checkout: checkout,
       adults:   st.adults||2,
       children: Array.isArray(st.childAges)?st.childAges:[],
+      residency: zbResidency(), // 15.10: гражданство из поиска (запомнено на устройстве)
     };
     var resp=await fetch(API+'/api/ostrovok/search',{
       method:'POST',
@@ -4532,7 +4590,8 @@ function zbSearchSnap(){
       d(st.din), d(st.dout),
       (st.adults!=null?st.adults:''),
       (st.kids!=null?st.kids:''),
-      (Array.isArray(st.childAges)?st.childAges.join('-'):'')
+      (Array.isArray(st.childAges)?st.childAges.join('-'):''),
+      zbResidency() // 15.10: сменили гражданство — прежняя выдача посчитана по другому
     ].join('|');
   }catch(e){ return ''; }
 }
@@ -5244,6 +5303,16 @@ async function hotelLogin(){
   }catch(e){err.textContent='Ошибка соединения';}
 }
 
+// 15.10: статус брони для «Моих броней». Бронь, которую отель не подтвердил, — «Не подтверждена»,
+// а не «Отменено»: гость ничего не отменял. Узнаём по статусу failed (и похожим) или по error_code
+// у отменённой брони. Статус «требует проверки» — «Проверяется». Остальное — как было.
+function zbBkStatus(bk){
+  var s=String((bk&&bk.status)||'').toLowerCase();
+  if(['failed','not_confirmed','unconfirmed','rejected'].indexOf(s)>=0)return 'failed';
+  if(s==='cancelled'&&bk&&(bk.error_code||bk.not_confirmed===true))return 'failed';
+  if(typeof OST_REVIEW_ST!=='undefined'&&OST_REVIEW_ST.indexOf(s)>=0)return 'review';
+  return (bk&&bk.status)||'';
+}
 function openCabinet(bookings){
   const b=bookings[0];
   function fmtDate(d){
@@ -5251,15 +5320,15 @@ function openCabinet(bookings){
     return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
   }
   function statusLabel(s){
-    const map={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено'};
+    const map={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено',failed:'Не подтверждена',review:'⏳ Проверяется'};
     return map[s]||s;
   }
   function statusColor(s){
-    const map={confirmed:'rgba(15,45,29,.1)',pending:'rgba(255,180,0,.1)',cancelled:'rgba(220,50,50,.1)',completed:'rgba(100,100,100,.1)'};
+    const map={confirmed:'rgba(15,45,29,.1)',pending:'rgba(255,180,0,.1)',cancelled:'rgba(220,50,50,.1)',completed:'rgba(100,100,100,.1)',failed:'rgba(100,100,100,.1)',review:'rgba(255,180,0,.1)'};
     return map[s]||'var(--sand3)';
   }
   function statusTextColor(s){
-    const map={confirmed:'#0F2D1D',pending:'#a06000',cancelled:'#c00',completed:'#555'};
+    const map={confirmed:'#0F2D1D',pending:'#a06000',cancelled:'#c00',completed:'#555',failed:'#555',review:'#a06000'};
     return map[s]||'var(--muted)';
   }
   document.getElementById('cabinet-body').innerHTML=`
@@ -5276,7 +5345,7 @@ function openCabinet(bookings){
               <div style="font-size:16px;font-weight:700;color:#111;margin-top:3px">${zbEsc(bk.hotel_name||'—')}</div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px">${zbEsc(bk.room_name||'')}</div>
             </div>
-            <span style="background:${statusColor(bk.status)};color:${statusTextColor(bk.status)};font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-left:8px">${statusLabel(bk.status)}</span>
+            <span style="background:${statusColor(zbBkStatus(bk))};color:${statusTextColor(zbBkStatus(bk))};font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-left:8px">${statusLabel(zbBkStatus(bk))}</span>
           </div>
           <!-- Детали -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--sand2);border-radius:10px;padding:12px 14px;margin-bottom:14px">
@@ -5310,8 +5379,8 @@ function printBooking(bk){
   if(typeof bk==='string') bk={booking_num:bk};
   const num=bk.booking_num||'—';
   function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});}
-  const statusMap={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено'};
-  const statusLabel=statusMap[bk.status]||bk.status||'—';
+  const statusMap={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено',failed:'Не подтверждена',review:'⏳ Проверяется'};
+  const statusLabel=statusMap[zbBkStatus(bk)]||bk.status||'—';
   const price=bk.total_price?parseFloat(bk.total_price).toFixed(0)+' '+(bk.currency||'BYN'):'—';
   const w=window.open('','_blank','width=640,height=800');
   if(!w)return;
@@ -6557,22 +6626,76 @@ function nightsWord(n){return n===1?'ночь':(n>=2&&n<=4?'ночи':'ноче�
 
 function ostMeal(m){
   var map={nomeal:'Без питания',breakfast:'Завтрак включён','breakfast-for-1':'Завтрак для 1 гостя','breakfast-for-2':'Завтрак для 2 гостей',halfboard:'Полупансион','half-board':'Полупансион',fullboard:'Полный пансион','full-board':'Полный пансион','all-inclusive':'Всё включено','continental-breakfast':'Континентальный завтрак'};
-  return map[m]||'Без питания';
+  // 15.10: неизвестное значение meal_data.value больше не превращается в «Без питания» —
+  // показываем как есть (иначе гость решит, что еды нет, а она может быть). Пусто — как раньше.
+  if(!m)return 'Без питания';
+  return map[m]||zbEsc(String(m));
 }
 
-function ostCancelText(c){
+// 15.10: время Островка (UTC, часто без «Z» на конце) → «ДД.ММ.ГГГГ ЧЧ:ММ» по Минску (UTC+3, без перехода).
+// Раньше строка без «Z» читалась как время устройства гостя, и в другом поясе час съезжал.
+function ostMinskFmt(v){
+  var str=String(v||'').trim(); if(!str)return '';
+  if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(str))str+='Z';
+  var t=new Date(str).getTime(); if(isNaN(t))return '';
+  var d=new Date(t+3*3600*1000);
+  return String(d.getUTCDate()).padStart(2,'0')+'.'+String(d.getUTCMonth()+1).padStart(2,'0')+'.'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
+}
+function ostTs(v){ var str=String(v||'').trim(); if(!str)return NaN; if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(str))str+='Z'; return new Date(str).getTime(); }
+// 15.10: разбор условий отмены. free_cancellation_before = null, но есть периоды штрафов
+// (cancellation_penalties.policies, сумма уже в наших BYN) → таблица «до даты — штраф».
+// «Невозвратный» — только если штраф 100% с момента брони (во всех ещё не прошедших периодах).
+function ostCancelInfo(c,price){
+  if(c&&c.free_cancellation_before)return {kind:'free'};
+  var pol=(c&&Array.isArray(c.policies))?c.policies.slice():[];
+  if(!pol.length)return {kind:'nonref'}; // данных о штрафах нет — как раньше
+  var now=Date.now();
+  pol.sort(function(a,b){ var x=a.start_at?ostTs(a.start_at):-Infinity, y=b.start_at?ostTs(b.start_at):-Infinity; return x-y; });
+  pol=pol.filter(function(p){ return !p.end_at||!(ostTs(p.end_at)<=now); }); // прошедшие периоды гостю не нужны
+  if(!pol.length)return {kind:'nonref'};
+  var pr=parseFloat(price);
+  var full=function(p){ var a=parseFloat(p.amount); return pr>0&&isFinite(a)&&a>=pr-0.5; };
+  if(pol.every(full))return {kind:'nonref'};
+  var rows=pol.map(function(p){
+    var when=p.end_at?('до '+ostMinskFmt(p.end_at)):(p.start_at?('после '+ostMinskFmt(p.start_at)):'в любое время');
+    var a=parseFloat(p.amount), fee;
+    if(p.amount==null||!isFinite(a))fee='по условиям тарифа';
+    else if(a<=0)fee='бесплатно';
+    else fee=String(Math.round(a))+' BYN'+(full(p)?' (вся стоимость)':'');
+    return {when:when,fee:fee};
+  });
+  return {kind:'table',rows:rows};
+}
+function ostCancelText(c,price){
   if(c&&c.free_cancellation_before){
-    var d=new Date(new Date(c.free_cancellation_before).getTime()+3*3600*1000); // UTC → Минск (UTC+3)
-    var s=String(d.getUTCDate()).padStart(2,'0')+'.'+String(d.getUTCMonth()+1).padStart(2,'0')+'.'+d.getUTCFullYear()+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0');
-    return '✅ Бесплатная отмена до '+s+' (по Минску)';
+    return '✅ Бесплатная отмена до '+ostMinskFmt(c.free_cancellation_before)+' (по Минску)';
+  }
+  var inf=ostCancelInfo(c,price);
+  if(inf.kind==='table'){
+    return '↩️ Отмена со штрафом: '+inf.rows.map(function(r){return r.when+' — '+r.fee;}).join('; ')+' (по минскому времени)';
   }
   return '⚠️ Невозвратный тариф — при отмене деньги не возвращаются';
 }
-// Цветная плашка условий отмены (зелёная — бесплатно, янтарная — невозвратный)
-function ostCancelBox(c){
+// 15.10: таблица штрафов отмены (по минскому времени)
+function ostCancelTableHTML(inf){
+  return '<table class="ost-cx-tbl">'+inf.rows.map(function(r){ return '<tr><td>'+zbEsc(r.when)+'</td><td>'+zbEsc(r.fee)+'</td></tr>'; }).join('')+'</table>'
+    +'<div class="ost-cx-note">Время — по минскому времени</div>';
+}
+// Короткая строка отмены для карточки тарифа; при штрафах по периодам — таблица под ней
+function ostCancelCardHTML(c,price){
+  var inf=ostCancelInfo(c,price);
+  if(inf.kind==='table')return {meta:'↩️ Отмена со штрафом',extra:'<div class="ostc-cx">'+ostCancelTableHTML(inf)+'</div>'};
+  return {meta:ostCancelText(c,price),extra:''};
+}
+// Цветная плашка условий отмены (зелёная — бесплатно, янтарная — невозвратный, серая — штраф по периодам)
+function ostCancelBox(c,price){
+  var inf=ostCancelInfo(c,price);
+  if(inf.kind==='table'){
+    return '<div class="ost-cx-box"><b>Условия отмены</b>'+ostCancelTableHTML(inf)+'</div>';
+  }
   var free=c&&c.free_cancellation_before;
   var bg=free?'#eaf7ee':'#fff4e6', col=free?'#1a7a3a':'#9a6b00', bd=free?'#bfe6cb':'#f0d9a8';
-  return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:10px;padding:10px 12px;font-size:12.5px;color:'+col+';font-weight:600;margin-bottom:14px">'+ostCancelText(c)+'</div>';
+  return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:10px;padding:10px 12px;font-size:12.5px;color:'+col+';font-weight:600;margin-bottom:14px">'+ostCancelText(c,price)+'</div>';
 }
 
 // Перевод/чистка удобств номера (Островок иногда отдаёт английскими кодами)
@@ -6794,8 +6917,22 @@ async function loadOstRates(h,opt){
     var adults=(window._capState&&window._capState.adults)||gCnt||2;
     var kids=(window._capState&&window._capState.childAges)||[];
     window._bookChildAges=Array.isArray(kids)?kids.slice():[];  // возрасты, под которые посчитаны цены — их и покажем в брони
-    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid||h.ostId,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:CFG.RESIDENCY,fresh:!!opt.fresh})});
+    // 15.10: гражданство из поиска; запоминаем, по какому посчитаны цены — его и покажем в брони
+    var _res=zbResidency();
+    window._hpResidency=_res;
+    var r=await fetch(API+'/api/ostrovok/hp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hid:h.hid||h.ostId,checkin:ci,checkout:co,adults:adults,children:Array.isArray(kids)?kids:[],residency:_res,fresh:!!opt.fresh})});
     var data=await r.json();
+    // 15.10: Островок ограничил запросы цен (rate_limited) — старые цены не показываем,
+    // гость сам обновит через минуту. Старый бэкенд поля не шлёт — работает как раньше.
+    if(data&&data.rate_limited===true){
+      _ostRates=[];
+      box.innerHTML='<div class="ost-ratelim" style="background:var(--sand2);border-radius:12px;padding:18px;font-size:13px;color:var(--ink)">'
+        +'<div style="font-weight:700;margin-bottom:6px">Цены временно недоступны</div>'
+        +'<div style="color:var(--muted);margin-bottom:12px">Обновите через минуту — покажем актуальные цены.</div>'
+        +'<button class="ost-ratelim-btn" onclick="loadOstRates(curHotel)" style="background:var(--green);color:#fff;border:none;padding:10px 22px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Обновить</button></div>';
+      try{ hpSumState('error','Цены временно недоступны'); }catch(e){}
+      return;
+    }
     // 03.10: Островок ограничил запросы цен (лимит в минуту) — не ошибка, а пауза: ждём и повторяем сами.
     // Повтор отменяется, если гость сменил даты, гостей или ушёл со страницы объекта.
     if(r.status===503&&data&&data.busy){
@@ -6864,13 +7001,14 @@ async function loadOstRates(h,opt){
       if(rt.capacity)capParts.push('👥 до '+rt.capacity+' '+(rt.capacity==1?'гостя':'гостей'));
       if(rt.bedrooms)capParts.push('🛏 '+rt.bedrooms+(rt.bedrooms==1?' комната':' комн.'));
       var capHtml=capParts.length?'<div class="ostc-cap">'+capParts.join(' · ')+'</div>':'';
+      var _cx=ostCancelCardHTML(rt.cancellation,rt.price_byn);
       return '<div class="ostc ost-rate-row" data-idx="'+i+'" onclick="ostPickRate('+i+')">'
         +cover
         +'<div class="ostc-body">'
         +'<div class="ostc-name">'+zbEsc(cleanRoomName(rt.room_name))+'</div>'
         +capHtml
         +chipsHtml
-        +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+ostCancelText(rt.cancellation)+'</div>'
+        +'<div class="ostc-meta">🍽 '+ostMeal(rt.meal)+' · '+_cx.meta+'</div>'+_cx.extra // 15.10: штрафы по периодам — таблицей
         +(ostFeesTxt(rt)?'<div class="ostc-fee">+ на месте: '+zbEsc(ostFeesTxt(rt))+'</div>':'')
         +'<div class="ostc-foot"><div class="ostc-price">'+rt.price_byn+' BYN<small>за '+n+' '+nightsWord(n)+'</small></div>'
         +'<button class="btn-select" onclick="event.stopPropagation();ostSelectRate('+i+')">Выбрать</button></div>'
@@ -6989,6 +7127,7 @@ function ostModalShell(){
 async function ostSelectRate(i){
   var rt=_ostRates[i];
   if(!rt||!curHotel)return;
+  window._ostBookSeq=(window._ostBookSeq||0)+1; // 15.10: новая бронь — опрос прошлой (до 15 мин) больше не пишет в окно
   ostModalShell();
   document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:2rem;margin-bottom:12px">⏳</div><div style="font-family:\'Unbounded\',sans-serif">Проверяем актуальность цены…</div></div>';
   try{
@@ -7003,6 +7142,101 @@ async function ostSelectRate(i){
   }
 }
 
+// ═ 15.10 ФОРМА ГОСТЕЙ ОСТРОВКА ═
+// Раньше форма рисовала одно поле «Имя и фамилия», а ostConfirm ждал отдельную фамилию из
+// скрытого поля, которое только очищалось, — и молча выходил. Имена второго гостя и детей
+// подменялись на Guest2 / Child1. Теперь для каждого гостя — видимые «Имя» и «Фамилия»
+// латиницей (как в паспорте), у ребёнка — возраст из поиска. Подставных имён нет.
+// Состав гостей — тот же, под который посчитаны цены (как и раньше в ostConfirm)
+function ostGuestPlan(){
+  var adults=parseInt((window._capState&&window._capState.adults)||gCnt||2)||2;
+  var bAges=(window._bookChildAges&&window._bookChildAges.length)?window._bookChildAges:((window._capState&&window._capState.childAges)||[]);
+  var kids=bAges.length||((window._capState&&window._capState.kids)||0);
+  var ages=[]; for(var c=0;c<kids;c++)ages.push(bAges[c]!=null?parseInt(bAges[c]):7);
+  return {adults:adults,ages:ages};
+}
+function ostNameFld(id,label,ph){
+  return '<div class="fg" style="margin:0 0 8px;min-width:0"><label for="'+id+'">'+label+'</label>'
+    +'<input id="'+id+'" class="ost-g-inp" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="'+ph+'" oninput="ostNameLive(this)" onblur="ostNameLive(this,true)">'
+    +'<div class="ost-g-err" id="'+id+'-err"></div></div>';
+}
+function ostGuestsHTML(gp){
+  var html='<div style="font-size:12px;color:var(--muted);margin:2px 0 10px">Имя и фамилия каждого гостя — <b>латиницей, как в паспорте</b> (например, Ivan Ivanov)</div>';
+  for(var i=0;i<gp.adults;i++){
+    html+='<div class="ost-guest" style="'+(i?'padding-top:6px;margin-top:6px':'')+'">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">'+(i===0?'Заказчик (взрослый 1)':'Взрослый '+(i+1))+'</div>'
+      +'<div class="fgrow">'+ostNameFld('ost-afn'+i,'Имя',i===0?'Ivan':'Anna')+ostNameFld('ost-aln'+i,'Фамилия',i===0?'Ivanov':'Ivanova')+'</div></div>';
+  }
+  for(var c=0;c<gp.ages.length;c++){
+    var age=gp.ages[c];
+    html+='<div class="ost-guest" style="padding-top:6px;margin-top:6px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px">Ребёнок '+(c+1)+' · '+age+' '+bkAgeWord(age)+' <span style="color:var(--muted);font-weight:400">(возраст из поиска)</span></div>'
+      +'<div class="fgrow">'+ostNameFld('ost-cfn'+c,'Имя','Maria')+ostNameFld('ost-cln'+c,'Фамилия','Ivanova')+'</div></div>';
+  }
+  return html;
+}
+// Проверка одного имени/фамилии: только латинские буквы; дефис или пробел — между частями
+function ostLatinNameErr(v){
+  var s=String(v||'').trim().replace(/\s+/g,' ');
+  if(!s)return 'Заполните поле';
+  if(/[а-яёА-ЯЁ]/.test(s))return 'Латиницей, как в паспорте: например, Ivan';
+  if(/\d/.test(s))return 'Без цифр';
+  if(!/^[A-Za-z]+(?:[ \-][A-Za-z]+)*$/.test(s))return 'Только латинские буквы (можно дефис)';
+  if(s.length>50)return 'Слишком длинно';
+  return null;
+}
+function ostNameLive(el,final){
+  var v=(el.value||'').trim(); var e=document.getElementById(el.id+'-err');
+  var err=(v||final)?ostLatinNameErr(v):null;
+  if(!final&&err==='Заполните поле')err=null;
+  el.classList.toggle('bad',!!err); if(e)e.textContent=err||'';
+}
+// Собрать гостей; при ошибке — подсветить поле и вернуть {error}
+function ostCollectGuests(){
+  var gp=ostGuestPlan(), guests=[], firstBad=null, msg=null;
+  function take(id){
+    var el=document.getElementById(id); var v=el?(el.value||'').trim().replace(/\s+/g,' '):'';
+    var err=el?ostLatinNameErr(v):'Заполните поле';
+    if(el){ el.classList.toggle('bad',!!err); var e=document.getElementById(id+'-err'); if(e)e.textContent=err||''; }
+    if(err&&!firstBad){ firstBad=el; msg=err; }
+    return v;
+  }
+  for(var i=0;i<gp.adults;i++){
+    var fn=take('ost-afn'+i), ln=take('ost-aln'+i);
+    guests.push({first_name:fn,last_name:ln});
+  }
+  for(var c=0;c<gp.ages.length;c++){
+    var cfn=take('ost-cfn'+c), cln=take('ost-cln'+c);
+    guests.push({first_name:cfn,last_name:cln,is_child:true,age:gp.ages[c]});
+  }
+  if(firstBad){ try{firstBad.focus();}catch(e){} return {error:'Проверьте имена гостей: '+msg.charAt(0).toLowerCase()+msg.slice(1)}; }
+  return {guests:guests};
+}
+// Гражданство в брони — только для чтения: цена посчитана по нему, поменять можно в поиске
+function ostResReadonlyHTML(){
+  var code=window._hpResidency||zbResidency();
+  return '<div class="fg"><label>Гражданство гостей</label><div class="ost-res-ro"><span id="f-citizen-ro">'+zbEsc(zbResName(code)||'Беларусь')+'</span>'
+    +'<a onclick="event.stopPropagation();ostResChange()" role="button">изменить</a></div>'
+    +'<input type="hidden" id="f-citizen" value="'+zbEsc(zbResName(code)||'Беларусь')+'" data-code="'+zbEsc(code)+'">'
+    +'<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Цена посчитана для этого гражданства. Чтобы поменять — вернитесь к поиску.</div></div>';
+}
+// «изменить» → закрываем бронь и открываем выбор гостей на странице объекта (там же гражданство);
+// по «Готово» цены пересчитаются под новое гражданство
+function ostResChange(){
+  closeBK();
+  try{
+    var btn=document.querySelector('.bk-datebtn[onclick*="hpOpenGuests"]');
+    if(btn){
+      btn.scrollIntoView({behavior:'smooth',block:'center'});
+      var pop=document.getElementById('hp-guests-pop');
+      if(pop&&!pop.classList.contains('open'))hpOpenGuests();
+      setTimeout(function(){ var s=document.querySelector('#hp-guests-pop select.zb-res-sel'); if(s)try{s.focus();}catch(e){} },350);
+      return;
+    }
+  }catch(e){}
+  try{ if(typeof serpEditSearch==='function')serpEditSearch(); }catch(e){}
+}
+
 function ostRenderForm(oldPrice){
   var h=curHotel,rt=_ostSel.rate,n=getNights();
   var adults=(window._capState&&window._capState.adults)||gCnt||2;
@@ -7011,26 +7245,14 @@ function ostRenderForm(oldPrice){
   var childAges=bAges;
   var _t=window._hpTimes||{};
   var timeRow=(_t.ci||_t.co)?'<div class="srow2"><span>Время</span><span>'+[_t.ci?'заезд с '+_t.ci:'',_t.co?'выезд до '+_t.co:''].filter(Boolean).join(' · ')+'</span></div>':'';
-  var extra='';
-  for(var g=1;g<adults;g++){
-    extra+='<div class="fgrow"><div class="fg"><label>Имя гостя '+(g+1)+'</label><input id="f-fn'+g+'" placeholder="Anna"></div><div class="fg"><label>Фамилия гостя '+(g+1)+'</label><input id="f-ln'+g+'" placeholder="Ivanova"></div></div>';
-  }
-  // Поля для детей (имя, фамилия). Возраст — только для просмотра (задан при поиске, цена под него уже посчитана)
-  if(kids>0){
-    extra+='<div style="font-size:12px;color:var(--muted);margin:14px 0 8px;font-weight:600">Дети</div>';
-    for(var c=0;c<kids;c++){
-      var cage=(childAges[c]!=null?childAges[c]:7);
-      var ageWord=(cage===1?'год':cage>=2&&cage<=4?'года':'лет');
-      extra+='<div class="fgrow"><div class="fg"><label>Имя ребёнка '+(c+1)+'</label><input id="f-cfn'+c+'" placeholder="Ivan"></div><div class="fg"><label>Фамилия</label><input id="f-cln'+c+'" placeholder="Ivanov"></div><div class="fg" style="max-width:110px"><label>Возраст</label><div style="background:var(--sand2);border-radius:10px;padding:11px 12px;font-size:14px;font-weight:700;color:var(--ink);text-align:center;cursor:default" title="Возраст указан при поиске">'+cage+' '+ageWord+'</div></div></div>';
-    }
-  }
+  var _gp=ostGuestPlan();
   document.getElementById('bm-body').innerHTML='\
     <div style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">'+h.name_ru+'</div>\
     <div style="color:var(--muted);font-size:13px;margin-bottom:8px">📍 '+zbEsc(h.address||'')+' · '+zbEsc(_ostSel.roomName)+'</div>\
-    '+ostCancelBox(rt.cancellation)
+    '+ostCancelBox(rt.cancellation,rt.price_byn)
     +(oldPrice?'<div style="background:#fff6e0;border-radius:10px;padding:10px 12px;font-size:13px;color:#9a6b00;margin-bottom:12px">⚠️ Цена обновилась: было '+oldPrice+' BYN, актуальная — <b>'+rt.price_byn+' BYN</b></div>':'')
-    +'<div class="fg"><label>Гражданство гостей</label><select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff"><option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option></select></div>\
-    <div id="f-guests"></div><input type="hidden" id="f-ln">\
+    +ostResReadonlyHTML()+'\
+    <div id="f-guests">'+ostGuestsHTML(_gp)+'</div>\
     <div style="border-top:1px solid var(--sand3);margin:14px 0 12px"></div>\
     <div class="fg"><label>Email</label><input id="f-em" type="email" placeholder="ivan@mail.ru"></div>\
     <div class="fg"><label>Телефон</label><input id="f-ph" type="tel" placeholder="+375 29 000-00-00"></div>\
@@ -7042,13 +7264,11 @@ function ostRenderForm(oldPrice){
   bkInjectConsent();
   bkInjectRoomPhoto();
   bkInjectRoomAmen();
-  bkRenderGuests();
 }
 
 // Точка входа оплаты Островка (под bePaid). Сейчас — заглушка.
 function ostStartPayment(){
-  var em=document.getElementById('f-em'), fn=document.getElementById('f-fn');
-  var _e=bkValidate(); if(_e){bkToast(_e);return;}
+  var _e=ostValidateForm(); if(_e){bkToast(_e);return;}
   if(!window._BEPAID_PUBLIC_KEY){
     document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:36px 20px">'
       +'<div style="font-size:2.2rem;margin-bottom:14px">⏳</div>'
@@ -7061,38 +7281,53 @@ function ostStartPayment(){
   ostConfirm();
 }
 
-async function ostConfirm(){
+// 15.10: проверка формы брони Островка — имена всех гостей латиницей, почта, телефон
+function ostValidateForm(){
+  var g=ostCollectGuests(); if(g.error)return g.error;
   var em=document.getElementById('f-em');
-  if(!em||!em.value.trim()||em.value.indexOf('@')<1){if(em)em.focus();return;}
-  var fn=(document.getElementById('f-fn')?.value||'').trim();
-  var ln=(document.getElementById('f-ln')?.value||'').trim();
-  if(!fn||!ln){(document.getElementById('f-fn')||{focus:function(){}}).focus();return;}
-  var adults=(window._capState&&window._capState.adults)||gCnt||2;
-  var bAges=(window._bookChildAges&&window._bookChildAges.length)?window._bookChildAges:((window._capState&&window._capState.childAges)||[]);
-  var kids=bAges.length||((window._capState&&window._capState.kids)||0);
-  var childAges=bAges;
-  var guests=[{first_name:fn,last_name:ln}];
-  for(var g=1;g<adults;g++){
-    var gf=(document.getElementById('f-fn'+g)?.value||'').trim()||('Guest'+(g+1));
-    var gl=(document.getElementById('f-ln'+g)?.value||'').trim()||ln;
-    guests.push({first_name:gf,last_name:gl});
-  }
-  // Дети — с пометкой is_child и возрастом (из полей формы или поиска)
-  for(var c=0;c<kids;c++){
-    var cfn=(document.getElementById('f-cfn'+c)?.value||'').trim()||('Child'+(c+1));
-    var cln=(document.getElementById('f-cln'+c)?.value||'').trim()||ln;
-    var cage=(childAges[c]!=null?childAges[c]:7);
-    guests.push({
-      first_name:cfn,
-      last_name:cln,
-      is_child:true,
-      age:cage
-    });
-  }
+  var e2=zbValidEmail(em?em.value:''); if(e2){ if(em)em.focus(); return e2; }
+  var ph=document.getElementById('f-ph');
+  var e3=zbValidPhone(ph?ph.value:''); if(e3){ if(ph)ph.focus(); return e3; }
+  return null;
+}
+
+// 15.10: ответы бэкенда по error_code (finish и status) → понятный гостю текст.
+// Сырой текст вроде «Ostrovok order/finish error» гостю не показываем.
+var OST_NOT_CONFIRMED=['book_limit','not_allowed','provider','block','charge','booking_finish_did_not_succeed'];
+var OST_REVIEW_ST=['review','needs_review','manual_review','check','needs_check','checking'];
+function ostErr(code,msg){ var e=new Error(msg||''); e.code=code||''; return e; }
+function ostErrView(e){
+  var code=String((e&&e.code)||'').toLowerCase(), msg=String((e&&e.message)||'');
+  if(code==='soldout')return {icon:'😔',title:'Номер только что закончился',text:'Выберите другой тариф — покажем актуальные.',again:true};
+  if(OST_NOT_CONFIRMED.indexOf(code)>=0)return {icon:'ℹ️',title:'Отель не подтвердил бронь',text:'Деньги не списаны, а если оплата уже прошла — они будут возвращены. Выберите другой тариф или другой объект.',again:true};
+  // Старый бэкенд (без error_code): русский текст ошибки показываем, технический — нет
+  var text=/[а-яё]/i.test(msg)?msg:'Попробуйте ещё раз или выберите другой тариф. Если вопрос остался — напишите на booking@zaedem.by.';
+  return {icon:'😔',title:'Не получилось оформить бронь',text:text,again:true};
+}
+function ostReviewView(pid,email){
+  var b=document.getElementById('bm-body'); if(!b)return;
+  b.innerHTML='<div class="ost-review" style="text-align:center;padding:30px 16px"><div style="font-size:2rem;margin-bottom:12px">🔎</div>'
+    +'<div style="font-family:\'Unbounded\',sans-serif;font-weight:800;margin-bottom:10px">Бронь проверяется</div>'
+    +'<div style="color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:20px">Мы напишем вам на почту'+(email?' <b>'+zbEsc(email)+'</b>':'')+'.<br>Номер заказа: <b>'+zbEsc(pid)+'</b></div>'
+    +'<button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Понятно</button></div>';
+}
+
+async function ostConfirm(){
+  // 15.10: раньше без фамилии (скрытое поле f-ln всегда пустое) функция молча выходила,
+  // а гостей 2+ и детей подменяла на Guest2 / Child1. Теперь — настоящие имена из формы.
+  var _ve=ostValidateForm(); if(_ve){ bkToast(_ve); return; }
+  var em=document.getElementById('f-em');
+  var guests=ostCollectGuests().guests;
+  var seq=window._ostBookSeq=(window._ostBookSeq||0)+1;
+  var mine=function(){ return window._ostBookSeq===seq; };
   var h=curHotel,rt=_ostSel.rate;
   var ci=document.getElementById('hp-in')?.value||getIn();
   var co=document.getElementById('hp-out')?.value||getOut();
   var phone=(document.getElementById('f-ph')?.value||'').trim();
+  var email=em.value.trim();
+  // 15.10: время прибытия и согласия читаем ДО замены формы экраном ожидания — раньше они читались
+  // после, из уже удалённых полей, и всегда уходили пустыми
+  var arrival=bkArrivalValue(), consents=bkCollectConsents();
 
   document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:2rem;margin-bottom:12px">⏳</div><div style="font-family:\'Unbounded\',sans-serif;margin-bottom:6px">Бронируем номер…</div><div id="ost-step" style="color:var(--muted);font-size:13px">Создаём заказ</div></div>';
 
@@ -7100,7 +7335,7 @@ async function ostConfirm(){
     // 1. Создание заказа
     var fr=await fetch(API+'/api/ostrovok/order/form',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({book_hash:rt.book_hash})});
     var fd=await fr.json();
-    if(!fr.ok||!fd.partner_order_id||!fd.payment)throw new Error(fd.error||'Не удалось создать заказ');
+    if(!fr.ok||!fd.partner_order_id||!fd.payment)throw ostErr(fd.error_code,fd.error||'');
     var pid=fd.partner_order_id;
 
     // 2. Завершение бронирования
@@ -7108,8 +7343,8 @@ async function ostConfirm(){
     var nr=await fetch(API+'/api/ostrovok/order/finish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       partner_order_id:pid,
       guests:guests,
-      guest_name:(fn+' '+ln).trim(),
-      guest_email:em.value.trim(),
+      guest_name:(guests[0].first_name+' '+guests[0].last_name).trim(),
+      guest_email:email,
       guest_phone:phone,
       payment:fd.payment,
       hotel_id:h.id,
@@ -7124,35 +7359,44 @@ async function ostConfirm(){
       check_in_time:(window._hpTimes&&_hpTimes.ci)||'',
       check_out_time:(window._hpTimes&&_hpTimes.co)||'',
       amenities:(_ostSel&&_ostSel.roomAmenities&&_ostSel.roomAmenities.length)?ostAmenList(_ostSel.roomAmenities,16).join(', '):'',
-      guest_arrival_time:bkArrivalValue(),
-      consents:bkCollectConsents()
+      guest_arrival_time:arrival,
+      consents:consents
     })});
     var nd=await nr.json();
-    if(!nr.ok||!nd.ok)throw new Error(nd.error||'Не удалось запустить бронирование');
+    var ndCode=String(nd.error_code||'').toLowerCase();
+    var started=(nr.ok&&nd.ok)||ndCode==='processing';
+    if(!started)throw ostErr(nd.error_code,nd.error||'');
 
-    // 3. Опрос статуса
-    if(st)st.textContent='Ждём подтверждение отеля (до минуты)';
-    var attempts=0;
+    // 3. Опрос статуса: до 15 минут — каждые 4 с первые 2 минуты, потом каждые 15 с
+    if(st)st.textContent='Проверяем бронь — это может занять до 15 минут, письмо придёт на почту';
+    var t0=Date.now();
     var poll=async function(){
-      attempts++;
-      var sr=await fetch(API+'/api/ostrovok/order/status/'+encodeURIComponent(pid));
-      var sd=await sr.json();
-      if(sd.status==='confirmed'){
-        document.getElementById('bm-body').innerHTML='<div class="success"><div class="s-ico">🎉</div><div class="conf">'+pid+'</div><h3 style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;margin-bottom:12px">Бронь подтверждена!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">'+h.name_ru+'</strong>!<br>✉️ Ваучер отправлен на '+em.value.trim()+'<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>';
+      if(!mine())return;
+      var sd=null;
+      try{
+        var sr=await fetch(API+'/api/ostrovok/order/status/'+encodeURIComponent(pid));
+        sd=await sr.json();
+      }catch(_){ sd=null; } // сбой связи — не повод считать бронь неудачной, спросим ещё раз
+      if(!mine())return;
+      if(sd&&sd.status==='confirmed'){
+        document.getElementById('bm-body').innerHTML='<div class="success"><div class="s-ico">🎉</div><div class="conf">'+pid+'</div><h3 style="font-family:\'Unbounded\',sans-serif;font-size:1.1rem;margin-bottom:12px">Бронь подтверждена!</h3><p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:20px">Добро пожаловать в <strong style="color:var(--green)">'+h.name_ru+'</strong>!<br>✉️ Ваучер отправлен на '+zbEsc(email)+'<br><span style="font-size:12.5px;color:var(--muted)">📋 Покажите ваучер при заселении — этого достаточно.</span></p><button onclick="closeBK()" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Отлично! ✓</button></div>';
         return;
       }
-      if(sd.status==='failed'){
-        throw new Error(sd.error==='soldout'?'Номер только что выкупили. Выберите другой тариф.':'Бронирование не удалось ('+(sd.error||'неизвестная ошибка')+')');
-      }
-      if(attempts<30){setTimeout(function(){poll().catch(ostFail);},4000);}
-      else throw new Error('Отель не ответил вовремя. Проверьте бронь '+pid+' в кабинете туриста или напишите нам.');
+      var code=sd?String(sd.error_code||sd.error||'').toLowerCase():'';
+      if(sd&&(OST_REVIEW_ST.indexOf(String(sd.status||'').toLowerCase())>=0||sd.needs_review===true)){ ostReviewView(pid,email); return; }
+      if(sd&&sd.status==='failed'&&code!=='processing'){ ostFail(ostErr(code,'')); return; }
+      var el=Date.now()-t0;
+      if(el>=15*60*1000){ ostReviewView(pid,email); return; } // 15 минут прошло — бронь досверит сервер, итог придёт письмом
+      setTimeout(function(){ poll().catch(ostFail); }, el<2*60*1000?4000:15000);
     };
     await poll();
-  }catch(e){ostFail(e);}
+  }catch(e){ if(mine())ostFail(e); }
 }
 
 function ostFail(e){
-  document.getElementById('bm-body').innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">❌</div><div style="color:#e53935;font-weight:700;margin-bottom:8px">Не получилось</div><div style="color:var(--muted);font-size:13px;margin-bottom:20px">'+e.message+'</div><button onclick="closeBK();loadOstRates(curHotel,{fresh:true})" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
+  var v=ostErrView(e);
+  var b=document.getElementById('bm-body'); if(!b)return;
+  b.innerHTML='<div class="ost-fail" data-code="'+zbEsc((e&&e.code)||'')+'" style="text-align:center;padding:30px"><div style="font-size:2rem;margin-bottom:12px">'+v.icon+'</div><div style="color:var(--ink);font-weight:700;margin-bottom:8px">'+zbEsc(v.title)+'</div><div style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:20px">'+zbEsc(v.text)+'</div><button onclick="closeBK();loadOstRates(curHotel,{fresh:true})" style="background:var(--green);color:#fff;border:none;padding:12px 28px;border-radius:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">Показать актуальные тарифы</button></div>';
 }
 
 </script>
@@ -7204,6 +7448,8 @@ function ostFail(e){
       </div>
     </div>
     <div id="ddc-ages"></div>
+    <!-- 15.10: гражданство гостей — Островок считает по нему цену -->
+    <div class="zb-res-slot"></div>
   </div>
   <button id="ddc-search" onclick="ddcSearch()" style="display:none;width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:12px">Найти жильё</button>
 </div>
@@ -7286,6 +7532,8 @@ function ostFail(e){
                 </div>
               </div>
               <div id="cs-ages"></div>
+              <!-- 15.10: гражданство гостей — в той же панели гостей на телефоне -->
+              <div class="zb-res-slot"></div>
             </div>
           </div>
 
