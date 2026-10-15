@@ -59,6 +59,10 @@ function makeStub(log) {
     if (p === '/api/ostrovok/reviews') return json(200, { reviews: [] });
     if (p === '/api/ostrovok/prebook') {
       const all = [RATE_TABLE, RATE_FREE, RATE_NONREF]; const rt = all.find(x => x.book_hash === body.book_hash) || RATE_TABLE;
+      if (S.prebookUp) {   // 29 А: цена выросла — rate с новой ценой и old_price/new_price на верхнем уровне
+        const np = rt.price_byn + S.prebookUp;
+        return json(200, { ok: true, changes: { price_changed: true }, rate: Object.assign({}, rt, { book_hash: 'p-' + rt.book_hash, price_byn: np }), old_price: rt.price_byn, new_price: np });
+      }
       return json(200, { ok: true, changes: null, rate: Object.assign({}, rt, { book_hash: 'p-' + rt.book_hash }) });
     }
     if (p === '/api/ostrovok/order/form') return json(200, { ok: true, partner_order_id: 'ZB-TEST00001', payment: { type: 'deposit', amount: '10.00', currency_code: 'USD' } });
@@ -222,9 +226,12 @@ async function run(browser, base, vp) {
     await fill({ 'ost-afn0': 'Ivan', 'ost-aln0': 'Ivanov', 'ost-afn1': 'Anna', 'ost-aln1': 'Ivanova', 'ost-cfn0': 'Maria', 'ost-cln0': 'Ivanova', 'f-em': 'ivan@example.com', 'f-ph': '+375 29 123-45-67' });
   };
   const NOT_CONF = ['book_limit', 'not_allowed', 'provider', 'block', 'charge', 'booking_finish_did_not_succeed'];
+  // 29 А: в order/status окончательные ещё 3ds и итог order/info после отсечки
+  const NOT_CONF_STATUS = NOT_CONF.concat(['3ds', 'order_cancelled', 'order_failed', 'order_rejected']);
   // finish отвечает ошибкой с error_code
   for (const code of ['soldout'].concat(NOT_CONF)) {
-    S.finish = () => ({ status: 502, body: { error: 'Ostrovok order/finish error', error_code: code } });
+    // ровно как отвечает 29 А на явный отказ finish
+    S.finish = () => ({ status: 502, body: { ok: false, status: 'failed', error_code: code, partner_order_id: 'ZB-TEST00001', error: 'Ostrovok order/finish error', debug: code } });
     await fillOk(); await page.evaluate(() => ostConfirm());
     await page.waitForSelector('#bm-body .ost-fail', { timeout: 8000 });
     const t = await page.locator('#bm-body').innerText();
@@ -235,13 +242,20 @@ async function run(browser, base, vp) {
   }
   // status отвечает failed с error_code
   S.finish = () => ({ status: 200, body: { ok: true, partner_order_id: 'ZB-TEST00001', status: 'processing' } });
-  for (const code of ['soldout'].concat(NOT_CONF)) {
+  for (const code of ['soldout'].concat(NOT_CONF_STATUS)) {
     S.status = () => ({ status: 200, body: { ok: false, status: 'failed', error_code: code, partner_order_id: 'ZB-TEST00001' } });
     await fillOk(); await page.evaluate(() => ostConfirm());
     await page.waitForSelector('#bm-body .ost-fail', { timeout: 8000 });
     const t = await page.locator('#bm-body').innerText();
     const want = code === 'soldout' ? /Номер только что закончился/ : /Отель не подтвердил бронь/;
     check('status error_code=' + code + ' → свой текст', want.test(t), t);
+  }
+  for (const code of ['booking_form_expired', 'rate_not_found', 'http_400']) {
+    S.finish = () => ({ status: 502, body: { ok: false, status: 'failed', error_code: code, partner_order_id: 'ZB-TEST00001', error: 'Ostrovok order/finish error', debug: code } });
+    await fillOk(); await page.evaluate(() => ostConfirm());
+    await page.waitForSelector('#bm-body .ost-fail', { timeout: 8000 });
+    const t2 = await page.locator('#bm-body').innerText();
+    check('finish error_code=' + code + ' → «Не получилось оформить бронь», без сырого текста', /Не получилось оформить бронь/.test(t2) && !/Ostrovok|order\/finish/.test(t2), t2);
   }
   // старый бэкенд: без error_code — сырой текст не показываем
   S.finish = () => ({ status: 502, body: { error: 'Ostrovok order/finish error', debug: null } });
@@ -250,22 +264,22 @@ async function run(browser, base, vp) {
   let t = await page.locator('#bm-body').innerText();
   check('старый бэкенд: «Ostrovok order/finish error» гостю не показан', !/Ostrovok/.test(t) && /Не получилось оформить бронь/.test(t), t);
   // finish error_code=processing → ожидание, затем подтверждение
-  S.finish = () => ({ status: 200, body: { ok: false, error_code: 'processing', partner_order_id: 'ZB-TEST00001' } });
+  S.finish = () => ({ status: 200, body: { ok: true, partner_order_id: 'ZB-TEST00001', status: 'processing', note: 'status_poll' } });
   let calls = 0;
   S.status = () => { calls++; return calls < 2 ? { status: 200, body: { ok: true, status: 'processing' } } : { status: 200, body: { ok: true, status: 'confirmed' } }; };
   await fillOk(); await page.evaluate(() => ostConfirm());
   await page.waitForTimeout(700);
   t = await page.locator('#bm-body').innerText();
-  check('processing → «Проверяем бронь — это может занять до 15 минут, письмо придёт на почту»', /Проверяем бронь — это может занять до 15 минут, письмо придёт на почту/.test(t), t);
+  check('finish processing (29 А: status_poll) → «Проверяем бронь — это может занять до 15 минут, письмо придёт на почту»', /Проверяем бронь — это может занять до 15 минут, письмо придёт на почту/.test(t), t);
   await shot('8_ozhidanie');
   await page.waitForSelector('#bm-body .success', { timeout: 10000 });
   check('после ожидания — подтверждение (опрос каждые 4 с)', calls >= 2);
   // «требует проверки»
   S.finish = () => ({ status: 200, body: { ok: true, partner_order_id: 'ZB-TEST00001', status: 'processing' } });
-  S.status = () => ({ status: 200, body: { ok: true, status: 'needs_review' } });
+  S.status = () => ({ status: 200, body: { ok: true, status: 'processing', needs_check: true, partner_order_id: 'ZB-TEST00001' } });
   await fillOk(); await page.evaluate(() => ostConfirm());
-  await page.waitForSelector('#bm-body .ost-review', { timeout: 8000 });
-  check('«требует проверки» → «Бронь проверяется, мы напишем вам на почту»', /Бронь проверяется[\s\S]*напишем вам на почту/.test(await page.locator('#bm-body').innerText()));
+  await page.waitForSelector('#bm-body .ost-review', { timeout: 3000 });
+  check('«требует проверки» (29 А: processing + needs_check:true) → сразу «Бронь проверяется, мы напишем вам на почту»', /Бронь проверяется[\s\S]*напишем вам на почту/.test(await page.locator('#bm-body').innerText()));
   await shot('9_proveryaetsya');
   // расписание опроса: 4 с первые 2 минуты, потом 15 с, всего до 15 минут
   await fillOk();
@@ -285,7 +299,7 @@ async function run(browser, base, vp) {
 
   // ── 6. rate_limited ──
   await page.evaluate(() => closeBK());
-  S.hp = () => ({ status: 200, body: { ok: false, rate_limited: true } });
+  S.hp = () => ({ status: 503, body: { error: 'Цены временно недоступны, повторите через минуту', rate_limited: true, busy: true, retry_after: 60 } });
   await page.evaluate(() => loadOstRates(curHotel));
   await page.waitForSelector('.ost-ratelim', { timeout: 8000 });
   t = await page.locator('#ost-rates').innerText();
@@ -297,6 +311,19 @@ async function run(browser, base, vp) {
   await page.locator('.ost-ratelim-btn').click();
   await page.waitForSelector('.ost-rate-row', { timeout: 8000 });
   check('«Обновить» загружает цены заново', await page.locator('.ost-rate-row').count() === 3);
+
+  // 29 А: prebook с old_price/new_price → плашка «Цена обновилась: было … актуальная …»
+  S.prebookUp = 15;
+  await page.evaluate(() => ostSelectRate(0));
+  await page.waitForSelector('#ost-afn0', { timeout: 8000 });
+  t = await page.locator('#bm-body').innerText();
+  check('prebook old_price/new_price → «Цена обновилась: было 200 BYN, актуальная — 215 BYN», в итоге 215', /Цена обновилась: было 200 BYN, актуальная — 215 BYN/.test(t) && /Итого\s*215 BYN/.test(t), t.slice(0, 400));
+  await shot('13_cena_obnovilas');
+  S.prebookUp = 0;
+  await page.evaluate(() => { closeBK(); ostSelectRate(0); });
+  await page.waitForSelector('#ost-afn0', { timeout: 8000 });
+  check('prebook без роста цены — плашки нет', !/Цена обновилась/.test(await page.locator('#bm-body').innerText()));
+  await page.evaluate(() => closeBK());
 
   // «изменить» гражданство из брони → панель гостей объекта с выбором гражданства
   await page.evaluate(() => ostSelectRate(0));
@@ -315,9 +342,11 @@ async function run(browser, base, vp) {
     { booking_num: 'ZB-FAILED001', status: 'failed', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
     { booking_num: 'ZB-FAILED002', status: 'cancelled', error_code: 'soldout', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
     { booking_num: 'ZB-CANCEL003', status: 'cancelled', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
+    { booking_num: 'ZB-NEEDCHK04', status: 'pending', hotel_name: 'Тестовый отель', guest_email: 'ivan@example.com', guest_name: 'Ivan Ivanov', check_in: '2026-11-10', check_out: '2026-11-12', total_price: 200 },
   ]));
   t = await page.locator('#cabinet-body').innerText();
-  check('«Мои брони»: неудачная бронь — «Не подтверждена»', (t.match(/Не подтверждена/g) || []).length === 2);
+  check('«Мои брони»: бронь «требует проверки» (29 А оставляет pending) — «Ожидает», без кнопки отмены', /ZB-NEEDCHK04[\s\S]*Ожидает/.test(t));
+  check('«Мои брони»: при status failed или error_code — «Не подтверждена»', (t.match(/Не подтверждена/g) || []).length === 2);
   check('«Мои брони»: настоящая отмена — по-прежнему «Отменено»', (t.match(/Отменено/g) || []).length === 1);
   await shot('12_moi_broni');
   await page.evaluate(() => document.getElementById('cabinet-modal').classList.remove('open'));
@@ -327,7 +356,7 @@ async function run(browser, base, vp) {
   check('нет горизонтальной прокрутки', !hscroll);
   check('ошибок JS в консоли нет', errors.length === 0, errors.join(' | '));
   if (process.env.ZB_DEBUG) console.log(netWarn.join('\n'));
-  if (netWarn.length) console.log('  (браузер отметил ответы с кодом ошибки от заглушек: ' + netWarn.length + ' — это намеренные 502 в проверке error_code)');
+  if (netWarn.length) console.log('  (браузер отметил ответы с кодом ошибки от заглушек: ' + netWarn.length + ' — это намеренные 502/503 заглушек: отказы finish и rate_limited)');
   await ctx.close();
 }
 
