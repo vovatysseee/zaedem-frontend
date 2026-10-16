@@ -1,6 +1,6 @@
 // 16.10: проверка порции 16.10: гражданство — родной select без клавиатуры; «Что рядом» без плашки ошибки
 // при автозагрузке; поиск по областям (выбор, подсказка, фильтр по типу, ошибка, ИИ-фразы); кнопка «Наверх»;
-// «Карта» уходит у «Показать ещё» и подвала; слова «турист» на страницах нет; карты на ключе CARTO.
+// «Карта» уходит у «Показать ещё» и подвала; на входе «Гость» / «Владелец», прежнего слова (п. 4) на страницах нет; карты на ключе CARTO.
 // Все ответы API и внешних сервисов — заглушки, сайт отдаётся локально.
 // Запуск из корня репозитория:  node .github/poisk-test/poisk_16_10.test.js
 // Для проверки карт с ключом CARTO нужен настоящий Leaflet: пакеты leaflet@1.9.4 и leaflet.markercluster@1.5.3
@@ -425,7 +425,7 @@ async function run(browser, base, vp, leaflet) {
   await goHome();
   await page.evaluate(() => openAuth()); await page.waitForTimeout(300);
   const tabs = await page.locator('#auth-body button').allTextContents();
-  check('вход: вкладки «Гость» и «Владелец жилья»', tabs.some(t => t.trim() === 'Гость') && tabs.some(t => t.trim() === 'Владелец жилья'), tabs.map(t => t.trim()).join(' | '));
+  check('вход: вкладки «Гость» и «Владелец»', tabs.some(t => t.trim() === 'Гость') && tabs.some(t => t.trim() === 'Владелец'), tabs.map(t => t.trim()).join(' | '));
   check('вход: по умолчанию вкладка гостя — поиск брони', /Найдите бронь по номеру и email/.test(await page.locator('#auth-body').innerText()));
   await shot('11_vhod_gost');
   await page.evaluate(() => document.getElementById('auth-modal').classList.remove('open'));
@@ -433,14 +433,15 @@ async function run(browser, base, vp, leaflet) {
     await page.goto(base + '/' + f); await page.waitForTimeout(f === 'index.html' ? 900 : 300);
     if (f === 'index.html') await page.evaluate(() => openAuth());
     const hits = await page.evaluate(() => {
-      const re = /турист|туризм/i, out = [];
+      // прежнее слово из п. 4 задания (и однокоренные) — буквами через \u, чтобы его не было в самих файлах
+      const re = new RegExp('\u0442\u0443\u0440\u0438(?:\u0441\u0442|\u0437\u043c)', 'i'), out = [];
       if (re.test(document.title)) out.push('title');
       if (re.test(document.body.innerText)) out.push('text');
       document.querySelectorAll('*').forEach(e => { for (const a of ['title', 'alt', 'aria-label', 'placeholder', 'content', 'onclick']) { const v = e.getAttribute(a); if (v && re.test(v)) out.push(a + '@' + e.tagName); } });
       if (re.test(document.documentElement.outerHTML)) out.push('html');
       return out;
     });
-    check('нет слова «турист» на странице ' + f, hits.length === 0, hits.join(','));
+    check('п. 4: прежнего слова нет на странице ' + f, hits.length === 0, hits.join(','));
   }
 
   check('нет горизонтальной прокрутки', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));

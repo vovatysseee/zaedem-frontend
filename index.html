@@ -5610,7 +5610,7 @@ async function confirmBook(total){
 
 function closeBK(){document.getElementById('bk-modal').classList.remove('open')}
 
-// 16.10: вкладки входа называются «Гость» и «Владелец жилья» — так понятнее, кто куда входит; ключ вкладки гостя — 'guest'
+// 16.10: вкладки входа называются «Гость» и «Владелец» — так понятнее, кто куда входит; ключ вкладки гостя — 'guest'
 function openAuth(tab){
   tab=tab||'guest';
   document.getElementById('auth-body').innerHTML=`
@@ -5619,7 +5619,7 @@ function openAuth(tab){
       <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:16px">Войти</div>
       <div style="display:flex;background:var(--sand2);border-radius:12px;padding:4px;margin-bottom:20px;gap:3px">
         <button onclick="openAuth('guest')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='guest'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-3px;margin-right:5px"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>Гость</button>
-        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Владелец жилья</button>
+        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Владелец</button>
       </div>
       ${tab==='guest'?`
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Найдите бронь по номеру и email.</div>
@@ -8080,6 +8080,8 @@ function ostFail(e){
         <div id="cs-footer" style="flex-shrink:0;padding:16px 20px 28px;background:#fff;border-top:1px solid #f0f0f0">
           <button onclick="capSheetSearch()" style="width:100%;background:#0F2D1D;color:#fff;border:none;border-radius:14px;padding:18px;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.3px">Найти жильё</button>
         </div>
+      </div><!-- 16.10: конец #cap-sheet. Раньше закрывающего тега не было, и всё, что стоит ниже до </body>
+           (подсказка PWA, избранное, скрипты), браузер клал внутрь скрытой шторки -->
 
 
 
@@ -8624,8 +8626,7 @@ function zbUpGo(){
   try{ sc.scrollTo({top:0,behavior:beh}); }catch(e){ if(sc===window)window.scrollTo(0,0); else sc.scrollTop=0; }
 }
 (function(){
-  // кнопку кладём прямо в body из скрипта: в разметке выше не закрыт #cap-sheet, и всё, что стоит после него,
-  // оказывается внутри шторки (она скрыта) — кнопку там не видно
+  // кнопку кладём прямо в body из скрипта — так она не зависит от того, внутри какого блока стоит этот скрипт
   var btn=document.createElement('button');
   btn.type='button'; btn.id='zb-up'; btn.className='zb-up'; btn.title='Наверх'; btn.tabIndex=-1;
   btn.setAttribute('aria-label','Наверх'); btn.setAttribute('aria-hidden','true');
