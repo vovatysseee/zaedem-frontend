@@ -1,6 +1,8 @@
 // 15.10: проверка правок поиска: гражданство (все страны, поиск по вводу), город в основной строке
 // «Куда едете?», «Что рядом» (успех, запасной путь, ошибка → «Повторить»), ИИ-фраза со многими фильтрами.
 // Все ответы API и внешних сервисов — заглушки, сайт отдаётся локально.
+// 16.10: проверки поля ввода гражданства и «Что рядом» с плашкой ошибки убраны — это поведение заменено,
+// новое проверяет poisk_16_10.test.js.
 // Запуск из корня репозитория:  node .github/poisk-test/poisk_15_10.test.js
 // Папка .github не попадает на GitHub Pages (Jekyll пропускает папки с точкой).
 'use strict';
@@ -133,46 +135,8 @@ async function run(browser, base, vp) {
   check('по умолчанию — Беларусь', info.def === 'by');
   check('Кыргызстан назван как в задании', info.kg === 'Кыргызстан', info.kg);
 
-  // панель гостей: на телефоне шторка (шаг «Гости»), на ПК — окно правки поиска на выдаче
-  await page.evaluate(() => { window._capState = window._capState || {}; Object.assign(window._capState, { city: 'Минск', din: new Date(2026, 10, 10), dout: new Date(2026, 10, 12), adults: 2, kids: 0, childAges: [], gDone: true }); dIn = new Date(2026, 10, 10); dOut = new Date(2026, 10, 12); });
-  let scope;
-  if (vp.mobile) { await page.evaluate(() => capSheetOpen(3)); scope = '#cs-step3'; }
-  else { await page.evaluate(() => { serpOpen(); }); await page.waitForTimeout(1200); await page.evaluate(() => { serpEditSearch(); serpSearchStep(3); }); scope = '#serp-sd-modal'; }
-  const inp = page.locator(scope + ' input.zb-res-inp');
-  check('поле гражданства видно, в нём «Беларусь»', await inp.isVisible() && await inp.inputValue() === 'Беларусь');
-  await tapOrClick(inp);
-  await page.waitForTimeout(400);
-  const all = await page.locator(scope + ' .zb-res-opt').count();
-  check('по нажатию открыт полный список: 249 стран', all === 249, String(all));
-  const firstTwo = await page.locator(scope + ' .zb-res-opt').evaluateAll(els => els.slice(0, 3).map(e => e.textContent));
-  check('первые в списке — Беларусь, Россия, Казахстан', firstTwo.join(',') === 'Беларусь,Россия,Казахстан', firstTwo.join(','));
-  await shot('1_grazhdanstvo_spisok');
-  await inp.fill('узб'); await page.waitForTimeout(400);
-  const uzb = await page.locator(scope + ' .zb-res-opt').evaluateAll(els => els.map(e => e.textContent));
-  check('набрал «узб» — Узбекистан', uzb[0] === 'Узбекистан' && uzb.length <= 3, uzb.join(','));
-  await shot('2_grazhdanstvo_uzb');
-  for (const [q, want] of [['кирг', 'Кыргызстан'], ['сша', 'kind:us'], ['герм', 'Германия'], ['ки', 'Китай']]) {
-    await inp.fill(q); await page.waitForTimeout(150);
-    const r = await page.locator(scope + ' .zb-res-opt').evaluateAll(els => els.map(e => e.textContent + '|' + e.dataset.code));
-    const ok = want.startsWith('kind:') ? r.some(x => x.endsWith('|' + want.slice(5))) : r.some(x => x.startsWith(want + '|'));
-    check('поиск «' + q + '» находит ' + want.replace('kind:us', 'США'), ok, r.slice(0, 5).join(','));
-  }
-  await inp.fill('узб'); await page.waitForTimeout(400);
-  await tapOrClick(page.locator(scope + ' .zb-res-opt[data-code="uz"]'));
-  await page.waitForTimeout(300);
-  check('выбран Узбекистан: в поле название, на устройстве код uz', await inp.inputValue() === 'Узбекистан' && await page.evaluate(() => localStorage.getItem('zb_residency')) === 'uz');
-  check('список после выбора закрыт', !(await page.locator(scope + ' .zb-res-list').isVisible()));
-  // мусор в поле и уход — возвращается выбранная страна
-  await tapOrClick(inp); await inp.fill('qqqq'); await page.waitForTimeout(150);
-  check('нет совпадений — подсказка «Ничего не нашли»', /Ничего не нашли/.test(await page.locator(scope + ' .zb-res-list').innerText()));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(250);
-  check('Esc — в поле снова Узбекистан', await inp.inputValue() === 'Узбекистан');
-  if (vp.mobile) await page.locator('#cs-footer button').tap(); else await page.evaluate(() => serpSearchSubmit());
-  await page.waitForTimeout(1200);
-  const s1 = last('/api/ostrovok/search');
-  check('в Островок ушёл код маленькими: residency=uz', s1 && s1.body && s1.body.residency === 'uz', JSON.stringify(s1 && s1.body));
-  await page.reload(); await page.waitForTimeout(800);
-  check('после перезагрузки выбор запомнен (Узбекистан)', await page.evaluate(() => { const s = document.querySelector('.zb-res-slot input.zb-res-inp'); return zbResidency() === 'uz' && s && s.value === 'Узбекистан'; }));
+  // 16.10: поле с поиском по вводу заменено родным select — выбор в панели гостей проверяет
+  // .github/poisk-test/poisk_16_10.test.js (раздел «Гражданство»)
   await page.evaluate(() => { localStorage.removeItem('zb_residency'); localStorage.removeItem('zb_recent_cities'); });
 
   // ═══ 2. ГОРОД — в основной строке «Куда едете?» ═══
@@ -231,48 +195,7 @@ async function run(browser, base, vp) {
     await page.evaluate(() => capSheetClose());
   }
 
-  // ═══ 3. «ЧТО РЯДОМ» ═══
-  const openHotelPage = async () => {
-    await page.evaluate(() => { window._capState = window._capState || {}; Object.assign(window._capState, { city: 'Минск', din: new Date(2026, 10, 10), dout: new Date(2026, 10, 12), adults: 2, kids: 0, childAges: [], gDone: true }); dIn = new Date(2026, 10, 10); dOut = new Date(2026, 10, 12); serpOpen(); });
-    await page.waitForTimeout(900);
-    await page.evaluate(() => openHotel('ost_1000'));
-    await page.waitForSelector('#hp-nearby', { timeout: 8000 });
-  };
-  S.nearby = () => NEARBY_OK; S.overpass = [];
-  await openHotelPage();
-  await page.waitForTimeout(800);
-  let nb = await page.locator('#hp-nearby').innerText();
-  check('«Что рядом»: ответ /api/nearby показан (магазин, аптека, остановка)', /Что рядом/.test(nb) && /Магазин/.test(nb) && /Аптека/.test(nb) && /Остановка/.test(nb), nb);
-  check('«Что рядом»: при удачном ответе бэкенда Overpass напрямую не спрашиваем', !log.some(x => x.path === 'overpass'));
-  await page.locator('#hp-nearby').scrollIntoViewIfNeeded(); await shot('4_ryadom_ok');
-
-  // бэкенд: ошибка, Overpass: первое зеркало «не успел» (200 + remark), второе — ответило
-  S.nearby = () => ({ nearby: [], error: true }); S.overpass = ['remark', 'ok'];
-  await openHotelPage(); await page.waitForTimeout(1200);
-  nb = await page.locator('#hp-nearby').innerText();
-  check('«Что рядом»: бэкенд не смог → запасной путь (Overpass, 2-е зеркало) — показано', /Аптека/.test(nb) && /Парк/.test(nb) && /Магазин/.test(nb), nb);
-  check('«Что рядом»: ответ «200 + remark: runtime error» считается сбоем, спросили второе зеркало', log.filter(x => x.path === 'overpass').length === 2);
-
-  // бэкенд: пусто (как после закэшированного таймаута), Overpass: оба зеркала недоступны → «Повторить»
-  log.length = 0;
-  S.nearby = () => ({ nearby: [], cached: true }); S.overpass = ['fail', 'fail'];
-  await openHotelPage(); await page.waitForTimeout(1200);
-  nb = await page.locator('#hp-nearby').innerText();
-  check('«Что рядом»: всё недоступно → «Не удалось загрузить, что рядом» и «Повторить», а не пустота', /Не удалось загрузить/.test(nb) && await page.locator('#hp-nearby-err button').isVisible(), nb);
-  await page.locator('#hp-nearby').scrollIntoViewIfNeeded(); await shot('5_ryadom_oshibka');
-  S.nearby = () => NEARBY_OK;
-  await tapOrClick(page.locator('#hp-nearby-err button')); await page.waitForTimeout(800);
-  nb = await page.locator('#hp-nearby').innerText();
-  check('«Повторить» — загрузилось', /Что рядом/.test(nb) && /Магазин/.test(nb), nb);
-  // бэкенд завис дольше 20 с — ждём не больше 20 с и идём в запасной путь
-  S.nearby = () => ({ delay: 25000, nearby: [] }); S.overpass = ['ok'];
-  await openHotelPage();
-  const t0 = Date.now();
-  await page.waitForFunction(() => /Аптека/.test((document.getElementById('hp-nearby') || {}).innerText || ''), null, { timeout: 26000 }).catch(() => {});
-  const waited = (Date.now() - t0) / 1000;
-  check('«Что рядом»: бэкенд молчит — через ~20 с ответ из запасного пути', /Аптека/.test(await page.locator('#hp-nearby').innerText()) && waited < 23, waited.toFixed(1) + ' с');
-  S.nearby = () => NEARBY_OK;
-
+  // 16.10: «Что рядом» теперь без плашки ошибки при автозагрузке — проверяет poisk_16_10.test.js
   } // конец разделов 1–3
   // ═══ 4. ИИ-ФРАЗА СО МНОГИМИ ФИЛЬТРАМИ ═══
   await goHome();
