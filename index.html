@@ -535,7 +535,9 @@ footer{background:#080e0a;color:rgba(255,255,255,.6);padding:3rem 0 2rem}
 .sf-tag:hover{border-color:var(--green);color:var(--green)}
 .sf-tag.active{background:var(--green);border-color:var(--green);color:#fff}
 .sf-tag-excl{border-color:#d4af37;color:#9a7d1e;background:linear-gradient(#fffdf5,#fff9e6)}
-body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,body.cat-mode #sft-nodep{display:none}
+/* 16.10: в разделе категории (Отели / Апартаменты / Усадьбы с главной) — та же панель фильтров, что в обычной выдаче.
+   Раньше «Цена», «Бесплатная отмена», «Бесконтактное заселение», «Без депозита» здесь прятались; теперь видны,
+   а без дат мягко просят выбрать даты (serpCatNeedDates) */
 .sf-tag-excl.active{background:linear-gradient(135deg,#e8c14a,#d4af37);border-color:#d4af37;color:#3a2e00}
 .sf-tag svg{width:10px;height:10px}
 .sf-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1.5px solid var(--sand3);padding:12px;min-width:220px;z-index:9999}
@@ -565,6 +567,18 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
 .srn-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .srn-type{flex-shrink:0;border:1.5px solid var(--green);background:#fff;color:var(--green);border-radius:50px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
 .srn-type.on{background:var(--green);color:#fff}
+/* 16.10: выдача упёрлась в предел бэкенда (limited: true) — подсказка над выдачей */
+.serp-limit-note{background:#fbf8f1;border:1.5px solid var(--sand3);border-radius:14px;padding:9px 12px;margin-bottom:12px;font-size:13px;color:var(--ink2,#3a3a3a);line-height:1.45}
+/* 16.10: раздел категории — фильтру нужны даты; мягкая просьба выбрать даты */
+.serp-cat-note{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;background:#f3f7ee;border:1.5px solid #dbe8cf;border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.scn-txt{font-size:13px;color:var(--ink);min-width:0;flex:1 1 200px;line-height:1.45}
+.scn-acts{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.scn-btn{border:1.5px solid var(--green);background:var(--green);color:#fff;border-radius:50px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.scn-x{border:none;background:none;color:var(--muted);font-size:16px;line-height:1;padding:6px 8px;cursor:pointer;font-family:inherit}
+/* 16.10: «Недавние» — ссылка «Очистить» справа от заголовка */
+.zb-rec-clear{border:none;background:none;padding:2px 0;margin:0;font-family:inherit;font-size:12px;font-weight:600;color:#1a5c38;cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-transform:none;letter-spacing:0}
+/* 16.10: «Что рядом» — подпись источника данных */
+.hp-near-attr{margin-top:8px;font-size:11px;color:var(--muted)}
 .dsk-reg-item{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f5f3ee;border:none;border-radius:50px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:inherit}
 .dsk-reg-item:hover{background:#ece8df}
 .sf-clear{font-size:12px;color:var(--green);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:underline;padding:0}
@@ -934,8 +948,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
   </div>
   <div id="hotel-grid" style="display:none"></div>
 </section>
-</div>
-</div>
+</div><!-- 16.10: конец #main-page. Второй </div> здесь был лишним: закрывать было нечего, браузер его пропускал -->
 
 <!-- ===== SERP PAGE ===== -->
 <div id="serp-page" class="serp-page">
@@ -1003,6 +1016,10 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
       <div id="serp-ai-chips" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
       <!-- 16.10: поиск по области — «Поиск по всей области» и фильтр по типу -->
       <div id="serp-region-note" class="serp-region-note" style="display:none" role="note"></div>
+      <!-- 16.10: выдача упёрлась в предел бэкенда (limited: true) — «Показаны первые N вариантов…» -->
+      <div id="serp-limit-note" class="serp-limit-note" style="display:none" role="note"></div>
+      <!-- 16.10: раздел категории — фильтру нужны даты; просим выбрать даты, а не прячем фильтр -->
+      <div id="serp-cat-note" class="serp-cat-note" style="display:none" role="status"></div>
       <div class="serp-sortbar">
         <div id="serp-meta" class="serp-meta" style="margin-bottom:0"></div>
         <div class="serp-sort-wrap">
@@ -2892,13 +2909,14 @@ async function loadNearby(lat,lon,manual){
   if(opener)opener.style.display='none';
   box.style.display='';
   box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">🚶 Смотрим, что рядом…</div>';
-  var list=null, failed=false, outOfArea=false;
+  var list=null, failed=false, outOfArea=false, attr=false;
   try{
     var r=await zbFetchTO(API+'/api/nearby?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon),{},20000);
     if(!r.ok)throw new Error('HTTP '+r.status);
     var d=await r.json();
     if(d&&d.error)throw new Error('бэкенд: Overpass не ответил');
     outOfArea=!!(d&&d.out_of_area);
+    attr=!!(d&&d.attribution); // 16.10: поле добавит порция 33 бэкенда; без него подписи нет
     list=(d&&d.nearby)||[];
   }catch(e){ failed=true; if(manual)console.warn('nearby:',e&&e.message||e); }
   if(!alive())return;
@@ -2927,7 +2945,9 @@ async function loadNearby(lat,lon,manual){
   box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
     +list.map(function(x){return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink);background:var(--sand2);border-radius:10px;padding:7px 11px">'+zbEsc(x.icon)+' '+zbEsc(x.label)+' <span style="color:var(--muted);font-weight:500">'+zbEsc(x.dist)+'</span></span>';}).join('')
-    +'</div>';
+    +'</div>'
+    // 16.10: данные «Что рядом» — из OpenStreetMap; бэкенд прислал attribution — мелкая подпись под блоком
+    +(attr?'<div class="hp-near-attr" id="hp-near-attr">© участники OpenStreetMap</div>':'');
 }
 // Поиск объекта для открытия. Раньше здесь было HOTELS.find(h=>h.id===id) — строгое сравнение,
 // и клик молча не срабатывал в двух случаях:
@@ -3148,6 +3168,21 @@ function zbWriteHash(view, hotelId){
       var seg=[encodeURIComponent(cs.city||''),f(cs.din),f(cs.dout),parseInt(cs.adults)||2,parseInt(cs.kids)||0,(cs.childAges||[]).join(',')].join('|');
       if(cs.city) h='#s='+seg;
     }
+    // 16.10: шаг окна (шторки поиска) ещё снимается — запишем историю сразу после этого (zbOvAfterBack),
+    // с теми же отметками «идёт Назад» / «восстанавливаем маршрут», что были в момент вызова
+    if(window._zbOvBackBusy&&window.zbOvAfterBack){
+      var _hn=window._zbHistNav, _rr=window._zbRestoringRoute;
+      if(zbOvAfterBack(function(){
+        var hn0=window._zbHistNav, rr0=window._zbRestoringRoute; window._zbHistNav=_hn; window._zbRestoringRoute=_rr;
+        try{ zbWriteHashHist(h); } finally { window._zbHistNav=hn0; window._zbRestoringRoute=rr0; }
+      }))return;
+    }
+    zbWriteHashHist(h);
+  }catch(e){}
+}
+// 16.10: запись шага истории вынесена из zbWriteHash без изменений (её можно отложить, см. выше)
+function zbWriteHashHist(h){
+  try{
     if(h){
       // pushState при СМЕНЕ экрана (новый шаг истории → браузерный Назад работает),
       // replaceState при обновлении того же экрана (правка дат/гостей — не плодим шаги).
@@ -3169,7 +3204,9 @@ function zbWriteHash(view, hotelId){
     else { zbClearHash(); window._zbLastHash=''; }
   }catch(e){}
 }
-function zbClearHash(){ try{ if(location.hash) history.replaceState(zbHistState(''),'',location.pathname+location.search); window._zbLastHash=''; }catch(e){} }
+function zbClearHash(){
+  if(window._zbOvBackBusy&&window.zbOvAfterBack&&zbOvAfterBack(zbClearHash))return; // 16.10: после снятия шага окна
+  try{ if(location.hash) history.replaceState(zbHistState(''),'',location.pathname+location.search); window._zbLastHash=''; }catch(e){} }
 
 // ═ «НАЗАД» НА ТЕЛЕФОНЕ: КНОПКА И ЖЕСТ — ОДИН ПУТЬ (04.10) ═
 // Шаг истории, который добавил сайт, помнит свой экран (zb), экран под ним (from) и загрузку
@@ -3587,6 +3624,7 @@ function serpPriceMode(m){
   try{ localStorage.setItem('zb_price_mode', m==='night'?'night':'trip'); }catch(e){}
   serpPmodePaint();
   try{ serpRender(); }catch(e){}
+  if(window._catMode){ try{ serpCatNeedDates('pmode'); }catch(e){} } // 16.10: в каталоге цен нет — режим запомнили, просим даты
 }
 function serpPmodePaint(){
   var m=srPriceMode();
@@ -3842,6 +3880,22 @@ function zbRegionNoteRender(listLen){
     +'<button type="button" id="srn-type" class="srn-type'+(only?' on':'')+'" aria-pressed="'+(only?'true':'false')+'" onclick="zbRegionTypeToggle()">🏡 Усадьбы и загородные</button>';
   el.style.display='flex';
 }
+// 16.10: бэкенд прислал limited: true (Островок отдал ровно предел выдачи, а всего у него больше; порция 32,
+// routes/ostrovok.js) — над выдачей подсказка «Показаны первые N вариантов — уточните город или добавьте фильтры».
+// N — сколько объектов пришло в ответе. В разделе категории (каталог без дат) подсказки нет.
+function zbVariantWord(n){
+  n=Math.abs(parseInt(n)||0); var d10=n%10, d100=n%100;
+  if(d10===1&&d100!==11)return 'вариант';
+  if(d10>=2&&d10<=4&&(d100<10||d100>=20))return 'варианта';
+  return 'вариантов';
+}
+function zbLimitNoteRender(){
+  var el=document.getElementById('serp-limit-note'); if(!el)return;
+  var n=parseInt(window._ostLimited)||0;
+  if(window._catMode||!n){ el.style.display='none'; el.textContent=''; return; }
+  el.textContent='Показаны первые '+n+' '+zbVariantWord(n)+' — уточните город или добавьте фильтры';
+  el.style.display='block';
+}
 function serpRender(){
   // 16.10: после отрисовки (и при раннем выходе с пустой выдачей) — следим за новой «Показать ещё»: «Карта» уходит, когда она на экране
   setTimeout(function(){ try{ zbMapBtnWatch(); }catch(e){} },0);
@@ -4018,7 +4072,7 @@ function serpRender(){
   if(meta){
     if(!list.length&&(window._ostrovokLoading||window._catBooting))meta.textContent='Загружаем варианты…';
     else if(window._aiRelaxed==='price')meta.textContent='По вашей цене точных нет — показали ближайшие ('+list.length+'). Снимите фильтр цены или смотрите варианты ниже';
-    else if(window._aiRelaxed==='excl')meta.textContent='Эксклюзив — это наши собственные объекты, в этом городе их пока нет. Показали все варианты ('+list.length+')';
+    else if(window._aiRelaxed==='excl')meta.textContent='Эксклюзив — это наши собственные объекты, '+(window._catMode?'в каталоге':'в этом городе')+' их пока нет. Показали все варианты ('+list.length+')'; // 16.10: в разделе категории города нет
     else if(window._aiRelaxed==='free')meta.textContent='С бесплатной отменой точных нет — показали похожие ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='cl')meta.textContent='С бесконтактным заселением на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
     else if(window._aiRelaxed==='nd')meta.textContent='Без депозита на эти даты нет — показали все варианты ('+list.length+'). Снимите тег';
@@ -4031,6 +4085,8 @@ function serpRender(){
   // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
   // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
   try{ zbRegionNoteRender(list.length); }catch(e){}
+  try{ zbLimitNoteRender(); }catch(e){}   // 16.10
+  try{ if(!window._catMode)serpCatNoteHide(); }catch(e){}   // 16.10: просьба выбрать даты — только в разделе категории
   var cardsBox=document.getElementById('serp-cards');
   if(!list.length&&cardsBox){
     var _oldMore=document.getElementById('serp-more'); if(_oldMore)_oldMore.remove(); // кнопка прошлого рендера не залипает
@@ -4041,6 +4097,9 @@ function serpRender(){
         +'<div style="font-size:14px">Загружаем варианты…</div></div>';
       return;
     }
+    // 16.10: раздел «Усадьбы» (каталог без данных) — любая перерисовка (фильтр, «За ночь») оставляет «Усадьбы — скоро»,
+    // а не «ничего не найдено»
+    if(window._catMode==='guest'){ cardsBox.innerHTML=catGuestStubHtml(); var _m0=document.getElementById('serp-meta'); if(_m0)_m0.textContent=''; return; }
     // 16.10: бэкенд пока не ищет по области — честно говорим, что скоро
     if(window._ostRegionErr&&zbIsRegion((window._capState||{}).city)){
       cardsBox.innerHTML='<div id="serp-region-soon" style="text-align:center;padding:40px 20px;color:var(--muted)">'
@@ -4235,6 +4294,9 @@ function serpClearFilters(){
   window._aiCategory=null; window._aiPriceMax=0; window._aiAmenities=null; window._aiAvoid=null;
   window._aiArea=null; window._aiName=null; window._aiStars=0; window._aiMeal=null;
   try{ var _R=window._lastAiResult; if(_R){ _R.category=null; _R.priceMax=0; _R.amenities=[]; _R.avoid=[]; _R.area=null; _R.name=null; _R.stars=0; _R.meal=null; zbPersistPills(); } }catch(e){}
+  // 16.10: в разделе категории «все типы» — перезагружаем каталог под отмеченные типы (раньше галочки
+  // ставились, а в списке оставалась прежняя категория)
+  if(window._catMode){ serpCatNoteHide(); serpFilterChange('cat'); return; }
   window._serpReset=true;serpRender();
 }
 
@@ -4387,6 +4449,10 @@ function serpToggleDD(ddId,e){
 }
 function serpToggleTag(tagId){
   var el=document.getElementById(tagId);
+  // 16.10: раздел категории (каталог без дат) — эти признаки приходят только с ценами на даты; кнопку не включаем,
+  // а просим выбрать даты. Уже включённую можно выключить как обычно.
+  var _catNeed={'sft-free':'free','sft-contactless':'contactless','sft-nodep':'nodep'}[tagId];
+  if(window._catMode&&_catNeed&&el&&!el.classList.contains('active')){ serpCatNeedDates(_catNeed); return; }
   if(el){ if(el.dataset&&el.dataset.ai)delete el.dataset.ai; // нажали руками — кнопка теперь «своя»
     el.classList.toggle('active');window._serpReset=true;serpRender();}
 }
@@ -4400,6 +4466,16 @@ function serpFilterChange(kind){
   // синхронизируем снимок ИИ, чтобы «Назад»/плашка не воскрешали снятое
   try{ var _R=window._lastAiResult; if(_R){ _R.category=window._aiCategory||null; _R.priceMax=window._aiPriceMax||0; zbPersistPills(); } }catch(e){}
   if(window._catMode){
+    // 16.10: цена и сортировка по цене без дат не работают (в каталоге цен нет) — возвращаем как было и просим даты
+    if(kind==='price'){
+      var _pr=document.querySelector('input[name="price-r"]:checked');
+      if(_pr&&_pr.value!=='0'){ var _p0=document.querySelector('input[name="price-r"][value="0"]'); if(_p0)_p0.checked=true; serpCatNeedDates('price'); return; }
+    }
+    if(kind==='sort'){
+      var _ss=document.getElementById('serp-sort');
+      if(_ss&&/^price_/.test(_ss.value)){ _ss.value=(window._serpSortPrev&&!/^price_/.test(window._serpSortPrev))?window._serpSortPrev:'recommended'; serpCatNeedDates('sort'); return; }
+      if(_ss)window._serpSortPrev=_ss.value;
+    }
     var checked=[];
     ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e&&e.checked)checked.push(c);});
     var newMode=checked.join(',');
@@ -4783,6 +4859,8 @@ async function serpLoadOstrovok(){
   HOTELS = HOTELS.filter(function(h){return h.source!=='ostrovok';});
   // 16.10: поиск по области — бэкенд ответил ошибкой или «региона нет» → «Поиск по областям скоро появится»
   var _isReg=zbIsRegion(city); window._ostRegionErr=false;
+  window._ostLimited=0; // 16.10: выдача упёрлась в предел бэкенда (limited: true, порция 32) — сколько показано
+  try{ zbLimitNoteRender(); }catch(e){} // 16.10: подсказка прошлого поиска не висит, пока ищем новый
 
   try{
     var body={
@@ -4807,6 +4885,7 @@ async function serpLoadOstrovok(){
       // 15.10: заменяем выдачу Островка целиком (а не дописываем) и убираем повторы по id
       var _seen={}, _fresh=data.hotels.filter(function(h){ var k=String(h&&h.id); if(_seen[k])return false; _seen[k]=1; return true; });
       HOTELS=_fresh.concat(HOTELS.filter(function(h){ return h.source!=='ostrovok'&&!_seen[String(h&&h.id)]; }));
+      if(data.limited===true)window._ostLimited=_fresh.length; // 16.10
     }
   }catch(e){
     if(_ostSeq!==window._ostSearchSeq)return;
@@ -4848,6 +4927,37 @@ async function serpLoadOstrovok(){
   }
 }
 
+// 16.10: раздел категории — какому фильтру нужны даты. Фильтр не прячем: при выборе мягко просим выбрать даты.
+// Цена, «Бесплатная отмена», «Бесконтактное заселение», «Без депозита» и сортировка по цене берутся из
+// предложений Островка на конкретные даты, а в каталоге без дат их нет (routes/catalog.js: price=null).
+var ZB_CAT_DATES={
+  price:'Цена зависит от дат. Выберите город и даты — и фильтр «Цена» заработает.',
+  free:'Бесплатная отмена зависит от тарифа на ваши даты. Выберите город и даты — и фильтр заработает.',
+  contactless:'Бесконтактное заселение указано в предложениях на ваши даты. Выберите город и даты — и фильтр заработает.',
+  nodep:'Депозит указан в предложениях на ваши даты. Выберите город и даты — и фильтр заработает.',
+  sort:'Сортировка по цене работает, когда известны цены. Выберите город и даты.',
+  pmode:'Режим цены запомнили. Цены появятся, когда выберете город и даты.'
+};
+function serpCatNeedDates(kind){
+  var el=document.getElementById('serp-cat-note'); if(!el)return;
+  document.querySelectorAll('.sf-dropdown.open').forEach(function(d){d.classList.remove('open');});
+  el.innerHTML='<div class="scn-txt">📅 '+zbEsc(ZB_CAT_DATES[kind]||ZB_CAT_DATES.price)+'</div>'
+    +'<div class="scn-acts"><button type="button" class="scn-btn" id="scn-pick" onclick="serpCatPickDates()">Выбрать даты</button>'
+    +'<button type="button" class="scn-x" aria-label="Скрыть подсказку" onclick="serpCatNoteHide()">✕</button></div>';
+  el.dataset.kind=kind||'';
+  el.style.display='flex';
+}
+function serpCatNoteHide(){ var el=document.getElementById('serp-cat-note'); if(el){ el.style.display='none'; el.innerHTML=''; el.dataset.kind=''; } }
+function serpCatPickDates(){ serpCatNoteHide(); try{ serpEditSearch(); }catch(e){} }
+// В категорию пришли из поиска с включёнными «датными» фильтрами — снимаем их: без дат они не работают,
+// а включённые молча обнуляли бы список
+function serpCatResetDateFilters(){
+  var p0=document.querySelector('input[name="price-r"][value="0"]'); if(p0)p0.checked=true;
+  ['sft-free','sft-contactless','sft-nodep'].forEach(function(id){ var e=document.getElementById(id); if(e){ e.classList.remove('active'); if(e.dataset)delete e.dataset.ai; } });
+  var ss=document.getElementById('serp-sort'); if(ss){ if(/^price_/.test(ss.value))ss.value='recommended'; window._serpSortPrev=ss.value; }
+  serpCatNoteHide();
+}
+
 // Клик по категории на главной → поиск со всей Беларусью + фильтр этой категории
 // ─── Каталог: все объекты категории по РБ (без дат), из базы /api/catalog ───
 window._catMode=null; window._catOffset=0; window._catTotal=0; window._catHasMore=false; window._catLoading=false; window._catBooting=false;
@@ -4859,6 +4969,7 @@ function catStart(cats){
   window._catMode=arr.join(','); window._catOffset=0; window._catHasMore=true; window._catLoading=false;
   window._catBooting=true; // короткий флаг «категория открывается» — для спиннера до первого ответа
   document.body.classList.add('cat-mode');
+  try{ serpCatResetDateFilters(); }catch(e){} // 16.10
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=arr.indexOf(c)>=0;});
   window._capState=window._capState||{};
   window._capState.city='';
@@ -4898,19 +5009,24 @@ async function catLoad(reset){
 function catShowEmpty(){
   window._catMode='guest';
   document.body.classList.add('cat-mode');
+  try{ serpCatResetDateFilters(); }catch(e){} // 16.10
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=(c==='guest');});
   HOTELS=[];
   window._serpReset=true; serpOpen();
   var cards=document.getElementById('serp-cards');
   var meta=document.getElementById('serp-meta'); if(meta)meta.textContent='';
   if(cards){
-    cards.innerHTML='<div style="padding:48px 20px;text-align:center;color:#5a6b5e">'
+    cards.innerHTML=catGuestStubHtml();
+  }
+  var more=document.getElementById('serp-more'); if(more)more.remove();
+}
+// 16.10: заглушка «Усадьбы — скоро» вынесена из catShowEmpty без изменений — её же рисует serpRender (см. там)
+function catGuestStubHtml(){
+  return '<div style="padding:48px 20px;text-align:center;color:#5a6b5e">'
       +'<div style="font-size:42px;margin-bottom:14px">🏡</div>'
       +'<div style="font-size:19px;font-weight:700;color:#0F2D1D;margin-bottom:8px">Усадьбы — скоро</div>'
       +'<div style="font-size:15px;line-height:1.5;max-width:400px;margin:0 auto">Скоро здесь появятся белорусские усадьбы — то, чего нет у других. Следите за обновлениями.</div>'
       +'</div>';
-  }
-  var more=document.getElementById('serp-more'); if(more)more.remove();
 }
 
 function openCategory(cat){
@@ -6034,17 +6150,36 @@ function zbLegalLoad(url){
   function uiClosed(id){
     var i=stack.lastIndexOf(id); if(i<0) return;
     stack.splice(i,1);
-    if(i===stack.length){ window._zbOvSkip++; try{ history.back(); }catch(e){ window._zbOvSkip--; } }
+    if(i===stack.length){
+      window._zbOvSkip++;
+      // 16.10: пока браузер снимает шаг окна, новые шаги сайта (выдача после шторки поиска) ждут — см. zbOvAfterBack
+      busyStart();
+      try{ history.back(); }catch(e){ window._zbOvSkip--; busyEnd(); }
+    }
   }
+  // 16.10: history.back() срабатывает не сразу. Если за ним тут же идёт pushState (выбрали город в шторке →
+  // открылась выдача), браузер снял бы уже шаг выдачи. Поэтому изменения истории на это время откладываем.
+  var busyT=0, after=[];
+  function busyStart(){ window._zbOvBackBusy=true; clearTimeout(busyT); busyT=setTimeout(busyEnd,700); }
+  function busyEnd(){
+    clearTimeout(busyT); window._zbOvBackBusy=false;
+    var q=after; after=[]; q.forEach(function(fn){ try{ fn(); }catch(e){} });
+  }
+  window.zbOvAfterBack=function(fn){ if(window._zbOvBackBusy){ after.push(fn); return true; } return false; };
+  // 16.10: шторка поиска на телефоне — окно со своим шагом истории (открытие/закрытие зовёт она сама, без наблюдателя:
+  // шаг должен сняться до того, как откроется выдача)
+  window.zbOvOpen=function(id){ push(id); };
+  window.zbOvClosed=function(id){ uiClosed(id); };
   function closeById(id){
-    if(id==='legal'){ closeLegal(); }
+    if(id==='cap'){ try{ capSheetClose({fromHistory:true}); }catch(e){} }
+    else if(id==='legal'){ closeLegal(); }
     else if(id==='bk'){ var m=document.getElementById('bk-modal'); if(m) m.classList.remove('open'); }
     else if(id==='gal'){ try{ closeGal(); }catch(e){} }        // 04.10: просмотр фото
     else if(id==='map'){ try{ closeHotelMap(); }catch(e){} }   // 04.10: карта объекта
   }
   // Регистрируется РАНЬШЕ обработчика маршрутов сайта и перехватывает «Назад», пока открыто окно
   window.addEventListener('popstate',function(e){
-    if(window._zbOvSkip>0){ window._zbOvSkip--; window._zbBackPending=0; e.stopImmediatePropagation(); return; }
+    if(window._zbOvSkip>0){ window._zbOvSkip--; window._zbBackPending=0; e.stopImmediatePropagation(); if(window._zbOvSkip===0)busyEnd(); return; }
     if(stack.length){ var id=stack.pop(); closeById(id); window._zbBackPending=0; e.stopImmediatePropagation(); }
   });
   function watch(id, el, isOpen){
@@ -6455,14 +6590,23 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   };
   // Недавние города — что человек сам выбирал (до 5, на этом устройстве)
   window.zbRecentCities=function(){
-    var a=[]; try{ a=JSON.parse(localStorage.getItem('zb_recent_cities')||'[]'); }catch(e){ a=[]; }
+    var a=[], raw=null; try{ raw=localStorage.getItem('zb_recent_cities'); a=JSON.parse(raw||'[]'); }catch(e){ a=[]; }
     if(!Array.isArray(a))a=[];
-    try{ if(!a.length&&window._lastReg&&window._lastReg.city)a=[window._lastReg.city]; }catch(e){}
+    // 16.10: после «Очистить» (в памяти пустой список '[]') город прошлого поиска сюда больше не подставляем
+    try{ if(!a.length&&raw===null&&!window._zbRecentCleared&&window._lastReg&&window._lastReg.city)a=[window._lastReg.city]; }catch(e){}
     return a.filter(function(n){ return typeof n==='string'&&n.trim(); }).slice(0,5);
   };
   window.zbRememberCity=function(name){
     if(!name)return;
     try{ var a=zbRecentCities().filter(function(n){ return zbCityNorm(n)!==zbCityNorm(name); }); a.unshift(String(name)); localStorage.setItem('zb_recent_cities',JSON.stringify(a.slice(0,5))); }catch(e){}
+  };
+  // 16.10: «Очистить» у «Недавних» — стираем список на этом устройстве, группа исчезает (телефон и компьютер)
+  window.zbRecentClear=function(){
+    window._zbRecentCleared=true;
+    try{ localStorage.setItem('zb_recent_cities','[]'); }catch(e){}
+    ['cs-recent-wrap','cap-dd-recent-wrap'].forEach(function(id){ var w=document.getElementById(id); if(w)w.style.display='none'; });
+    ['cs-recent-pills','cap-dd-recent'].forEach(function(id){ var b=document.getElementById(id); if(b)b.innerHTML=''; });
+    try{ var dd=document.getElementById('cap-dd'); if(dd&&dd.style.display==='block')posUnder(dd); }catch(e){}
   };
   function zbCityEmoji(n){ if(zbIsRegion(n))return '🗺'; var c=zbCityByName(n); return c?c.emoji:'📍'; }
   // 16.10: области для выбора направления (компьютер, телефон, правка поиска на выдаче)
@@ -6785,21 +6929,61 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
       if(_cs.kids!=null)csKids=parseInt(_cs.kids)||0;
       if(csDin)csNav=new Date(csDin.getFullYear(),csDin.getMonth(),1);
     }catch(e){}
+    // 16.10: запоминаем, где стояла страница, — при закрытии вернём её туда же (см. csScrollGuard ниже)
+    var _wasOpen=sheet.style.display==='flex';
+    if(!_wasOpen)csLockY=window.scrollY||window.pageYOffset||0;
     sheet.style.display='flex';
     var sc=document.getElementById('cs-scroll');if(sc)sc.scrollTop=0;
     csStep(startStep||1);
-    // 15.10: шаг «Куда едете?» — курсор сразу в поле города (одно поле на экране), недавние над популярными
+    // 16.10: шаг «Куда едете?» — БЕЗ клавиатуры. Раньше курсор сразу ставился в поле города: на телефоне выскакивала
+    // клавиатура, закрывала половину списка, и прокрутка списка тянула страницу за шторкой. Теперь сверху поле поиска
+    // (клавиатура — только если гость сам нажал в него), ниже «Недавние», «Популярные», «Области» — выбор пальцем.
     if((startStep||1)===1){
       try{ csRenderRecent(); }catch(e){}
-      try{ var _ci=document.getElementById('cs-city-input'); if(_ci){ _ci.value=''; csMobileSearch(''); _ci.focus(); } }catch(e){}
+      try{ var _ci=document.getElementById('cs-city-input'); if(_ci){ _ci.value=''; csMobileSearch(''); } }catch(e){}
     }
+    // 16.10: фокус не в поле ввода (он мог остаться на кнопке/поле под шторкой — тогда клавиатура не нужна)
+    try{ var _ae=document.activeElement; if(_ae&&_ae!==document.body&&_ae.blur&&!sheet.contains(_ae))_ae.blur(); }catch(e){}
+    // 16.10: «Назад» на телефоне закрывает шторку, как и другие окна сайта (на iPhone, как и у них, — крестиком)
+    if(!_wasOpen){ try{ if(window.zbOvOpen)zbOvOpen('cap'); }catch(e){} }
   };
 
-  window.capSheetClose=function(){
+  // opts.fromHistory — закрыта жестом/кнопкой «Назад» (шаг истории уже снят браузером)
+  window.capSheetClose=function(opts){
     var sheet=document.getElementById('cap-sheet');
     if(!sheet)return;
+    var _wasOpen=sheet.style.display==='flex';
     sheet.style.display='none';
+    if(!_wasOpen)return;
+    try{ var _ae=document.activeElement; if(_ae&&sheet.contains(_ae)&&_ae.blur)_ae.blur(); }catch(e){}
+    // 16.10: страница там же, где была до шторки (на iPhone клавиатура могла её сдвинуть)
+    var y=csLockY; csLockY=null;
+    if(y!=null&&Math.abs((window.scrollY||window.pageYOffset||0)-y)>1){ try{ window.scrollTo(0,y); }catch(e){} }
+    // 16.10: снимаем шаг истории шторки сразу (а не позже), чтобы следующий экран (выдача) встал в историю после него
+    if(!(opts&&opts.fromHistory)){ try{ if(window.zbOvClosed)zbOvClosed('cap'); }catch(e){} }
   };
+
+  // ═ 16.10: ПРОКРУТКА ПОД ШТОРКОЙ ПОИСКА (телефон) ═
+  // Пока шторка открыта, страница под ней стоит: класс zb-lock (overflow:hidden у html и body, общий для всех окон,
+  // см. конец страницы) + overscroll-behavior:contain у списка. iPhone до iOS 16 overflow:hidden у body при
+  // касании не слушает, и список «протекал» — листалась страница за шторкой. Поэтому здесь ещё и касания:
+  // тянут вне списка (шапка, кнопка внизу) или список упёрся в край — это движение гасим. Позицию страницы
+  // помним (csLockY) и при закрытии возвращаем, так что прыжка наверх нет. Компьютер не затрагивается.
+  var csLockY=null;
+  (function csScrollGuard(){
+    var lastY=0;
+    function open(){ var s=document.getElementById('cap-sheet'); return !!(s&&s.style.display==='flex'); }
+    document.addEventListener('touchstart',function(e){ if(!open()||!e.touches||!e.touches[0])return; lastY=e.touches[0].clientY; },{passive:true});
+    document.addEventListener('touchmove',function(e){
+      if(!open()||!e.touches||e.touches.length!==1)return;     // щипок не трогаем
+      var y=e.touches[0].clientY, dy=y-lastY; lastY=y;
+      var sc=document.getElementById('cs-scroll'), t=e.target;
+      var inList=!!(sc&&t&&sc.contains(t));
+      var max=sc?sc.scrollHeight-sc.clientHeight:0;
+      var stop=!inList||max<=0||(dy>0&&sc.scrollTop<=0)||(dy<0&&sc.scrollTop>=max-1);
+      if(stop&&e.cancelable)e.preventDefault();
+    },{passive:false});
+  })();
 
   var csTitles={1:'Поиск жилья',2:'Когда едете?',3:'Гости'};
   var csCurrentStep=1;
@@ -7920,7 +8104,11 @@ function ostFail(e){
 <div id="cap-dd" style="display:none;position:fixed;top:0;left:0;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.22);border:1.5px solid #e8e4dc;z-index:99999;padding:10px 0;overflow:hidden;min-width:280px">
   <div id="cap-dd-suggest" role="listbox" aria-label="Подсказки городов" style="display:none;padding:4px 10px 6px"></div>
   <div id="cap-dd-recent-wrap" style="display:none">
-    <div style="padding:6px 16px 6px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Недавние</div>
+    <!-- 16.10: «Очистить» — недавние города хранятся на устройстве, гость может их стереть -->
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 16px 6px">
+      <div style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Недавние</div>
+      <button type="button" class="zb-rec-clear" onmousedown="event.preventDefault()" onclick="event.stopPropagation();zbRecentClear()">Очистить</button>
+    </div>
     <div id="cap-dd-recent" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 8px"></div>
   </div>
   <div id="cap-dd-pop">
@@ -7995,7 +8183,11 @@ function ostFail(e){
               <div id="cs-city-suggest" style="display:none;background:#fff;border:1.5px solid #f0f0f0;border-radius:12px;overflow:hidden;margin-top:8px;box-shadow:0 4px 16px rgba(0,0,0,.1)"></div>
               <!-- 15.10: недавние города (что выбирали на этом устройстве) — как на компьютере -->
               <div id="cs-recent-wrap" style="display:none">
-                <div style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Недавние</div>
+                <!-- 16.10: «Очистить» справа от заголовка -->
+                <div style="margin-top:16px;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 2px">
+                  <div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px">Недавние</div>
+                  <button type="button" class="zb-rec-clear" onclick="zbRecentClear()">Очистить</button>
+                </div>
                 <div id="cs-recent-pills" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
               </div>
               <div id="cs-pop-lbl" style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Популярные</div>

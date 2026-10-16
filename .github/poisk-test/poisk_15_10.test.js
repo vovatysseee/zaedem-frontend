@@ -176,10 +176,12 @@ async function run(browser, base, vp) {
     check('ПК: Esc — панель закрыта, строка снова «Брест · …»', !(await page.locator('#cap-dd').isVisible()) && /Брест/.test(await page.locator('#cap-top').innerText()));
   } else {
     await page.locator('#cap-main').tap(); await page.waitForTimeout(500);
+    // 16.10: шторка открывается БЕЗ клавиатуры (курсор не в поле); печатать — нажав в поле (порция «шторка без прыжков»)
     const act = await page.evaluate(() => document.activeElement && document.activeElement.id);
-    check('телефон: касание «Куда едете?» — экран выбора города, курсор сразу в поле', act === 'cs-city-input', act);
+    check('телефон: касание «Куда едете?» — экран выбора города, клавиатура не выскакивает (16.10)', act !== 'cs-city-input', act);
     const vis = await visibleTextInputs();
     check('телефон: на экране одно поле города', vis.length === 1 && vis[0] === 'cs-city-input', vis.join(','));
+    await page.locator('#cs-city-input').tap(); await page.waitForTimeout(300);
     await page.keyboard.type('инск', { delay: 40 }); await page.waitForTimeout(400);
     const sug = await page.locator('#cs-city-suggest [data-city]').allTextContents();
     check('телефон: «инск» — Минск (раньше искало только с начала названия)', sug.some(x => /Минск/.test(x)), sug.join(','));
