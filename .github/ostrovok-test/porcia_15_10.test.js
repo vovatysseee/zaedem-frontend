@@ -94,19 +94,12 @@ async function routeExternal(ctx, base) {
 }
 
 const results = [];
-// 15.10 (вечер): гражданство теперь поле с поиском по вводу, а не select — выбираем как человек:
-// нажали в поле, набрали начало названия, нажали на страну в списке
+// 16.10: гражданство снова родной select (без клавиатуры на телефоне) — выбираем страну по коду
 async function pickRes(page, scope, query, code, mobile) {
-  const inp = page.locator(scope + ' input.zb-res-inp');
-  if (mobile) await inp.tap(); else await inp.click();
-  await inp.fill(query);
-  // два касания подряд быстрее ~0,3 с браузер телефона считает двойным касанием и щелчок не отдаёт;
-  // человек между касаниями печатает — ждём столько же
-  await page.waitForTimeout(400);
-  const opt = page.locator(scope + ' .zb-res-opt[data-code="' + code + '"]').first();
-  if (mobile) await opt.tap(); else await opt.click();
+  const sel = page.locator(scope + ' select.zb-res-sel');
+  await sel.selectOption(code);
   await page.waitForTimeout(150);
-  if (process.env.ZB_DEBUG) console.log('pickRes', scope, query, await page.evaluate(() => zbResidency()), await inp.inputValue());
+  if (process.env.ZB_DEBUG) console.log('pickRes', scope, query, await page.evaluate(() => zbResidency()), await sel.inputValue());
 }
 function check(name, ok, info) { results.push({ name, ok: !!ok, info: info || '' }); console.log((ok ? '  ✔ ' : '  ✘ ') + name + (info && !ok ? ' — ' + info : '')); }
 
@@ -137,7 +130,7 @@ async function run(browser, base, vp) {
   await setTrip([5]);
   if (vp.mobile) {
     await page.evaluate(() => capSheetOpen(3));
-    const sel = page.locator('#cs-step3 input.zb-res-inp');
+    const sel = page.locator('#cs-step3 select.zb-res-sel');
     check('телефон: выбор гражданства в панели гостей виден', await sel.isVisible());
     await pickRes(page, '#cs-step3', 'росс', 'ru', true);
     await page.waitForTimeout(200);
@@ -147,7 +140,7 @@ async function run(browser, base, vp) {
     await page.evaluate(() => { serpOpen(); });
     await page.waitForTimeout(1200);
     await page.evaluate(() => { serpEditSearch(); serpSearchStep(3); });
-    const sel = page.locator('#serp-sd-modal input.zb-res-inp');
+    const sel = page.locator('#serp-sd-modal select.zb-res-sel');
     check('ПК: выбор гражданства в панели гостей виден', await sel.isVisible());
     await pickRes(page, '#serp-sd-modal', 'росс', 'ru', false);
     await page.waitForTimeout(200);
@@ -162,7 +155,7 @@ async function run(browser, base, vp) {
   // перезагрузка — значение то же, в обеих панелях
   await page.reload(); await page.waitForTimeout(800);
   check('после перезагрузки гражданство — Россия', await page.evaluate(() => zbResidency()) === 'ru');
-  check('после перезагрузки в панели стоит Россия', await page.evaluate(() => { var s = document.querySelector('.zb-res-slot input.zb-res-inp'); return s && s.dataset.code; }) === 'ru');
+  check('после перезагрузки в панели стоит Россия', await page.evaluate(() => { var s = document.querySelector('.zb-res-slot select.zb-res-sel'); return s && s.value; }) === 'ru');
 
   // ── страница объекта: residency в /hp, питание, отмена ──
   await setTrip([5]);
@@ -355,7 +348,7 @@ async function run(browser, base, vp) {
   await page.waitForSelector('.ost-res-ro a');
   await page.locator('.ost-res-ro a').click();
   await page.waitForTimeout(500);
-  check('«изменить» → окно брони закрыто, открыт выбор гостей с гражданством', !(await page.locator('#bk-modal.open').count()) && await page.locator('#hp-guests-pop.open input.zb-res-inp').isVisible());
+  check('«изменить» → окно брони закрыто, открыт выбор гостей с гражданством', !(await page.locator('#bk-modal.open').count()) && await page.locator('#hp-guests-pop.open select.zb-res-sel').isVisible());
   await pickRes(page, '#hp-guests-pop', 'каз', 'kz', !!vp.mobile);
   await page.evaluate(() => hpApplyGuests());
   await page.waitForSelector('.ost-rate-row', { timeout: 8000 });

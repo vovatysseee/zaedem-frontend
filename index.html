@@ -352,6 +352,8 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 @keyframes ostspin{to{transform:rotate(360deg)}}
 .hp-addr{cursor:pointer;border-bottom:1px dashed var(--sand3);transition:color .15s}
 .hp-addr:hover{color:var(--green)}
+/* 16.10: ссылка «Что рядом» у адреса — только когда сами данные не пришли; открывает блок по просьбе гостя */
+.hp-near-open{font-size:12.5px;color:var(--green);font-weight:600;cursor:pointer;border-bottom:1px dashed var(--sand3)}
 .hmap-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
 .hmap-ov.open{display:flex}
 .hmap-box{background:#fff;border-radius:18px;overflow:hidden;width:min(640px,100%);max-height:90vh;display:flex;flex-direction:column;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -557,6 +559,14 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
 .lmp-wrap{background:none!important;border:none!important}
 .sf-load-more{display:block;width:100%;margin:18px 0 4px;padding:13px;background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;transition:.15s}
 .sf-load-more:hover{background:var(--green);color:#fff}
+/* 16.10: поиск по области — подсказка над выдачей и заметный фильтр «Усадьбы и загородные» */
+.serp-region-note{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;background:#f3f7ee;border:1.5px solid #dbe8cf;border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.srn-txt{font-size:13.5px;color:var(--ink);min-width:0}
+.srn-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.srn-type{flex-shrink:0;border:1.5px solid var(--green);background:#fff;color:var(--green);border-radius:50px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
+.srn-type.on{background:var(--green);color:#fff}
+.dsk-reg-item{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#f5f3ee;border:none;border-radius:50px;font-size:13px;font-weight:600;color:#111;cursor:pointer;font-family:inherit}
+.dsk-reg-item:hover{background:#ece8df}
 .sf-clear{font-size:12px;color:var(--green);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:underline;padding:0}
 .sf-chk{display:flex;align-items:center;gap:10px;padding:10px 8px;cursor:pointer;border-radius:8px;font-size:13px;font-weight:500;color:var(--ink);transition:.1s}
 .sf-chk:hover{background:var(--sand)}
@@ -655,20 +665,14 @@ body.cat-mode #sft-price,body.cat-mode #sft-free,body.cat-mode #sft-contactless,
 .zb-res-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0 4px;border-top:1px solid #f0f0f0;margin-top:4px}
 .zb-res-lbl{font-size:13px;font-weight:600;color:#111}
 .zb-res-sub{font-size:11px;color:#aaa}
-/* 15.10: гражданство — поле с поиском по вводу вместо короткого select; список стран под строкой */
-.zb-res-inp{width:58%;max-width:200px;min-width:0;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13px;background:#fff;color:#111;outline:none;text-overflow:ellipsis}
-.zb-res-inp:focus{border-color:#0F2D1D}
-.zb-res-list{margin:6px 0 2px;max-height:240px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1.5px solid #eee;border-radius:10px;background:#fff}
-.zb-res-opt{padding:8px 12px;font-size:13.5px;color:#111;cursor:pointer;border-bottom:1px solid #f6f4f0}
-.zb-res-opt:hover,.zb-res-opt.hl{background:#f7f5f0}
-.zb-res-opt.cur{font-weight:700;color:#0F2D1D}
-.zb-res-sep{padding:6px 12px 4px;font-size:10.5px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.6px;background:#fbfaf7}
-.zb-res-none{padding:10px 12px;font-size:12.5px;color:#999}
-@media (max-width:768px){.zb-res-inp{font-size:16px}.zb-res-opt{padding:11px 12px;font-size:15px}}
+/* 16.10: гражданство — родной select: на телефоне системный список без клавиатуры, на компьютере прыжок по первой букве */
+.zb-res-sel{width:58%;max-width:200px;min-width:0;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:6px 26px 6px 8px;font-family:inherit;font-size:13px;color:#111;outline:none;cursor:pointer;text-overflow:ellipsis;-webkit-appearance:none;-moz-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230F2D1D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 9px center}
+.zb-res-sel:focus{border-color:#0F2D1D}
+@media (max-width:768px){.zb-res-sel{font-size:16px}}
 #cs-step3 .zb-res-row{padding:18px 0 4px}
 #cs-step3 .zb-res-lbl{font-size:16px}
 #cs-step3 .zb-res-sub{font-size:13px}
-#cs-step3 .zb-res-inp{font-size:16px;padding:9px 10px}
+#cs-step3 .zb-res-sel{font-size:16px;padding:9px 28px 9px 10px}
 .ost-cx-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
 .ost-cx-tbl td{padding:4px 0;border-top:1px solid rgba(0,0,0,.07);vertical-align:top}
 .ost-cx-tbl td:first-child{white-space:nowrap}
@@ -997,6 +1001,8 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
       </div>
 
       <div id="serp-ai-chips" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+      <!-- 16.10: поиск по области — «Поиск по всей области» и фильтр по типу -->
+      <div id="serp-region-note" class="serp-region-note" style="display:none" role="note"></div>
       <div class="serp-sortbar">
         <div id="serp-meta" class="serp-meta" style="margin-bottom:0"></div>
         <div class="serp-sort-wrap">
@@ -1071,7 +1077,7 @@ else if(_zr&&(_zr.view==='serp'||_zr.view==='hotel')){_de.classList.add('zb-rest
         <div class="ft-pay-block"><span id="ft-pay-icons"></span></div>
         <a href="payment.html" class="ft-secure"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>Защищённая оплата картой · 3-D Secure</a>
       </div>
-      <div class="ft-col"><h4>Гостям</h4><a onclick="openAuth('tourist')">Найти мою бронь</a><a href="payment.html">Оплата и возврат</a><a href="oferta.html">Публичная оферта</a><a href="terms.html">Правила пользования</a></div>
+      <div class="ft-col"><h4>Гостям</h4><a onclick="openAuth('guest')">Найти мою бронь</a><a href="payment.html">Оплата и возврат</a><a href="oferta.html">Публичная оферта</a><a href="terms.html">Правила пользования</a></div>
       <div class="ft-col"><h4>Компания</h4><a href="contacts.html">Контакты и реквизиты</a><a href="privacy.html">Персональные данные</a><a href="confidential.html">Конфиденциальность</a></div>
       <div class="ft-col ft-col-partners"><h4>Партнёрам</h4><div class="ft-links"><a onclick="openHotelApp()">Добавить свой объект</a><a onclick="openAuth('hotelowner')">Личный кабинет</a></div></div>
     </div>
@@ -1143,10 +1149,6 @@ var ZB_RES_FALLBACK=(
 var ZB_RES_TOP=['by','ru','kz','ua','pl','lt','lv','uz','am','ge','az','kg','tj','md','de','cn'];
 // 15.10: «Кыргызстан» — как в списке частых стран (Intl называет «Киргизия»; по «кирг» тоже найдётся)
 var ZB_RES_NAME_FIX={kg:'Кыргызстан'};
-// 15.10: другие названия для поиска по вводу («сша», «англия», «киргизия»)
-var ZB_RES_ALIAS={us:'сша америка соединенные штаты',gb:'англия британия великобритания',ae:'оаэ эмираты',kg:'киргизия киргизстан кыргызстан',
-  kr:'южная корея корея',kp:'северная корея кндр',cz:'чехия чешская',nl:'голландия нидерланды',md:'молдавия молдова',by:'белоруссия беларусь',
-  ci:'кот дивуар',mk:'македония',sz:'свазиленд эсватини',mm:'бирма мьянма',tr:'турция турецкая',de:'германия фрг'};
 const ZB_COUNTRIES=(function(){
   var dn=null; try{ if(typeof Intl!=='undefined'&&Intl.DisplayNames)dn=new Intl.DisplayNames(['ru'],{type:'region'}); }catch(e){ dn=null; }
   var all=ZB_RES_FALLBACK.map(function(p){
@@ -1167,98 +1169,38 @@ function zbResidency(){
 function zbSetResidency(code){
   code=String(code||'').toLowerCase(); if(!zbResName(code))return;
   try{ localStorage.setItem('zb_residency',code); }catch(e){}
-  // 15.10: вместо select — поле с поиском; обновляем все такие поля на странице
-  try{ document.querySelectorAll('input.zb-res-inp').forEach(function(s){ s.value=zbResName(code); s.dataset.code=code; }); }catch(e){}
+  // 16.10: обновляем все списки гражданства на странице (панели гостей на главной, выдаче, объекте)
+  try{ document.querySelectorAll('select.zb-res-sel').forEach(function(s){ s.value=code; }); }catch(e){}
   // на странице объекта цены пересчитаются при закрытии окошка гостей, как при смене числа гостей
   try{ if(document.getElementById('hp-guests-pop'))window._hpGuestsDirty=true; }catch(e){}
 }
 // Компактная строка «Гражданство» для панелей гостей (главная, телефон, выдача, страница объекта)
-// 15.10: поле с поиском по вводу («узб» → Узбекистан) и списком под строкой (в потоке панели,
-// а не поверх — так его не обрезают окна с overflow:hidden).
+// 16.10: что и почему — поле с поиском по вводу на телефоне сразу открывало клавиатуру, гостю неудобно.
+// Теперь родной <select>: на телефоне системный список без клавиатуры, на компьютере — прыжок по первым
+// буквам. Внутри две группы: «Частые» (как раньше сверху) и «Все страны» по алфавиту (249, названия —
+// из ZB_COUNTRIES, т.е. Intl.DisplayNames или встроенный список). Значение — код маленькими буквами,
+// запоминание и передача в /search и /hp — прежние (zbSetResidency / zbResidency).
+var _zbResOpts={};
+function zbResOptionsHTML(byName){
+  var k=byName?'n':'c'; if(_zbResOpts[k])return _zbResOpts[k];
+  var opt=function(c){ var v=byName?c[1]:c[0]; return '<option value="'+zbEsc(v)+'" data-code="'+c[0]+'">'+zbEsc(c[1])+'</option>'; };
+  var top=ZB_COUNTRIES.slice(0,ZB_RES_TOP.length), all=ZB_COUNTRIES.slice();
+  try{ all.sort(function(a,b){ return a[1].localeCompare(b[1],'ru'); }); }catch(e){ all.sort(function(a,b){ return a[1]<b[1]?-1:a[1]>b[1]?1:0; }); }
+  return (_zbResOpts[k]='<optgroup label="Частые">'+top.map(opt).join('')+'</optgroup><optgroup label="Все страны">'+all.map(opt).join('')+'</optgroup>');
+}
 function zbResRowHTML(){
   var cur=zbResidency();
   return '<div class="zb-res-wrap" onclick="event.stopPropagation()"><div class="zb-res-row"><div><div class="zb-res-lbl">Гражданство</div><div class="zb-res-sub">цена зависит от него</div></div>'
-    +'<input class="zb-res-inp" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-label="Гражданство гостей" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done"'
-    +' value="'+zbEsc(zbResName(cur))+'" data-code="'+cur+'" onfocus="zbResOpen(this)" onclick="zbResOpen(this)" oninput="zbResFilter(this)" onkeydown="zbResKey(event,this)" onblur="zbResBlur(this)">'
-    +'</div><div class="zb-res-list" role="listbox" aria-label="Страны" style="display:none"></div></div>';
+    +'<select class="zb-res-sel" aria-label="Гражданство гостей" onchange="zbSetResidency(this.value)">'+zbResOptionsHTML(false).replace('value="'+cur+'"','value="'+cur+'" selected')+'</select>'
+    +'</div></div>';
 }
-function zbResNorm(s){ return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[’'`]/g,'').replace(/[-–—().,]/g,' ').replace(/\s+/g,' ').trim(); }
-// Подходящие страны: пусто — весь список (частые сверху); иначе сначала совпадение с начала слова, потом внутри
-function zbResMatches(q){
-  q=zbResNorm(q);
-  if(!q)return ZB_COUNTRIES.slice();
-  var a=[],b=[];
-  ZB_COUNTRIES.forEach(function(c){
-    var hay=zbResNorm(c[1]+' '+(ZB_RES_ALIAS[c[0]]||''));
-    if(q.length===2&&c[0]===q){ a.unshift(c); return; }
-    if(hay.indexOf(q)===0||hay.indexOf(' '+q)>=0)a.push(c);
-    else if(hay.indexOf(q)>=0)b.push(c);
-  });
-  return a.concat(b);
-}
-function zbResList(inp){ var w=inp&&inp.closest('.zb-res-wrap'); return w&&w.querySelector('.zb-res-list'); }
-function zbResRender(inp,q){
-  var box=zbResList(inp); if(!box)return;
-  var m=zbResMatches(q), cur=inp.dataset.code||zbResidency(), nq=zbResNorm(q), h='';
-  if(!m.length)h='<div class="zb-res-none">Ничего не нашли — проверьте написание</div>';
-  m.forEach(function(c,i){
-    if(!nq&&i===ZB_RES_TOP.length)h+='<div class="zb-res-sep">Все страны</div>';
-    h+='<div class="zb-res-opt'+(c[0]===cur?' cur':'')+(i===0&&nq?' hl':'')+'" role="option" data-code="'+c[0]+'" onmousedown="event.preventDefault()" onclick="zbResPick(this)">'+zbEsc(c[1])+'</div>';
-  });
-  box.innerHTML=h;
-}
-function zbResOpen(inp){
-  var box=zbResList(inp); if(!box)return;
-  if(box.style.display!=='none')return;
-  clearTimeout(inp._zbBlurT);
-  zbResRender(inp,'');
-  box.style.display='block'; inp.setAttribute('aria-expanded','true');
-  try{ inp.select(); }catch(e){}
-  // высота списка — сколько есть места до низа экрана (панели гостей бывают position:fixed)
-  try{
-    var r=box.getBoundingClientRect(), vh=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
-    var av=Math.floor(vh-r.top-12); box.style.maxHeight=Math.max(150,Math.min(240,av))+'px';
-    if(av<150)inp.scrollIntoView({block:'start',behavior:'smooth'});
-    var c=box.querySelector('.zb-res-opt.cur'); if(c)box.scrollTop=Math.max(0,c.offsetTop-box.offsetTop-60);
-  }catch(e){}
-}
-function zbResFilter(inp){
-  var box=zbResList(inp); if(box&&box.style.display==='none'){ box.style.display='block'; inp.setAttribute('aria-expanded','true'); }
-  zbResRender(inp,inp.value); if(box)box.scrollTop=0;
-}
-function zbResClose(inp,restore){
-  var box=zbResList(inp); if(box){ box.style.display='none'; box.innerHTML=''; }
-  inp.setAttribute('aria-expanded','false');
-  if(restore)inp.value=zbResName(inp.dataset.code||zbResidency());
-}
-function zbResPick(opt){
-  var w=opt.closest('.zb-res-wrap'), inp=w&&w.querySelector('.zb-res-inp'); if(!inp)return;
-  zbSetResidency(opt.dataset.code);
-  inp.dataset.code=opt.dataset.code; inp.value=zbResName(opt.dataset.code);
-  zbResClose(inp,false);
-  try{ inp.blur(); }catch(e){}
-}
-function zbResBlur(inp){
-  // выбор пункта списка приходит щелчком после blur — даём ему сработать
-  clearTimeout(inp._zbBlurT);
-  inp._zbBlurT=setTimeout(function(){ if(document.activeElement!==inp)zbResClose(inp,true); },200);
-}
-function zbResKey(e,inp){
-  var box=zbResList(inp); if(!box)return;
-  if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); zbResClose(inp,true); try{inp.blur();}catch(_){} return; }
-  var opts=[].slice.call(box.querySelectorAll('.zb-res-opt'));
-  var i=opts.findIndex(function(o){ return o.classList.contains('hl'); });
-  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
-    e.preventDefault(); if(box.style.display==='none'){ zbResOpen(inp); return; }
-    if(i>=0)opts[i].classList.remove('hl');
-    i=e.key==='ArrowDown'?Math.min(opts.length-1,i+1):Math.max(0,i-1);
-    if(opts[i]){ opts[i].classList.add('hl'); try{ opts[i].scrollIntoView({block:'nearest'}); }catch(_){} }
-    return;
-  }
-  if(e.key==='Enter'){ e.preventDefault(); e.stopPropagation(); var o=opts[i>=0?i:0]; if(o&&zbResNorm(inp.value))zbResPick(o); else { zbResClose(inp,true); try{inp.blur();}catch(_){} } }
+// select.value выбирает первый подходящий пункт — это строка из «Частых», если страна там есть
+function zbResSyncSel(root){
+  try{ var cur=zbResidency(); (root||document).querySelectorAll('select.zb-res-sel').forEach(function(s){ if(s.value!==cur)s.value=cur; }); }catch(e){}
 }
 function zbResFill(){
   try{ document.querySelectorAll('.zb-res-slot').forEach(function(el){ el.innerHTML=zbResRowHTML(); }); }catch(e){}
+  zbResSyncSel(); // 16.10: выбранное гражданство в списках
 }
 document.addEventListener('DOMContentLoaded',zbResFill);
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -2175,7 +2117,9 @@ function aiUnion(a,b){
 }
 // 15.10: ИИ иногда отвечает областью/районом («Минская область»). Островок тогда ищет по всей области —
 // это и «больше 500». Знакомый город — как есть; область/район — город фразы или город по названию области.
-function aiNormCity(c,localCity){
+function aiNormCity(c,localCity,q){
+  // 16.10: гость сам сказал «в Минской области» / «под Минском» — ищем по области, что бы ни ответил ИИ
+  var _rq=q?zbRegionFromText(q):null; if(_rq)return _rq;
   var cs=String(c||'').trim(); if(!cs)return localCity||null;
   var n=cs.toLowerCase().replace(/ё/g,'е');
   var list=(typeof ZB_CITY_LIST!=='undefined'?ZB_CITY_LIST:[]).concat(AI_CITIES);
@@ -2193,6 +2137,7 @@ async function aiSearch(){
   window._aiPending=null; window._aiPick=false; aiHintReset(); // 11.10: текст изменили и нажали поиск — обычный путь, отложенный разбор не нужен
   window._fromAI=true; window._lastAiQuery=q; window._searchOrigin='ai';
   var p=aiParse(q), el=document.getElementById('ai-understood');
+  try{ var _rg0=zbRegionFromText(q); if(_rg0)p.city=_rg0; }catch(e){} // 16.10: «усадьба под Минском», «в Минской области» → область
   if(aiQuickRefine(q,el))return; // частое уточнение обработали сами — токены целы
   if(el){ el.style.display='block'; el.innerHTML='🧠 Понимаю запрос…'; }
   // КОНТЕКСТ ДИАЛОГА: если новый запрос не называет другой город — шлём GPT предыдущий
@@ -2262,7 +2207,7 @@ async function aiSearch(){
         if(a.childAges.length<_ag0)a.kids=Math.max(a.childAges.length,parseInt(p.kids)||0,1); // дети названы, но без «лишних» возрастов-дат
       }
       var _prevCity=_localReady?String(p.city||''):null;
-      if(a.city)p.city=aiNormCity(a.city,p.city); // 15.10: «Минская область» → Минск, а не поиск по всей области
+      if(a.city)p.city=aiNormCity(a.city,p.city,q); // 15.10: «Минская область» → Минск, а не поиск по всей области; 16.10: если гость сам назвал область — область
       if(a.category)p.category=a.category;
       if(a.adults)p.adults=parseInt(a.adults)||p.adults;
       if(a.kids!=null){ var _gk=parseInt(a.kids)||0; if(_gk>0||!(parseInt(p.kids)>0))p.kids=_gk; } // ноль от GPT не стирает найденных локально детей
@@ -2291,7 +2236,7 @@ async function aiSearch(){
         var _csH=window._capState||{};
         var _fH=function(d){ if(!d)return ''; d=new Date(d); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
         var _diff=false;
-        if(a.city&&String(a.city)!==_prevCity)_diff=true;
+        if(a.city&&String(p.city)!==_prevCity)_diff=true; // 16.10: сравниваем уже разобранный город (область гостя ИИ не перебивает)
         if(a.din&&a.din!==_fH(_csH.din))_diff=true;
         if(a.dout&&a.dout!==_fH(_csH.dout))_diff=true;
         if(a.adults&&(parseInt(a.adults)||0)!==(parseInt(_csH.adults)||0))_diff=true;
@@ -2924,13 +2869,27 @@ async function zbNearbyOverpass(lat,lon){
   }
   throw new Error(last||'Overpass недоступен');
 }
+// 16.10: что и почему — пока бэкенд /api/nearby почти везде отвечает ошибкой или пустым списком,
+// плашка «Не удалось загрузить» висела почти на каждом объекте. Теперь сами при открытии объекта
+// спрашиваем ТОЛЬКО наш бэкенд и молча: есть данные — блок как раньше; нет данных или ошибка — блока нет
+// вовсе (как до 15.10), рядом с адресом — маленькая ссылка «Что рядом». Запасной путь (Overpass из браузера)
+// и «Повторить» — только когда гость сам нажал эту ссылку. Так браузер гостя не ходит на чужие серверы
+// без спроса и в консоли нет ошибок от занятых зеркал. CSP на сайте нет (ни meta, ни заголовков
+// GitHub Pages), запросы к зеркалам она не блокирует.
 function zbNearbyRetry(){
-  try{ var h=curHotel; if(h&&h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude); }catch(e){}
+  try{ var h=curHotel; if(h&&h.latitude&&h.longitude)loadNearby(h.latitude,h.longitude,true); }catch(e){}
 }
-async function loadNearby(lat,lon){
+function zbNearbyOpen(){
+  var op=document.getElementById('hp-near-open'); if(op)op.style.display='none';
+  zbNearbyRetry();
+  try{ var box=document.getElementById('hp-nearby'); if(box)box.scrollIntoView({behavior:zbReduceMotion()?'auto':'smooth',block:'center'}); }catch(e){}
+}
+async function loadNearby(lat,lon,manual){
   var box=document.getElementById('hp-nearby'); if(!box)return;
   var tok=box._zbNear=(box._zbNear||0)+1;
   var alive=function(){ return box.isConnected&&box._zbNear===tok; }; // ушли на другой объект — старый ответ не рисуем
+  var opener=document.getElementById('hp-near-open');
+  if(opener)opener.style.display='none';
   box.style.display='';
   box.innerHTML='<div style="font-size:12.5px;color:var(--muted)">🚶 Смотрим, что рядом…</div>';
   var list=null, failed=false, outOfArea=false;
@@ -2941,9 +2900,9 @@ async function loadNearby(lat,lon){
     if(d&&d.error)throw new Error('бэкенд: Overpass не ответил');
     outOfArea=!!(d&&d.out_of_area);
     list=(d&&d.nearby)||[];
-  }catch(e){ failed=true; console.warn('nearby:',e&&e.message||e); }
+  }catch(e){ failed=true; if(manual)console.warn('nearby:',e&&e.message||e); }
   if(!alive())return;
-  if((!list||!list.length)&&!outOfArea){
+  if(manual&&(!list||!list.length)&&!outOfArea){
     try{ list=await zbNearbyOverpass(lat,lon); failed=false; }
     catch(e){ failed=true; console.warn('nearby (запасной путь):',e&&e.message||e); }
     if(!alive())return;
@@ -2954,13 +2913,17 @@ async function loadNearby(lat,lon){
     var _near=list.map(function(x){return String(x.label)+' '+String(x.dist);});
     if(curHotel){curHotel._nearby=_near;}
   }catch(_){}
-  if(!list.length&&failed){
-    box.innerHTML='<div id="hp-nearby-err" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;font-size:12.5px;color:var(--muted)">'
-      +'<span>🚶 Не удалось загрузить, что рядом.</span>'
-      +'<button type="button" onclick="zbNearbyRetry()" style="border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:5px 12px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green);cursor:pointer">Повторить</button></div>';
+  if(!list.length){
+    if(!manual){ box.style.display='none'; box.innerHTML=''; if(opener&&!outOfArea)opener.style.display=''; return; }
+    if(failed){
+      box.innerHTML='<div id="hp-nearby-err" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;font-size:12.5px;color:var(--muted)">'
+        +'<span>🚶 Не удалось загрузить, что рядом.</span>'
+        +'<button type="button" onclick="zbNearbyRetry()" style="border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:5px 12px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--green);cursor:pointer">Повторить</button></div>';
+      return;
+    }
+    box.innerHTML='<div id="hp-nearby-none" style="font-size:12.5px;color:var(--muted)">🚶 В радиусе 1,5 км магазинов, кафе, остановок и парков не нашли.</div>';
     return;
   }
-  if(!list.length){ box.style.display='none'; return; }
   box.innerHTML='<div style="font-family:\'Unbounded\',sans-serif;font-size:.85rem;font-weight:700;color:var(--green);margin-bottom:.6rem">Что рядом</div>'
     +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
     +list.map(function(x){return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink);background:var(--sand2);border-radius:10px;padding:7px 11px">'+zbEsc(x.icon)+' '+zbEsc(x.label)+' <span style="color:var(--muted);font-weight:500">'+zbEsc(x.dist)+'</span></span>';}).join('')
@@ -3040,7 +3003,7 @@ function openHotel(id){
     <div class="hp-layout">
       <div>
         <h1 class="hp-title">${zbEsc(h.name_ru)}</h1>
-        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${zbEsc(cleanAddr(h.address))}</span>${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${zbEsc(phone)}</span>`:''}</div>
+        <div class="hp-meta">${parseFloat(h.rating||0)>0?`<span class="hp-rat">★ ${parseFloat(h.rating||0).toFixed(0)} ${parseFloat(h.rating)>=5?"звёзд":parseFloat(h.rating)>=2?"звезды":"звезда"}</span>`:``}${starsH(h.stars,14)}<span class="hp-addr" onclick="openHotelMap()" title="Показать на карте"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>${zbEsc(cleanAddr(h.address))}</span>${(h.latitude&&h.longitude)?`<span id="hp-near-open" class="hp-near-open" role="button" tabindex="0" style="display:none" onclick="zbNearbyOpen()" onkeydown="if(event.key==='Enter')zbNearbyOpen()">🚶 Что рядом</span>`:''}${phone?`<span style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>${zbEsc(phone)}</span>`:''}</div>
         ${desc?`<p class="hp-desc">${desc}</p>`:''}
         <div style="margin:0 0 1.5rem">
           <button onclick="hpQaToggle()" style="display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--sand3);background:#fff;border-radius:50px;padding:9px 16px;font-size:13px;font-weight:700;color:var(--green);font-family:inherit;cursor:pointer">💬 Спросить об объекте</button>
@@ -3741,6 +3704,25 @@ function zbMealOk(meal,want){
   if(want==='none')return r===0; if(want==='any')return r>0;
   return r>=({breakfast:1,half:2,full:3,all:4}[want]||1);
 }
+// 16.10: что и почему — усадьбы чаще стоят не в городе, а по области. Гость может сам выбрать область
+// (группа «Области» в выборе направления): в поиск уходит её название в поле city («Минская область»),
+// бэкенд научится искать по области следующей порцией. Город сам областью НЕ подменяется.
+var ZB_REGIONS=['Брестская область','Витебская область','Гомельская область','Гродненская область','Минская область','Могилёвская область'];
+var ZB_REGION_STEM={'брест':'Брестская область','витеб':'Витебская область','гомел':'Гомельская область','гродн':'Гродненская область','минск':'Минская область','могил':'Могилёвская область'};
+function zbIsRegion(c){
+  var n=String(c||'').toLowerCase().replace(/ё/g,'е').trim(); if(!n)return false;
+  for(var i=0;i<ZB_REGIONS.length;i++){ if(ZB_REGIONS[i].toLowerCase().replace(/ё/g,'е')===n)return true; }
+  return false;
+}
+// Область, которую гость назвал сам: «в Минской области», «Гродненская обл.», «усадьба под Минском»,
+// «в окрестностях Бреста», «пригород Гомеля». Просто «в Минске» — это город, не область.
+function zbRegionFromText(q){
+  var t=' '+String(q||'').toLowerCase().replace(/ё/g,'е')+' ', m;
+  var stem=function(w){ for(var k in ZB_REGION_STEM){ if(w.indexOf(k)===0)return ZB_REGION_STEM[k]; } return null; };
+  m=t.match(/([а-я]+)\s+(?:област|обл\.?(?=[^а-я]))/); if(m&&/(ая|ой|ую|ою)$/.test(m[1])){ var r1=stem(m[1]); if(r1)return r1; }
+  m=t.match(/(?:^|[^а-я])(?:под|окрестност[а-я]*|пригород[а-я]*)\s+(?:г\.?\s*)?([а-я]+)/); if(m){ var r2=stem(m[1]); if(r2)return r2; }
+  return null;
+}
 // Город из адреса объекта: «проспект Победителей, д. 20, Минск» → «Минск».
 // Нужен шаринг-ссылкам на отели, открытые из каталога/витрины (там нет города поиска).
 var ZB_CITY_LIST=['Минск','Брест','Гродно','Витебск','Гомель','Могилёв','Пинск','Несвиж','Нарочь','Браслав','Бобруйск','Барановичи','Борисов','Орша','Мозырь','Солигорск','Новополоцк','Молодечно','Лида','Полоцк','Жлобин','Речица','Слуцк','Мир','Логойск'];
@@ -3838,7 +3820,31 @@ function aiChipRemove(type,idx){
   }catch(e){}
   try{ serpRender(); }catch(e){}
 }
+// 16.10: подсказка над выдачей, когда гость выбрал область, и заметная кнопка «Усадьбы и загородные»
+// (тот же фильтр, что «Тип жилья» → «Агроусадьбы / шале»). Ошибка бэкенда для области — «скоро появится».
+function zbRegionGuestOnly(){
+  if(window._aiCategory)return window._aiCategory==='guest';
+  var g=document.getElementById('flt-guest'), h=document.getElementById('flt-hotel'), a=document.getElementById('flt-apart');
+  return !!(g&&g.checked&&h&&!h.checked&&a&&!a.checked);
+}
+function zbRegionTypeToggle(){
+  var only=zbRegionGuestOnly();
+  [['hotel',only],['apart',only],['guest',true]].forEach(function(x){ var e=document.getElementById('flt-'+x[0]); if(e)e.checked=x[1]; });
+  serpFilterChange('cat');
+}
+function zbRegionNoteRender(listLen){
+  var el=document.getElementById('serp-region-note'); if(!el)return;
+  var c=(window._capState&&window._capState.city)||'';
+  if(window._catMode||!zbIsRegion(c)){ el.style.display='none'; el.innerHTML=''; return; }
+  var only=zbRegionGuestOnly(), err=!!window._ostRegionErr;
+  el.innerHTML='<div class="srn-txt">🗺 <b>Поиск по всей области</b> · '+zbEsc(c)
+    +'<div class="srn-sub">'+(err?(listLen?'Поиск по областям скоро появится — пока показали то, что нашли':'Пока ищем по городам'):'Усадьбы и загородные дома по всей области, не только в городе')+'</div></div>'
+    +'<button type="button" id="srn-type" class="srn-type'+(only?' on':'')+'" aria-pressed="'+(only?'true':'false')+'" onclick="zbRegionTypeToggle()">🏡 Усадьбы и загородные</button>';
+  el.style.display='flex';
+}
 function serpRender(){
+  // 16.10: после отрисовки (и при раннем выходе с пустой выдачей) — следим за новой «Показать ещё»: «Карта» уходит, когда она на экране
+  setTimeout(function(){ try{ zbMapBtnWatch(); }catch(e){} },0);
   window._serpDomV=(window._serpDomV||0)+1;   // 04.10 (порция 21): номер отрисовки — «Назад» проверяет, менялся ли список
   try{ serpRenderAiChips(); }catch(e){}
   // фильтры
@@ -3865,6 +3871,8 @@ function serpRender(){
 
   var hotels=(HOTELS&&HOTELS.length?HOTELS:[]).filter(function(h){return !h.draft;});
   var city=(window._capState&&window._capState.city||'').toLowerCase().trim();
+  // 16.10: поиск по области — по адресу не дофильтровываем: «… область» пишут не во всех адресах (только район/деревня)
+  if(zbIsRegion(city))city='';
   // Фильтруем по городу если есть совпадения, иначе показываем всё
   var cityFiltered=city?hotels.filter(function(h){
     return (h.address||'').toLowerCase().indexOf(city)!==-1||(h.name_ru||'').toLowerCase().indexOf(city)!==-1;
@@ -4022,6 +4030,7 @@ function serpRender(){
   }
   // Ручные фильтры (цена/звёзды) дали ноль → вместо белого экрана понятное сообщение с кнопкой сброса.
   // НО если инвентарь Островка ещё грузится — это НЕ «пусто», а «ждём». Показываем загрузку, не заглушку.
+  try{ zbRegionNoteRender(list.length); }catch(e){}
   var cardsBox=document.getElementById('serp-cards');
   if(!list.length&&cardsBox){
     var _oldMore=document.getElementById('serp-more'); if(_oldMore)_oldMore.remove(); // кнопка прошлого рендера не залипает
@@ -4030,6 +4039,16 @@ function serpRender(){
       cardsBox.innerHTML='<div style="text-align:center;padding:48px 20px;color:var(--muted)">'
         +'<div class="zb-spin" style="width:34px;height:34px;border:3px solid var(--sand3);border-top-color:var(--green);border-radius:50%;margin:0 auto 14px;animation:zbspin .7s linear infinite"></div>'
         +'<div style="font-size:14px">Загружаем варианты…</div></div>';
+      return;
+    }
+    // 16.10: бэкенд пока не ищет по области — честно говорим, что скоро
+    if(window._ostRegionErr&&zbIsRegion((window._capState||{}).city)){
+      cardsBox.innerHTML='<div id="serp-region-soon" style="text-align:center;padding:40px 20px;color:var(--muted)">'
+        +'<div style="font-size:40px;margin-bottom:12px">🗺</div>'
+        +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Поиск по областям скоро появится</div>'
+        +'<div style="font-size:13px;margin-bottom:16px">Пока выберите город — например, Минск, Брест или Гродно</div>'
+        +'<button onclick="serpEditSearch()" style="border:none;background:var(--green);color:#fff;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Выбрать город</button>'
+        +'</div>';
       return;
     }
     cardsBox.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted)">'
@@ -4703,8 +4722,12 @@ function serpSearchFilterCities(val){
   var list=document.getElementById('ssd-city-list');
   if(!list)return;
   var cities=val?SERP_CITIES.filter(function(c){return c.name.toLowerCase().indexOf(val.toLowerCase())!==-1;}):SERP_CITIES;
+  // 16.10: группа «Области» под городами (по набору — те, что подходят)
+  var regs=(window.ZB_REGION_ITEMS||[]).filter(function(c){ return !val||c.name.toLowerCase().replace(/ё/g,'е').indexOf(String(val).toLowerCase().replace(/ё/g,'е'))!==-1; });
   list.innerHTML='';
+  if(regs.length)cities=cities.concat([{sep:'Области'}],regs);
   cities.forEach(function(c){
+    if(c.sep){ var hd=document.createElement('div'); hd.style.cssText='padding:10px 18px 4px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px'; hd.textContent=c.sep; list.appendChild(hd); return; }
     var item=document.createElement('div');
     item.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 18px;cursor:pointer;font-size:14px;color:#111';
     item.innerHTML='<span style="font-size:16px">'+c.emoji+'</span>'+c.name;
@@ -4758,6 +4781,8 @@ async function serpLoadOstrovok(){
 
   // Сразу убираем результаты ПРОШЛОГО города — иначе при пустом/упавшем поиске они залипают
   HOTELS = HOTELS.filter(function(h){return h.source!=='ostrovok';});
+  // 16.10: поиск по области — бэкенд ответил ошибкой или «региона нет» → «Поиск по областям скоро появится»
+  var _isReg=zbIsRegion(city); window._ostRegionErr=false;
 
   try{
     var body={
@@ -4776,6 +4801,7 @@ async function serpLoadOstrovok(){
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     var data=await resp.json();
     if(_ostSeq!==window._ostSearchSeq)return; // 15.10: пока ждали, начался другой поиск — этот ответ не нужен
+    if(_isReg&&(data.error||data.ok===false||/region_not_found/.test(String(data.reason||''))))window._ostRegionErr=true;
 
     if(data.hotels&&data.hotels.length){
       // 15.10: заменяем выдачу Островка целиком (а не дописываем) и убираем повторы по id
@@ -4784,6 +4810,7 @@ async function serpLoadOstrovok(){
     }
   }catch(e){
     if(_ostSeq!==window._ostSearchSeq)return;
+    if(_isReg)window._ostRegionErr=true; // 16.10
     console.warn('Ostrovok search error:',e.message);
   }finally{
     if(_ostSeq!==window._ostSearchSeq)return; // 15.10: устаревший поиск не снимает загрузку и не рисует выдачу
@@ -5153,9 +5180,8 @@ function openBookModal(){
     <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:4px">${zbEsc(h.name_ru)}</div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:1.25rem">📍 ${zbEsc(h.address||'')}${room?' · '+zbEsc(room.name):''}</div>
     <div class="fg"><label>Гражданство гостей</label>
-      <select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">
-        <option>Беларусь</option><option>Россия</option><option>Украина</option><option>Казахстан</option><option>Азербайджан</option><option>Армения</option><option>Грузия</option><option>Узбекистан</option><option>Киргизия</option><option>Таджикистан</option><option>Молдова</option><option>Литва</option><option>Латвия</option><option>Эстония</option><option>Польша</option><option>Германия</option><option>Турция</option><option>Израиль</option><option>Китай</option><option>США</option><option>Великобритания</option><option>Франция</option><option>Италия</option><option>Испания</option><option>ОАЭ</option><option>Индия</option>
-      </select>
+      <!-- 16.10: тот же полный список, что в поиске: «Частые» и «Все страны»; значение — название, как раньше -->
+      <select id="f-citizen" onchange="bkRenderGuests()" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--sand3);border-radius:12px;font-family:inherit;font-size:14px;background:#fff">${zbResOptionsHTML(true)}</select>
     </div>
     <div id="f-guests"></div>
     <input type="hidden" id="f-ln">
@@ -5584,17 +5610,18 @@ async function confirmBook(total){
 
 function closeBK(){document.getElementById('bk-modal').classList.remove('open')}
 
+// 16.10: вкладки входа называются «Гость» и «Владелец жилья» — так понятнее, кто куда входит; ключ вкладки гостя — 'guest'
 function openAuth(tab){
-  tab=tab||'tourist';
+  tab=tab||'guest';
   document.getElementById('auth-body').innerHTML=`
     <button onclick="document.getElementById('auth-modal').classList.remove('open')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
     <div style="clear:both">
       <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:16px">Войти</div>
       <div style="display:flex;background:var(--sand2);border-radius:12px;padding:4px;margin-bottom:20px;gap:3px">
-        <button onclick="openAuth('tourist')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='tourist'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-3px;margin-right:5px"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>Турист</button>
-        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Партнёр</button>
+        <button onclick="openAuth('guest')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='guest'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-3px;margin-right:5px"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.2 0-7 2.2-7 5v1h14v-1c0-2.8-2.8-5-7-5z"/></svg>Гость</button>
+        <button onclick="openAuth('hotelowner')" style="flex:1;padding:9px;border:none;border-radius:9px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;${tab==='hotelowner'?'background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.12)':'background:none;color:var(--muted)'}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 011 1v11M7.5 7h3M7.5 11h3M7.5 15h3"/></svg>Владелец жилья</button>
       </div>
-      ${tab==='tourist'?`
+      ${tab==='guest'?`
         <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Найдите бронь по номеру и email.</div>
         <div class="fg"><label>Номер брони</label><input type="text" id="bn-inp" placeholder="ZB-K7M4Q2XHD" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></div>
         <div class="fg"><label>Email</label><input type="email" id="be-inp" placeholder="ivan@mail.ru"></div>
@@ -6371,6 +6398,15 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     el.style.top=(r.bottom+8)+'px';
     el.style.left=r.left+'px';
     el.style.width=r.width+'px';
+    // 16.10: с группой «Области» список стал выше — на невысоком экране он прокручивается внутри, а не уходит за край
+    // список городов ужимаем (он листается сам), чтобы «Области» были видны без прокрутки
+    if(el.id==='cap-dd'){
+      var avail=Math.floor(window.innerHeight-(r.bottom+8)-12);
+      var rw=document.getElementById('cap-dd-recent-wrap'), lst=document.getElementById('cap-dd-list');
+      var extra=150+((rw&&rw.style.display!=='none')?52:0);
+      if(lst)lst.style.maxHeight=Math.max(150,Math.min(320,avail-extra))+'px';
+      el.style.maxHeight=Math.max(220,avail)+'px'; el.style.overflowY='auto';
+    }
   }
   function posUnderCenter(el,w){
     var cm=getAnchor();
@@ -6413,6 +6449,8 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     try{ syn(typeof AI_CITY_SYN==='object'?AI_CITY_SYN:{},q); }catch(e){}
     syn(ZB_CITY_LAT,q);
     if(/[a-z\[\];',.`]/.test(q)){ var fx=zbKbFix(q); if(fx!==q){ scan(fx); try{ syn(typeof AI_CITY_SYN==='object'?AI_CITY_SYN:{},fx); }catch(e){} } }
+    // 16.10: области — после городов, чтобы «минск» по-прежнему давал первым Минск
+    ZB_REGION_ITEMS.forEach(function(c){ var n=zbCityNorm(c.name); if(q.length>=3&&(n.indexOf(q)===0||n.indexOf(' '+q)>=0))add(c); });
     return out;
   };
   // Недавние города — что человек сам выбирал (до 5, на этом устройстве)
@@ -6426,7 +6464,10 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
     if(!name)return;
     try{ var a=zbRecentCities().filter(function(n){ return zbCityNorm(n)!==zbCityNorm(name); }); a.unshift(String(name)); localStorage.setItem('zb_recent_cities',JSON.stringify(a.slice(0,5))); }catch(e){}
   };
-  function zbCityEmoji(n){ var c=zbCityByName(n); return c?c.emoji:'📍'; }
+  function zbCityEmoji(n){ if(zbIsRegion(n))return '🗺'; var c=zbCityByName(n); return c?c.emoji:'📍'; }
+  // 16.10: области для выбора направления (компьютер, телефон, правка поиска на выдаче)
+  var ZB_REGION_ITEMS=ZB_REGIONS.map(function(n){ return {name:n,emoji:'🗺'}; });
+  window.ZB_REGION_ITEMS=ZB_REGION_ITEMS;
   window.buildCityDD=function buildCityDD(){
     var list=document.getElementById('cap-dd-list');
     if(!list)return;
@@ -6434,6 +6475,15 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
       return '<div class="dsk-city-item" data-city="'+c.name+'" style="display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;font-size:14px;font-weight:600;color:#111">'+
         '<span style="font-size:20px;width:28px;text-align:center">'+c.emoji+'</span>'+c.name+'</div>';
     }).join('');
+    // 16.10: группа «Области»
+    var rl=document.getElementById('cap-dd-reg');
+    if(rl){
+      rl.innerHTML=ZB_REGION_ITEMS.map(function(c){ return '<button type="button" class="dsk-reg-item" data-city="'+zbEsc(c.name)+'">'+c.emoji+' '+zbEsc(c.name.replace(' область',''))+'</button>'; }).join('');
+      rl.querySelectorAll('.dsk-reg-item').forEach(function(el){
+        el.addEventListener('mousedown',function(e){e.preventDefault();});
+        el.addEventListener('click',function(e){ e.stopPropagation(); capDeskPick(this.dataset.city); });
+      });
+    }
     list.querySelectorAll('.dsk-city-item').forEach(function(el){
       el.addEventListener('mouseenter',function(){this.style.background='#f7f5f0';});
       el.addEventListener('mouseleave',function(){this.style.background='';});
@@ -6913,6 +6963,8 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
   window.csMobileSearch=function(val){
     var sug=document.getElementById('cs-city-suggest');
     var pop=document.getElementById('cs-popular-pills'), popL=document.getElementById('cs-pop-lbl'), recW=document.getElementById('cs-recent-wrap');
+    var regW=document.getElementById('cs-reg-wrap'); // 16.10: области — вместе с популярными
+    if(regW)regW.style.display=(val&&val.trim())?'none':'';
     if(!val||!val.trim()){
       if(sug)sug.style.display='none';
       if(pop)pop.style.display='flex';
@@ -6940,6 +6992,7 @@ var _mp=document.getElementById('main-page');if(_mp)_mp.style.display='block';
         if(inp)inp.value=this.dataset.city;
         if(sug)sug.style.display='none';
         if(pop)pop.style.display='flex'; if(popL)popL.style.display='';
+        var rw2=document.getElementById('cs-reg-wrap'); if(rw2)rw2.style.display='';
       });
     });
   };
@@ -7687,7 +7740,7 @@ function ostResChange(){
       btn.scrollIntoView({behavior:'smooth',block:'center'});
       var pop=document.getElementById('hp-guests-pop');
       if(pop&&!pop.classList.contains('open'))hpOpenGuests();
-      setTimeout(function(){ var s=document.querySelector('#hp-guests-pop input.zb-res-inp'); if(s)try{s.focus();}catch(e){} },350);
+      setTimeout(function(){ var s=document.querySelector('#hp-guests-pop select.zb-res-sel'); if(s)try{s.focus();}catch(e){} },350);
       return;
     }
   }catch(e){}
@@ -7873,6 +7926,9 @@ function ostFail(e){
   <div id="cap-dd-pop">
     <div style="padding:4px 16px 8px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px">Популярные города</div>
     <div id="cap-dd-list" style="display:grid;grid-template-columns:1fr 1fr;max-height:320px;overflow-y:auto"></div>
+    <!-- 16.10: области — для усадеб и загородного жилья; в поиск уходит название области -->
+    <div style="padding:10px 16px 6px;font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;border-top:1px solid #f3f1ec;margin-top:4px">Области</div>
+    <div id="cap-dd-reg" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 6px"></div>
   </div>
 </div>
 <!-- DESKTOP: календарь (position:fixed, корень body) -->
@@ -7955,6 +8011,18 @@ function ostFail(e){
                 <button onclick="csPickCity('Несвиж')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏰 Несвиж</button>
                 <button onclick="csPickCity('Мир')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🏰 Мир</button>
                 <button onclick="csPickCity('Беловежская пуща')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🦌 Беловежская пуща</button>
+              </div>
+              <!-- 16.10: области — для усадеб; в поиск уходит название области -->
+              <div id="cs-reg-wrap">
+                <div style="margin-top:16px;font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.8px;padding:0 2px">Области</div>
+                <div id="cs-reg-pills" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+                  <button onclick="csPickCity('Брестская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Брестская</button>
+                  <button onclick="csPickCity('Витебская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Витебская</button>
+                  <button onclick="csPickCity('Гомельская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Гомельская</button>
+                  <button onclick="csPickCity('Гродненская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Гродненская</button>
+                  <button onclick="csPickCity('Минская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Минская</button>
+                  <button onclick="csPickCity('Могилёвская область')" style="padding:8px 14px;background:#f5f5f5;border:none;border-radius:50px;font-size:13px;cursor:pointer;color:#111">🗺 Могилёвская</button>
+                </div>
               </div>
             </div>
           </div>
@@ -8474,6 +8542,125 @@ function ostFail(e){
   // Возврат из кэша браузера: страница и так стоит там, где её оставили
   window.addEventListener('pageshow',function(e){ if(e.persisted){ try{ sessionStorage.removeItem(KEY); }catch(_){} reveal(); } });
 })();
+</script>
+<!-- 16.10: кнопка «Наверх» и уход плавающей «Карта» у «Показать ещё» / подвала.
+     Откат — удалить этот блок целиком (стили и скрипт ниже) и вызов zbMapBtnWatch в начале serpRender. -->
+<style>
+/* «Наверх»: тот же тёмно-зелёный и та же тень, что у «Карта». Телефон — слева внизу (не мешает «Карта»
+   по центру), с учётом безопасной зоны iPhone. Компьютер — справа внизу; на выдаче — на границе списка
+   и карты, не на карточках. Появляется плавно, когда пролистано больше ~1,5 экрана. */
+.zb-up{position:fixed;left:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:80;width:46px;height:46px;border-radius:50%;border:none;background:var(--green4);color:#fff;box-shadow:0 8px 32px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;opacity:0;visibility:hidden;transform:translateY(14px);transition:opacity .25s ease,transform .25s ease,visibility 0s linear .25s;-webkit-tap-highlight-color:transparent}
+.zb-up svg{width:20px;height:20px}
+.zb-up.show{opacity:1;visibility:visible;transform:none;transition:opacity .25s ease,transform .25s ease,visibility 0s}
+.zb-up:hover{background:var(--green)}
+.zb-up:focus-visible{outline:3px solid var(--lime);outline-offset:3px}
+/* в конце выдачи на телефоне — место под плавающими «Карта» и «Наверх», чтобы «Показать ещё» не оставалась под ними */
+@media(max-width:900px){ #serp-page .serp-list{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))} }
+@media(min-width:901px){
+  .zb-up{left:auto;right:24px;bottom:24px}
+  /* на выдаче — на границе списка и карты: карточки кончаются за 28px до неё, у карты в этом углу ничего нет */
+  body.on-serp .zb-up{right:calc(36vw - 23px)}
+}
+/* «Карта» плавно уходит, когда «Показать ещё» или подвал на экране (при открытой карте — остаётся «Список») */
+.serp-map-toggle{transition:opacity .25s ease,transform .25s ease,visibility 0s}
+body.zb-mapbtn-away:not(.map-open) .serp-map-toggle{opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,16px);transition:opacity .25s ease,transform .25s ease,visibility 0s linear .25s}
+@media (prefers-reduced-motion:reduce){
+  .zb-up,.zb-up.show,.serp-map-toggle,body.zb-mapbtn-away:not(.map-open) .serp-map-toggle{transition:none}
+}
+</style>
+<script>
+// 16.10: что и почему — в длинной выдаче и на длинной странице объекта на телефоне не было способа быстро
+// вернуться наверх. Кнопка появляется, когда пролистано больше ~1,5 экрана, прячется у верха; по нажатию —
+// плавная прокрутка наверх (при «уменьшить движение» в системе — сразу, без анимации).
+// На компьютере выдача листается не окном, а своим списком (#serp-list) — его и слушаем, и листаем.
+function zbReduceMotion(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
+function zbUpScroller(){
+  try{
+    if(document.body.classList.contains('on-serp')){
+      var l=document.getElementById('serp-list');
+      if(l){ var oy=getComputedStyle(l).overflowY; if((oy==='auto'||oy==='scroll')&&l.scrollHeight>l.clientHeight+1)return l; }
+    }
+  }catch(e){}
+  return window;
+}
+// Когда кнопка не нужна или помешает: открыта карта, шторка поиска, окно (бронь, вход, галерея, карта объекта),
+// правка поиска, идёт ввод в поле (на телефоне открыта клавиатура), показано уведомление внизу.
+function zbUpBlocked(){
+  var b=document.body;
+  if(b.classList.contains('map-open'))return true;
+  if(document.querySelector('.overlay.open,.gal-ov.open,.hmap-ov.open,#pwa-toast.show'))return true;
+  var cs=document.getElementById('cap-sheet'); if(cs&&cs.style.display&&cs.style.display!=='none')return true;
+  var sd=document.getElementById('serp-sd-modal'); if(sd&&sd.offsetParent!==null)return true;
+  var fv=document.getElementById('fav-page'); if(fv&&fv.style.display&&fv.style.display!=='none')return true;
+  var t=document.getElementById('bk-toast'); if(t&&t.style.opacity==='1')return true;
+  var a=document.activeElement; if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox'&&a.type!=='radio')return true;
+  // «Показать ещё» проезжает под кнопкой — на это время кнопку прячем, чтобы не закрывала
+  try{
+    var btn=document.getElementById('zb-up'), more=document.getElementById('serp-more');
+    if(btn&&more&&more.offsetParent!==null){
+      var r1=btn.getBoundingClientRect(), r2=more.getBoundingClientRect(), pad=8;
+      if(!(r2.right<r1.left-pad||r2.left>r1.right+pad||r2.bottom<r1.top-pad-14||r2.top>r1.bottom+pad))return true;
+    }
+  }catch(e){}
+  return false;
+}
+var _zbUpRaf=0, _zbUpOn=false;
+function zbUpUpdate(){
+  _zbUpRaf=0;
+  var btn=document.getElementById('zb-up'); if(!btn)return;
+  var sc=zbUpScroller();
+  var y=sc===window?(window.scrollY||document.documentElement.scrollTop||0):sc.scrollTop;
+  var h=sc===window?window.innerHeight:sc.clientHeight;
+  var on=y>h*1.5&&!zbUpBlocked();
+  if(on===_zbUpOn)return;
+  _zbUpOn=on;
+  btn.classList.toggle('show',on);
+  btn.setAttribute('aria-hidden',on?'false':'true');
+  btn.tabIndex=on?0:-1;
+}
+function zbUpSchedule(){ if(!_zbUpRaf)_zbUpRaf=requestAnimationFrame(zbUpUpdate); }
+function zbUpGo(){
+  var sc=zbUpScroller(), beh=zbReduceMotion()?'auto':'smooth';
+  try{ sc.scrollTo({top:0,behavior:beh}); }catch(e){ if(sc===window)window.scrollTo(0,0); else sc.scrollTop=0; }
+}
+(function(){
+  // кнопку кладём прямо в body из скрипта: в разметке выше не закрыт #cap-sheet, и всё, что стоит после него,
+  // оказывается внутри шторки (она скрыта) — кнопку там не видно
+  var btn=document.createElement('button');
+  btn.type='button'; btn.id='zb-up'; btn.className='zb-up'; btn.title='Наверх'; btn.tabIndex=-1;
+  btn.setAttribute('aria-label','Наверх'); btn.setAttribute('aria-hidden','true');
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  btn.addEventListener('click',zbUpGo);
+  document.body.appendChild(btn);
+  window.addEventListener('scroll',zbUpSchedule,{passive:true});
+  window.addEventListener('resize',zbUpSchedule,{passive:true});
+  // прокрутка списка выдачи на компьютере (scroll не всплывает — ловим на перехвате)
+  document.addEventListener('scroll',function(e){ if(e.target&&e.target.id==='serp-list')zbUpSchedule(); },{capture:true,passive:true});
+  // смена экрана, окна, фокус в полях — всё это приходит после нажатий и ввода
+  ['click','focusin','focusout','keyup','touchend'].forEach(function(ev){ document.addEventListener(ev,function(){ setTimeout(zbUpSchedule,60); },{capture:true,passive:true}); });
+  try{ new MutationObserver(zbUpSchedule).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(e){}
+})();
+
+// 16.10: что и почему — плавающая «Карта» в конце выдачи закрывала «Показать ещё объекты».
+// Когда «Показать ещё» или подвал входят в экран — «Карта» плавно уходит, когда уходят — возвращается.
+// «Показать ещё» пересоздаётся при каждой отрисовке выдачи, поэтому serpRender зовёт zbMapBtnWatch().
+var _zbMapIO=null, _zbMapSeen=new Set();
+function zbMapBtnSync(){ document.body.classList.toggle('zb-mapbtn-away',_zbMapSeen.size>0); }
+function zbMapBtnWatch(){
+  if(typeof IntersectionObserver!=='function')return;
+  if(!_zbMapIO){
+    _zbMapIO=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting)_zbMapSeen.add(en.target); else _zbMapSeen.delete(en.target); });
+      zbMapBtnSync();
+    },{threshold:0,rootMargin:'0px 0px -8px 0px'});
+  }
+  // старые (удалённые) кнопки больше не считаем
+  _zbMapSeen.forEach(function(el){ if(!el.isConnected){ _zbMapSeen.delete(el); try{ _zbMapIO.unobserve(el); }catch(e){} } });
+  zbMapBtnSync();
+  var more=document.getElementById('serp-more'); if(more&&!more._zbIO){ more._zbIO=1; _zbMapIO.observe(more); }
+  var ft=document.querySelector('footer'); if(ft&&!ft._zbIO){ ft._zbIO=1; _zbMapIO.observe(ft); }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',zbMapBtnWatch,{once:true}); else zbMapBtnWatch();
 </script>
 </body>
 </html>
