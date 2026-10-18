@@ -2964,6 +2964,9 @@ function zbFindHotel(id){
   if(h){ try{ if(typeof HOTELS!=='undefined'&&HOTELS&&!pick(HOTELS)) HOTELS.push(h); }catch(e){} return h; }
   return null;
 }
+// 18.10: содержимое галереи объекта вынесено из openHotel без изменений — им же обновляем галерею,
+// когда фото тестового отеля Островка приходят из hp
+function hpGalleryInner(pf){var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+zbUrl(p[i])+'" data-full="'+zbUrl(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}var btn=pf.length?'<button class="hp-gallery-all" onclick="openGal(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Все фото ('+pf.length+')</button>':'';return g(0)+g(1)+g(2)+btn;}
 function openHotel(id){
   curHotel=zbFindHotel(id);
   if(!curHotel){ if(typeof bkToast==='function')try{bkToast('Объект недоступен, обновите страницу');}catch(e){} return; }
@@ -3018,7 +3021,7 @@ function openHotel(id){
   });
   document.getElementById('hp-content').innerHTML=`
     <div class="hp-gallery">
-      ${(function(){var pf=(h.photos||[]);var p=pf.map(function(u){return srNormPhoto(u);});function g(i){return '<div class="gp" onclick="openGal('+i+')">'+(p[i]?'<img src="'+zbUrl(p[i])+'" data-full="'+zbUrl(pf[i]||'')+'" onerror="srImgFallback(this)" alt="">':'')+'</div>';}var btn=pf.length?'<button class="hp-gallery-all" onclick="openGal(0)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Все фото ('+pf.length+')</button>':'';return g(0)+g(1)+g(2)+btn;})()}
+      ${hpGalleryInner(h.photos||[])}
     </div>
     <div class="hp-layout">
       <div>
@@ -3289,6 +3292,18 @@ function zbEnsureScreen(){
     goHomeReset(); window.scrollTo(0,0); try{fitHeroTitleDeferred();}catch(e){}
   }catch(e){}
 }
+// 18.10: тестовые отели Островка для сертификации (hid 8473727 и 8526976). В выдаче городов их нет,
+// поэтому ссылка #h=ost_<hid> раньше уводила в город с «объект недоступен». Теперь кладём в HOTELS
+// заготовку и открываем объект сразу; цены, как у всех, — через /api/ostrovok/hp по hid.
+var ZB_ETG_TEST_HIDS=[8473727,8526976];
+function zbIsEtgTest(h){ return !!h&&ZB_ETG_TEST_HIDS.indexOf(parseInt(h.hid||h.ostId,10))>=0; }
+function zbEtgTestStub(hotelId){
+  var m=String(hotelId||'').match(/^ost_(\d+)$/); if(!m)return null;
+  var hid=parseInt(m[1],10); if(ZB_ETG_TEST_HIDS.indexOf(hid)<0)return null;
+  var h={id:'ost_'+hid,hid:hid,source:'ostrovok',name_ru:'ETG test hotel',address:'',photos:[]};
+  HOTELS.push(h);
+  return h;
+}
 // Открытие по ссылке. true → hash обработан (восстановление из sessionStorage пропускаем).
 function zbOpenFromHash(){
   var raw=location.hash||''; if(raw.length<4)return false;
@@ -3316,7 +3331,7 @@ function zbOpenFromHash(){
   // Раньше ссылка без города всегда падала на главную, даже если отель можно открыть.
   if(kind==='h'&&!city){
     try{
-      var _loc0=(HOTELS||[]).find(function(x){return String(x.id)===String(hotelId);});
+      var _loc0=(HOTELS||[]).find(function(x){return String(x.id)===String(hotelId);})||zbEtgTestStub(hotelId); // 18.10: тестовый отель Островка
       if(_loc0){ openHotel(_loc0.id); window._zbLinkHotelPending=false; return true; }
     }catch(e){}
     // без города отель Островка не поднять → уходим в обычный сценарий; спиннер ссылки снимаем, иначе повиснет до таймаута
@@ -3346,7 +3361,7 @@ function zbOpenFromHash(){
   try{ if(typeof updCapDisplay==='function')updCapDisplay(); }catch(e){}
   if(kind==='h'){
     // Отель уже в пуле (свой/черновик/из базы) → открываем сразу; иначе город грузится ПРОВЕРЕННЫМ путём.
-    var loc=HOTELS.find(function(x){return String(x.id)===String(hotelId);});
+    var loc=HOTELS.find(function(x){return String(x.id)===String(hotelId);})||zbEtgTestStub(hotelId); // 18.10: тестовый отель Островка — без поиска города
     if(loc){ try{ openHotel(loc.id); window._zbLinkHotelPending=false; return true; }catch(e){} } // открылся сразу → бут снимет спиннер
     // Отель Островка по ссылке: идём обычным поисковым путём serpOpen() (он battle-tested),
     // но экран выдачи СКРЫТ классами zb-restoring — получатель видит спиннер → сразу отель.
@@ -7325,6 +7340,7 @@ function ostMeal(m){
 }
 
 // 15.10: время Островка (UTC, часто без «Z» на конце) → «ДД.ММ.ГГГГ ЧЧ:ММ» по Минску (UTC+3, без перехода).
+// 18.10: подпись у срока отмены и таблицы штрафов — «по Минску (UTC+3)»: гость из другого пояса сразу видит пояс.
 // Раньше строка без «Z» читалась как время устройства гостя, и в другом поясе час съезжал.
 function ostMinskFmt(v){
   var str=String(v||'').trim(); if(!str)return '';
@@ -7360,18 +7376,18 @@ function ostCancelInfo(c,price){
 }
 function ostCancelText(c,price){
   if(c&&c.free_cancellation_before){
-    return '✅ Бесплатная отмена до '+ostMinskFmt(c.free_cancellation_before)+' (по Минску)';
+    return '✅ Бесплатная отмена до '+ostMinskFmt(c.free_cancellation_before)+' по Минску (UTC+3)';
   }
   var inf=ostCancelInfo(c,price);
   if(inf.kind==='table'){
-    return '↩️ Отмена со штрафом: '+inf.rows.map(function(r){return r.when+' — '+r.fee;}).join('; ')+' (по минскому времени)';
+    return '↩️ Отмена со штрафом: '+inf.rows.map(function(r){return r.when+' — '+r.fee;}).join('; ')+'. Время — по Минску (UTC+3)';
   }
   return '⚠️ Невозвратный тариф — при отмене деньги не возвращаются';
 }
-// 15.10: таблица штрафов отмены (по минскому времени)
+// 15.10: таблица штрафов отмены (по минскому времени; 18.10: подпись «по Минску (UTC+3)»)
 function ostCancelTableHTML(inf){
   return '<table class="ost-cx-tbl">'+inf.rows.map(function(r){ return '<tr><td>'+zbEsc(r.when)+'</td><td>'+zbEsc(r.fee)+'</td></tr>'; }).join('')+'</table>'
-    +'<div class="ost-cx-note">Время — по минскому времени</div>';
+    +'<div class="ost-cx-note">Время — по Минску (UTC+3)</div>';
 }
 // Короткая строка отмены для карточки тарифа; при штрафах по периодам — таблица под ней
 function ostCancelCardHTML(c,price){
@@ -7601,6 +7617,7 @@ async function loadOstRates(h,opt){
   // Прошлый выбор относился к прошлым датам — сбрасываем, иначе кнопка забронирует
   // тариф под тем же номером в новом списке, а это совсем другой номер и другая цена.
   window._ostPicked=0;
+  window._ostTestBook=false; // 18.10: тестовая бронь — только по свежему ответу hp (см. ниже)
   try{ hpSumState('loading','Ищем номера…'); }catch(e){}
   box.innerHTML='<div class="ost-loading"><div class="ost-spin"></div><div>Ищем свободные номера…</div></div>';
   try{
@@ -7644,6 +7661,9 @@ async function loadOstRates(h,opt){
     }
     if(!r.ok)throw new Error(data.error||'HTTP '+r.status);
     window._ostBookEnabled=!!data.booking_enabled;
+    // 18.10: тестовый режим Островка (сертификация): booking_enabled === true И test_only === true —
+    // в форме активная кнопка «Тестовая бронь (без оплаты)». Иначе — как раньше, кнопка выключена.
+    window._ostTestBook=(data.booking_enabled===true&&data.test_only===true);
     // Подтягиваем полное описание и реальные удобства на страницу отеля
     if(data.hotel){
       // ВАЖНО: пишем данные и в объект (curHotel/h) — иначе консьерж «Спросить у отеля»
@@ -7653,6 +7673,16 @@ async function loadOstRates(h,opt){
         if(data.hotel.amenities&&data.hotel.amenities.length){ h.amenities=ostAmenList(data.hotel.amenities).map(function(a){return {n:a};}); if(curHotel&&curHotel.id===h.id)curHotel.amenities=h.amenities; }
         if(data.hotel.check_in){ h.check_in=data.hotel.check_in; if(curHotel&&curHotel.id===h.id)curHotel.check_in=data.hotel.check_in; }
         if(data.hotel.check_out){ h.check_out=data.hotel.check_out; if(curHotel&&curHotel.id===h.id)curHotel.check_out=data.hotel.check_out; }
+        // 18.10: у заготовки тестового отеля нет названия и фото — подставляем из hp, если пришли
+        if(zbIsEtgTest(h)){
+          var _hc=document.getElementById('hp-content'), _mine=(curHotel===h);
+          var _nm=data.hotel.name_ru||data.hotel.name;
+          if(_nm){ h.name_ru=String(_nm); var _tt=_mine&&_hc&&_hc.querySelector('.hp-title'); if(_tt)_tt.textContent=h.name_ru; }
+          if(Array.isArray(data.hotel.photos)&&data.hotel.photos.length&&!(h.photos&&h.photos.length)){
+            h.photos=data.hotel.photos.slice();
+            var _gl=_mine&&_hc&&_hc.querySelector('.hp-gallery'); if(_gl)_gl.innerHTML=hpGalleryInner(h.photos);
+          }
+        }
       }catch(_){}
       var hpc=document.getElementById('hp-content');
       if(hpc&&data.hotel.description){
@@ -7953,8 +7983,11 @@ function ostRenderForm(oldPrice){
     '+bkArrivalHTML((window._hpTimes&&_hpTimes.ci)||'')+'\
     <div class="sumbox"><div class="srow2"><span>'+zbEsc(_ostSel.roomName)+'</span><span>🍽 '+ostMeal(rt.meal)+'</span></div><div class="srow2"><span>Заезд → Выезд</span><span>'+fmtBkDates()+'</span></div>'+timeRow+'<div class="srow2"><span>Ночей</span><span>'+n+'</span></div><div class="stotal"><span>Итого</span><span>'+rt.price_byn+' BYN</span></div>'+ostOnsiteFormHTML(rt)+'</div>\
     '+payGridHTML()+'\
-    <button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button>\
-    <div class="pay-soon-note">Скоро подключим онлайн-оплату</div><div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>';
+    '+(window._ostTestBook
+      // 18.10: тестовый режим Островка — бронь без оплаты (bePaid ещё нет), сразу ostConfirm(); галочки согласий проверяет bkConsentCheck
+      ?'<button class="btn-pay" onclick="ostConfirm()">Тестовая бронь (без оплаты)</button>'
+      :'<button class="btn-pay btn-pay-soon" disabled>🔒 Забронировать и оплатить '+rt.price_byn+' BYN</button><div class="pay-soon-note">Скоро подключим онлайн-оплату</div>')+'\
+    <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px">Вопросы по брони? <a href="contacts.html" class="legal-link" style="color:var(--green);text-decoration:underline">Контакты и реквизиты</a></div>';
   bkInjectConsent();
   bkInjectRoomPhoto();
   bkInjectRoomAmen();
