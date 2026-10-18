@@ -171,10 +171,10 @@ async function run(browser, base, vp) {
   check('таблица штрафов в карточке (free_cancellation_before=null)', await page.locator('.ost-rate-row').nth(0).locator('.ost-cx-tbl tr').count() === 3);
   check('штрафы по минскому времени: до 05.11.2026 12:00 — бесплатно', /до 05\.11\.2026 12:00\s+бесплатно/.test(card0), card0);
   check('штраф 60 BYN до 09.11.2026 12:00', /до 09\.11\.2026 12:00\s+60 BYN/.test(card0), card0);
-  check('подпись «по минскому времени»', /по минскому времени/.test(card0));
+  check('подпись «по Минску (UTC+3)» (18.10: было «по минскому времени»)', /по Минску \(UTC\+3\)/.test(card0));
   check('таблица ≠ «Невозвратный»', !/Невозвратный/.test(card0));
   const card1 = await page.locator('.ost-rate-row').nth(1).innerText();
-  check('бесплатная отмена: время по Минску как раньше (до 08.11.2026 13:00 (по Минску))', /Бесплатная отмена до 08\.11\.2026 13:00 \(по Минску\)/.test(card1), card1);
+  check('бесплатная отмена: время по Минску (18.10: до 08.11.2026 13:00 по Минску (UTC+3))', /Бесплатная отмена до 08\.11\.2026 13:00 по Минску \(UTC\+3\)/.test(card1), card1);
   const card2 = await page.locator('.ost-rate-row').nth(2).innerText();
   check('100% с момента брони — «Невозвратный»', /Невозвратный/.test(card2), card2);
   await page.locator('.ost-rate-row').nth(0).scrollIntoViewIfNeeded();
