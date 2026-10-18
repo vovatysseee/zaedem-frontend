@@ -7808,9 +7808,9 @@ function hpPolicyRender(pol){
       buckets[gi].push(lab&&txt?lab+' — '+txt:(lab||txt));
     });
     var total=buckets.reduce(function(n,b){return n+b.length;},0);
-    // 18.10: длинный список (до 60 строк) на телефоне — первые 8 строк, остальные за «Показать все условия».
-    // Строки остаются в странице (скрыты стилем), так что текст не пропадает; если строк 8 и меньше — кнопки нет
-    var LIM=8, fold=total>LIM, n=0;
+    // 18.10: длинный список (до 60 строк) на телефоне — первые 15 строк, остальные за «Показать все условия».
+    // Строки остаются в странице (скрыты стилем), так что текст не пропадает; если строк 15 и меньше — кнопки нет
+    var LIM=15, fold=total>LIM, n=0;
     buckets.forEach(function(b,k){
       if(!b.length)return;
       rows.push('<div class="hp-pol-grp'+(fold&&n>=LIM?' hp-pol-x':'')+'">'+GRP[k].t+'</div>');

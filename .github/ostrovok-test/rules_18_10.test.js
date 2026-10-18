@@ -146,12 +146,8 @@ async function run(browser, base, vp) {
     const { ctx, page, errors } = await open('', POLICY_RULES);
     check('ссылка на тестовый отель открывает объект', await page.evaluate(() => document.body.classList.contains('on-hotel') && curHotel && curHotel.id === 'ost_8473727'));
     const pol = page.locator('#hp-policy');
-    check('13 строк > 8: список свёрнут, кнопка «Показать все условия»', await pol.locator('.hp-pol-all').count() === 1);
-    check('в свёрнутом виде видно 8 строк правил', await pol.locator('.hp-pol-rule:visible').count() === 8);
-    await pol.scrollIntoViewIfNeeded();
-    await shotTo(page, '1_svernuto');
-    await press(pol.locator('.hp-pol-all'));
-    check('«Показать все условия» → видны все 13 строк, кнопка «Свернуть»', await pol.locator('.hp-pol-rule:visible').count() === 13 && /Свернуть/.test(await pol.locator('.hp-pol-all').innerText()));
+    check('13 строк ≤ 15: кнопки «Показать все условия» нет, скрытых строк нет', await pol.locator('.hp-pol-all').count() === 0 && await pol.locator('.hp-pol-x').count() === 0);
+    check('все 13 строк правил видны сразу', await pol.locator('.hp-pol-rule:visible').count() === 13);
     const txt = (await pol.innerText()).replace(/[ \t]+/g, ' ');
     const heads = await pol.locator('.hp-pol-grp').allInnerTexts();
     check('заголовки групп по порядку: Заезд и выезд, Дети, Питание, Услуги, Визы', JSON.stringify(heads.map(h => h.toLowerCase())) === JSON.stringify(['заезд и выезд', 'дети', 'питание', 'услуги', 'визы']), JSON.stringify(heads));
@@ -181,7 +177,7 @@ async function run(browser, base, vp) {
     allErrors.push(...errors); await ctx.close();
   }
 
-  // ── 2. короткий список (≤ 8 строк): без кнопки; все строки видны ──
+  // ── 2. короткий список (≤ 15 строк): без кнопки; все строки видны ──
   {
     const rules = RULES_ALL.filter(r => ['children', 'meal', 'visa', 'deposit', 'no_show'].includes(r.section));
     const { ctx, page, errors } = await open('', Object.assign({}, POLICY_OLD, { rules }));
@@ -202,11 +198,22 @@ async function run(browser, base, vp) {
     allErrors.push(...e.errors); await e.ctx.close();
   }
 
+  // ── 3б. граница порога: ровно 15 строк — без кнопки, 16 — свёрнуто до 15 ──
+  for (const cnt of [15, 16]) {
+    const rules = Array.from({ length: cnt }, (_, i) => ({ section: 'add_fee', label: 'Сбор ' + (i + 1), text: (i + 1) + ' BYN' }));
+    const { ctx, page, errors } = await open('', Object.assign({}, POLICY_OLD, { rules }));
+    const pol = page.locator('#hp-policy');
+    const btn = await pol.locator('.hp-pol-all').count(), vis = await pol.locator('.hp-pol-rule:visible').count();
+    check(cnt + ' строк: ' + (cnt === 15 ? 'без кнопки, видны все 15' : 'кнопка есть, видны 15 из 16'), cnt === 15 ? btn === 0 && vis === 15 : btn === 1 && vis === 15, 'кнопок ' + btn + ', видно ' + vis);
+    if (cnt === 16) { await press(pol.locator('.hp-pol-all')); check('16 строк: после «Показать все условия» видны все 16', await pol.locator('.hp-pol-rule:visible').count() === 16); }
+    allErrors.push(...errors); await ctx.close();
+  }
+
   // ── 4. длинный список (40 строк) на телефоне ──
   {
     const { ctx, page, errors } = await open('', Object.assign({}, POLICY_OLD, { rules: RULES_LONG }));
     const pol = page.locator('#hp-policy');
-    check('40 строк: свёрнуто до 8 (кнопка есть)', await pol.locator('.hp-pol-all').count() === 1 && await pol.locator('.hp-pol-rule:visible').count() === 8, String(await pol.locator('.hp-pol-rule:visible').count()));
+    check('40 строк: свёрнуто до 15 (кнопка есть)', await pol.locator('.hp-pol-all').count() === 1 && await pol.locator('.hp-pol-rule:visible').count() === 15, String(await pol.locator('.hp-pol-rule:visible').count()));
     check('в свёрнутом виде группа «Услуги» видна, пустых заголовков нет (скрытые группы не торчат)', await page.evaluate(() => Array.from(document.querySelectorAll('#hp-policy .hp-pol-grp')).filter(e => e.offsetParent !== null).length === 2));
     await pol.scrollIntoViewIfNeeded();
     await shotTo(page, '3_dlinnyj_svernut');
@@ -221,7 +228,7 @@ async function run(browser, base, vp) {
     check('кнопка достаточно высокая для пальца (≥ 32 px)', btnBox && btnBox.height >= 32, JSON.stringify(btnBox));
     await shotTo(page, '4_dlinnyj_razvernut');
     await press(pol.locator('.hp-pol-all'));
-    check('«Свернуть» возвращает 8 строк', await pol.locator('.hp-pol-rule:visible').count() === 8);
+    check('«Свернуть» возвращает 15 строк', await pol.locator('.hp-pol-rule:visible').count() === 15);
     allErrors.push(...errors); await ctx.close();
   }
 
