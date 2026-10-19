@@ -321,6 +321,13 @@ body.on-hotel footer,body:has(#hotel-page.open) footer{display:none}
 .hp-pol-k{flex:0 0 38%;max-width:200px;color:var(--muted)}
 .hp-pol-v{flex:1;min-width:0;color:var(--ink);overflow-wrap:anywhere}
 .hp-pol-more{border:none;background:none;padding:0;color:var(--green);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+/* 18.10: разделы правил (policy.rules): заголовок группы, строка «label — text», сворачивание длинного списка */
+.hp-pol-grp{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--green);padding:12px 0 2px;border-top:1px solid var(--sand2)}
+.hp-pol-grp+.hp-pol-row{border-top:none}
+.hp-pol-foldrow{padding:8px 0 10px;border-top:1px solid var(--sand2)}
+.hp-pol-sep{margin-top:8px;padding-top:12px;border-top:1px solid var(--sand3)}
+.hp-pol-all{font-size:13px;min-height:32px}
+.hp-pol:not(.hp-pol-open) .hp-pol-x{display:none}
 @media(max-width:560px){.hp-pol-row{flex-direction:column;gap:2px}.hp-pol-k{max-width:none;flex-basis:auto;font-size:12px}}
 .ostc-fee{font-size:11.5px;color:#9a6b00;margin:-6px 0 10px}
 .bk-onsite{font-size:11.5px;color:#9a6b00;margin-top:6px;text-align:right;line-height:1.4}
@@ -7772,20 +7779,55 @@ function hpPolicyRender(pol){
   var old=document.getElementById('hp-policy'); if(old)old.remove();
   if(!pol)return;
   var rows=[];
-  var row=function(k,v){ rows.push('<div class="hp-pol-row"><div class="hp-pol-k">'+zbEsc(k)+'</div><div class="hp-pol-v">'+v+'</div></div>'); };
+  var row=function(k,v,cls){ rows.push('<div class="hp-pol-row'+(cls?' '+cls:'')+'"><div class="hp-pol-k">'+zbEsc(k)+'</div><div class="hp-pol-v">'+v+'</div></div>'); };
   if(pol.contactless)row('Заселение','бесконтактное');
   if(Array.isArray(pol.deposit)){
     if(!pol.deposit.length)row('Депозит','не требуется');
     else pol.deposit.forEach(function(d){ row(d.label,zbEsc(d.text)); });
   }
-  if(Array.isArray(pol.paid)&&pol.paid.length){
+  var hasRules=Array.isArray(pol.rules)&&pol.rules.length;
+  if(hasRules){
+    // 18.10: бэкенд с OST_POLICY_FULL=1 отдаёт все разделы правил (rules) — ETG требует показать их гостю целиком.
+    // Они заменяют строку «Оплачивается отдельно» (pol.paid): платные услуги уже внутри rules. Депозит пропускаем —
+    // он выше своими строками. Без rules (переменная выключена) остаётся прежний вывод.
+    var GRP=[
+      {t:'Заезд и выезд',s:['check_in_check_out','no_show']},
+      {t:'Дети',s:['children','children_meal','cot','extra_bed']},
+      {t:'Питание',s:['meal']},
+      {t:'Услуги',s:['internet','parking','pets','shuttle','add_fee']},
+      {t:'Визы',s:['visa']}
+    ];
+    var buckets=GRP.map(function(){return [];});
+    pol.rules.forEach(function(x){
+      if(!x||typeof x!=='object'||x.section==='deposit')return;
+      var txt=x.text==null?'':String(x.text), lab=x.label==null?'':String(x.label);
+      if(!txt&&!lab)return;
+      var gi=-1;
+      GRP.forEach(function(g,k){ if(g.s.indexOf(x.section)>=0)gi=k; });
+      if(gi<0)gi=3; // неизвестный раздел — в «Услуги», чтобы правило не потерялось
+      buckets[gi].push(lab&&txt?lab+' — '+txt:(lab||txt));
+    });
+    var total=buckets.reduce(function(n,b){return n+b.length;},0);
+    // 18.10: длинный список (до 60 строк) на телефоне — первые 15 строк, остальные за «Показать все условия».
+    // Строки остаются в странице (скрыты стилем), так что текст не пропадает; если строк 15 и меньше — кнопки нет
+    var LIM=15, fold=total>LIM, n=0;
+    buckets.forEach(function(b,k){
+      if(!b.length)return;
+      rows.push('<div class="hp-pol-grp'+(fold&&n>=LIM?' hp-pol-x':'')+'">'+GRP[k].t+'</div>');
+      b.forEach(function(line){
+        rows.push('<div class="hp-pol-row hp-pol-rule'+(fold&&n>=LIM?' hp-pol-x':'')+'"><div class="hp-pol-v">'+zbEsc(line)+'</div></div>');
+        n++;
+      });
+    });
+    if(fold)rows.push('<div class="hp-pol-foldrow"><button type="button" class="hp-pol-more hp-pol-all" aria-expanded="false" onclick="var b=this.closest(\'.hp-pol\'),o=b.classList.toggle(\'hp-pol-open\');this.setAttribute(\'aria-expanded\',o);this.textContent=o?\'Свернуть\':\'Показать все условия\'">Показать все условия</button></div>');
+  } else if(Array.isArray(pol.paid)&&pol.paid.length){
     row('Оплачивается отдельно',pol.paid.map(function(x){return zbEsc(x.label)+' — '+zbEsc(x.text);}).join('<br>'));
   }
   if(pol.extra_info){
     var t=String(pol.extra_info);
     if(t.length>240){
-      row('Сведения от объекта','<span class="hp-pol-short">'+zbEsc(t.slice(0,220))+'… <button type="button" class="hp-pol-more" onclick="this.parentNode.style.display=\'none\';this.parentNode.nextSibling.style.display=\'inline\'">Показать полностью</button></span><span style="display:none">'+zbEsc(t)+'</span>');
-    } else row('Сведения от объекта',zbEsc(t));
+      row('Сведения от объекта','<span class="hp-pol-short">'+zbEsc(t.slice(0,220))+'… <button type="button" class="hp-pol-more" onclick="this.parentNode.style.display=\'none\';this.parentNode.nextSibling.style.display=\'inline\'">Показать полностью</button></span><span style="display:none">'+zbEsc(t)+'</span>',hasRules?'hp-pol-sep':'');
+    } else row('Сведения от объекта',zbEsc(t),hasRules?'hp-pol-sep':'');
   }
   if(!rows.length)return;
   var b=document.createElement('div'); b.id='hp-policy'; b.className='hp-pol';
