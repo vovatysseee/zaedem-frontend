@@ -2095,6 +2095,15 @@ function aiReplayLast(){
   ['hotel','apart','guest'].forEach(function(c){var e=document.getElementById('flt-'+c);if(e)e.checked=R.category?(c===R.category):true;});
   try{ serpOpen(); }catch(e){ try{ doSearch(); }catch(_){} }
 }
+// 19.10: что и почему — «а подешевле»/«а подороже» ставят сортировку тем же значением, что список «Сортировка»
+// (price_asc / price_desc). Раньше стояло 'price-asc' с дефисом: такого пункта нет, и список сбрасывался
+// на пустое значение вместо «сначала дешёвые». В каталоге без дат цен нет — как и при ручном выборе, просим даты.
+function aiQuickSort(v){
+  var ss=document.getElementById('serp-sort'); if(!ss)return;
+  if(window._catMode){ try{ serpCatNeedDates('sort'); }catch(e){} return; }
+  ss.value=v;
+  window._serpSortPrev=v;
+}
 // Быстрые уточнения БЕЗ похода в GPT: «а подешевле», «с парковкой», «без завтрака».
 // Экономия токенов на самых частых фразах диалога — обрабатываем мгновенно на месте.
 // Возвращает true, если фраза обработана (GPT не нужен).
@@ -2114,12 +2123,12 @@ function aiQuickRefine(q,el){
   var m;
   if(/^а?\s*(по)?дешевле!?$/.test(t)){
     if(window._aiPriceMax>0){ window._aiPriceMax=Math.max(10,Math.round(window._aiPriceMax*0.8)); }
-    else { var ss=document.getElementById('serp-sort'); if(ss){ss.value='price-asc';} }
+    else { aiQuickSort('price_asc'); } // 19.10: значение списка — 'price_asc' (было 'price-asc' → сортировка сбрасывалась)
     done=true;
   }
   else if(/^а?\s*(по)?дороже!?$/.test(t)){
     if(window._aiPriceMax>0){ window._aiPriceMax=Math.round(window._aiPriceMax*1.3); }
-    else { var ss2=document.getElementById('serp-sort'); if(ss2){ss2.value='price-desc';} }
+    else { aiQuickSort('price_desc'); }
     done=true;
   }
   else if((m=t.match(/^а?\s*(?:и\s+)?без\s+([а-я0-9\- ]{3,25})$/))){
@@ -2135,6 +2144,7 @@ function aiQuickRefine(q,el){
   if(el){ el.style.display='block'; el.innerHTML='🧠 Уточнил: '+q; }
   window._serpReset=true;
   try{ if(document.getElementById('serp')&&document.getElementById('serp').style.display!=='none'){serpRender();} else {serpOpen();} }catch(e){}
+  try{ if(typeof zbSaveRoute==='function')zbSaveRoute('serp'); }catch(e){} // 19.10: сортировка, как при ручном выборе, переживает обновление страницы
   return true;
 }
 // 15.10: объединение списков пожеланий без повторов (без учёта регистра и «ё»)
@@ -2282,6 +2292,13 @@ async function aiSearch(){
         aiApplyRefinements(p,el); return;
       }
     } else if(_localReady){ return; } // GPT промолчал — работаем на локальном разборе
+    else if(_d&&_d.region&&_d.region.city&&!p.city){
+      // 19.10: что и почему — при сбое/таймауте ИИ (parsed: null) бэкенд отдаёт в region область, найденную
+      // по правилу (routes/ai.js). Локальный разбор главный: область берём, только если города своими силами
+      // не нашли. Даты и гости ниже разбираются из фразы, как при любом промолчавшем ИИ.
+      var _rc=String(_d.region.city).trim();
+      if(_rc&&!/^(null|undefined|none|нет|-+)$/i.test(_rc))p.city=aiNormCity(_rc,null,null);
+    }
   }catch(e){ if(_localReady)return; }
   aiApplyAndGo(p,q,el);
 }
@@ -4007,11 +4024,21 @@ function zbRegionTypeToggle(){
   [['hotel',only],['apart',only],['guest',true]].forEach(function(x){ var e=document.getElementById('flt-'+x[0]); if(e)e.checked=x[1]; });
   serpFilterChange('cat');
 }
+// 19.10: «Минская область» → «Минской области» (для «по всей Минской области»); шесть областей — все на «-ская»
+function zbRegionDat(n){ return String(n||'').replace(/ая область$/i,'ой области'); }
 function zbRegionNoteRender(listLen){
   var el=document.getElementById('serp-region-note'); if(!el)return;
   var c=(window._capState&&window._capState.city)||'';
-  if(window._catMode||!zbIsRegion(c)){ el.style.display='none'; el.innerHTML=''; return; }
+  // 19.10: Островок ничего не нашёл по области — над пустой выдачей подпись не нужна, объяснение даёт заглушка ниже
+  if(window._catMode||!zbIsRegion(c)||window._ostAreaNotFound){ el.style.display='none'; el.innerHTML=''; return; }
   var only=zbRegionGuestOnly(), err=!!window._ostRegionErr;
+  // 19.10: бэкенд ответил area: true — выдача по всей области; подписываем её областью из ответа
+  if(window._ostArea&&!err){
+    el.innerHTML='<div class="srn-txt">🗺 <b>Варианты по всей '+zbEsc(zbRegionDat(window._ostArea.name||c))+'</b>'
+      +'<div class="srn-sub">Усадьбы и загородные дома по всей области, не только в городе</div></div>'
+      +'<button type="button" id="srn-type" class="srn-type'+(only?' on':'')+'" aria-pressed="'+(only?'true':'false')+'" onclick="zbRegionTypeToggle()">🏡 Усадьбы и загородные</button>';
+    el.style.display='flex'; return;
+  }
   el.innerHTML='<div class="srn-txt">🗺 <b>Поиск по всей области</b> · '+zbEsc(c)
     +'<div class="srn-sub">'+(err?(listLen?'Поиск по областям скоро появится — пока показали то, что нашли':'Пока ищем по городам'):'Усадьбы и загородные дома по всей области, не только в городе')+'</div></div>'
     +'<button type="button" id="srn-type" class="srn-type'+(only?' on':'')+'" aria-pressed="'+(only?'true':'false')+'" onclick="zbRegionTypeToggle()">🏡 Усадьбы и загородные</button>';
@@ -4237,6 +4264,16 @@ function serpRender(){
     // 16.10: раздел «Усадьбы» (каталог без данных) — любая перерисовка (фильтр, «За ночь») оставляет «Усадьбы — скоро»,
     // а не «ничего не найдено»
     if(window._catMode==='guest'){ cardsBox.innerHTML=catGuestStubHtml(); var _m0=document.getElementById('serp-meta'); if(_m0)_m0.textContent=''; return; }
+    // 19.10: поиск шёл по области (area: true), а Островок её не нашёл (region_not_found_by) — понятный текст вместо «город не найден»
+    if(window._ostAreaNotFound&&zbIsRegion((window._capState||{}).city)){
+      cardsBox.innerHTML='<div id="serp-area-empty" style="text-align:center;padding:40px 20px;color:var(--muted)">'
+        +'<div style="font-size:40px;margin-bottom:12px">🗺</div>'
+        +'<div style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Не нашли варианты по области — попробуйте город или другие даты</div>'
+        +'<div style="font-size:13px;margin-bottom:16px">Например, Минск, Брест или Гродно</div>'
+        +'<button onclick="serpEditSearch()" style="border:none;background:var(--green);color:#fff;border-radius:50px;padding:10px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">Выбрать город или даты</button>'
+        +'</div>';
+      return;
+    }
     // 16.10: бэкенд пока не ищет по области — честно говорим, что скоро
     if(window._ostRegionErr&&zbIsRegion((window._capState||{}).city)){
       cardsBox.innerHTML='<div id="serp-region-soon" style="text-align:center;padding:40px 20px;color:var(--muted)">'
@@ -4997,6 +5034,7 @@ async function serpLoadOstrovok(){
   // 16.10: поиск по области — бэкенд ответил ошибкой или «региона нет» → «Поиск по областям скоро появится»
   var _isReg=zbIsRegion(city); window._ostRegionErr=false;
   window._ostLimited=0; // 16.10: выдача упёрлась в предел бэкенда (limited: true, порция 32) — сколько показано
+  window._ostArea=null; window._ostAreaNotFound=false; // 19.10: ответ с area: true (поиск по области) и «по области ничего не нашли»
   try{ zbLimitNoteRender(); }catch(e){} // 16.10: подсказка прошлого поиска не висит, пока ищем новый
 
   try{
@@ -5016,7 +5054,10 @@ async function serpLoadOstrovok(){
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     var data=await resp.json();
     if(_ostSeq!==window._ostSearchSeq)return; // 15.10: пока ждали, начался другой поиск — этот ответ не нужен
-    if(_isReg&&(data.error||data.ok===false||/region_not_found/.test(String(data.reason||''))))window._ostRegionErr=true;
+    // 19.10: area: true — поиск шёл по области; название берём из ответа (city), запасное — из строки «Куда»
+    if(data.area===true)window._ostArea={name:zbIsRegion(data.city)?data.city:(_isReg?city:'')};
+    if(data.area===true&&data.reason==='region_not_found_by')window._ostAreaNotFound=true;
+    else if(_isReg&&(data.error||data.ok===false||/region_not_found/.test(String(data.reason||''))))window._ostRegionErr=true;
 
     if(data.hotels&&data.hotels.length){
       // 15.10: заменяем выдачу Островка целиком (а не дописываем) и убираем повторы по id
