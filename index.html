@@ -1866,6 +1866,10 @@ function aiParse(t){
   // ГОРОД: имя, затем синонимы/склонения
   for(var i=0;i<AI_CITIES.length;i++){ if(s.indexOf(AI_CITIES[i].toLowerCase().replace(/ё/g,'е'))>=0){ r.city=AI_CITIES[i]; break; } }
   if(!r.city){ for(var ck in AI_CITY_SYN){ if(s.indexOf(ck)>=0){ r.city=AI_CITY_SYN[ck]; break; } } }
+  // 19.10: во фразе есть область или окрестности («в минской обл», «минщина», «под Пинском») — область;
+  // если рядом назван и город («Пинск, Брестская область») — город. Поиск по куску слова выше тут ошибался:
+  // в «брестская область» находил «Брест». Фразы без области — как раньше.
+  try{ var _pl=zbPlaceFromText(t); if(_pl.region)r.city=_pl.city||_pl.region; }catch(e){}
   // НОЧИ (раньше гостей, чтобы «на 3 ночи» не ушло в гостей)
   var mn=s.match(/на\s+(\d+)\s*(ноч|сут|дня|дней|день)/); if(mn)r.nights=parseInt(mn[1]);
   // 11.10: «3 ночи», «2-х суток» без «на» и словами: «на две ночи», «трое суток»
@@ -2143,13 +2147,21 @@ function aiUnion(a,b){
 // это и «больше 500». Знакомый город — как есть; область/район — город фразы или город по названию области.
 function aiNormCity(c,localCity,q){
   // 16.10: гость сам сказал «в Минской области» / «под Минском» — ищем по области, что бы ни ответил ИИ
-  var _rq=q?zbRegionFromText(q):null; if(_rq)return _rq;
+  // 19.10: явное во фразе побеждает ответ ИИ: область («минобл», «под Пинском»…) — область; город и область
+  // вместе — город; один город, названный сам по себе («в Пинске»), — он, даже если ИИ ответил другим городом
+  // или областью. Два разных города во фразе («из Гродно в Минск» и т. п.) — решает ИИ, как раньше.
+  var _pl=null; try{ _pl=q?zbPlaceFromText(q):null; }catch(e){}
+  if(_pl&&_pl.region)return _pl.city||_pl.region;
+  if(_pl&&_pl.cities.length===1)return _pl.cities[0];
   var cs=String(c||'').trim(); if(!cs)return localCity||null;
   var n=cs.toLowerCase().replace(/ё/g,'е');
   var list=(typeof ZB_CITY_LIST!=='undefined'?ZB_CITY_LIST:[]).concat(AI_CITIES);
   for(var i=0;i<list.length;i++){ if(list[i].toLowerCase().replace(/ё/g,'е')===n)return list[i]; }
   if(!/област|район|регион|(?:^|\s)обл\.?(?:\s|$)|р-н/.test(n))return cs; // другой город — ищем как назвал ИИ
   if(localCity)return localCity;
+  // 19.10: ИИ ответил одной из шести областей (бэкенд так отвечает на «окрестности», «Логойский район» и т. п.),
+  // а своего города во фразе нет — ищем по области, как при выборе области в списке (раньше — по областному центру)
+  for(var ri=0;ri<ZB_REGIONS.length;ri++){ if(ZB_REGIONS[ri].toLowerCase().replace(/ё/g,'е')===n)return ZB_REGIONS[ri]; }
   var w=n.split(/\s+/)[0];
   for(var j=0;j<AI_CITIES.length;j++){ var cn=AI_CITIES[j].toLowerCase().replace(/ё/g,'е'); var st=cn.slice(0,Math.max(4,cn.length-1)); if(w.indexOf(st)===0)return AI_CITIES[j]; }
   return cs;
@@ -3768,20 +3780,123 @@ function zbMealOk(meal,want){
 // (группа «Области» в выборе направления): в поиск уходит её название в поле city («Минская область»),
 // бэкенд научится искать по области следующей порцией. Город сам областью НЕ подменяется.
 var ZB_REGIONS=['Брестская область','Витебская область','Гомельская область','Гродненская область','Минская область','Могилёвская область'];
-var ZB_REGION_STEM={'брест':'Брестская область','витеб':'Витебская область','гомел':'Гомельская область','гродн':'Гродненская область','минск':'Минская область','могил':'Могилёвская область'};
 function zbIsRegion(c){
   var n=String(c||'').toLowerCase().replace(/ё/g,'е').trim(); if(!n)return false;
   for(var i=0;i<ZB_REGIONS.length;i++){ if(ZB_REGIONS[i].toLowerCase().replace(/ё/g,'е')===n)return true; }
   return false;
 }
-// Область, которую гость назвал сам: «в Минской области», «Гродненская обл.», «усадьба под Минском»,
-// «в окрестностях Бреста», «пригород Гомеля». Просто «в Минске» — это город, не область.
-function zbRegionFromText(q){
-  var t=' '+String(q||'').toLowerCase().replace(/ё/g,'е')+' ', m;
-  var stem=function(w){ for(var k in ZB_REGION_STEM){ if(w.indexOf(k)===0)return ZB_REGION_STEM[k]; } return null; };
-  m=t.match(/([а-я]+)\s+(?:област|обл\.?(?=[^а-я]))/); if(m&&/(ая|ой|ую|ою)$/.test(m[1])){ var r1=stem(m[1]); if(r1)return r1; }
-  m=t.match(/(?:^|[^а-я])(?:под|окрестност[а-я]*|пригород[а-я]*)\s+(?:г\.?\s*)?([а-я]+)/); if(m){ var r2=stem(m[1]); if(r2)return r2; }
+// 19.10: что и почему — ИИ-поиск понимал область только в двух видах («в Минской области», «под Минском»).
+// Теперь разбор места во фразе — по тем же правилам, что бэкенд (services/by_areas.js, промпт routes/ai.js),
+// и шире: падежи и «обл.», обратный порядок («обл. минская»), сокращения («минобл», «мин. обл», «брест обл»,
+// «гродн. обл», «вит. обл», «гом. обл», «могил. обл»), разговорные («минщина», «на брестчине»), окрестности
+// («под Минском», «возле Бреста», «около Гродно», «рядом с Витебском», «пригород Минска»; «под Пинском» —
+// область этого города), по-белорусски («Мінская вобласць») и латиницей («Minsk region»).
+// Город сам областью не становится («Минск», «Брест» — город). Город и область вместе («Пинск, Брестская
+// область») — город. Город после «из» («из Минска в Брестскую область») — откуда едут, не куда.
+// Ответ: {region, city, cities}: region — область (как в ZB_REGIONS), cities — города, названные сами по себе
+// (не в составе области и не после «под/возле…»), city — город, который побеждает область (первый из cities).
+var ZB_REGION_DEF=[
+  {name:'Брестская область',   abbr:['брест','брестск','брэст','брэсцк'],                 folk:['брестчин','брестщин','берестейщин','берасцейшчын'], lat:/^brest/},
+  {name:'Витебская область',   abbr:['вит','витеб','витебск','вицебск'],                  folk:['витебщин','вицебшчын'],                             lat:/^(vitebsk|viciebsk)/},
+  {name:'Гомельская область',  abbr:['гом','гомел','гомель','гомельск'],                  folk:['гомельщин','гомельшчын'],                           lat:/^(gomel|homel)/},
+  {name:'Гродненская область', abbr:['гродн','гродно','гродненск','гродзенск'],           folk:['гродненщин','гродзеншчын'],                         lat:/^(grodn|hrodn)/},
+  {name:'Минская область',     abbr:['мин','минск'],                                      folk:['минщин','миншчын'],                                 lat:/^minsk/},
+  {name:'Могилёвская область', abbr:['мог','могил','могилев','могилевск','магилев','магилевск'], folk:['могилевщин','магилевшчын'],              lat:/^(mogil|mahil)/}
+];
+var ZB_OBL_WORD=/^(?:обл|область|области|областью|вобл|вобласць|вобласци|вобласцю|region|oblast|obl|voblast|voblasts)$/;
+// Город → его область: для «под Пинском», «возле Лиды» (областные центры — тоже)
+var ZB_CITY_REGION={'Минск':'Минская','Брест':'Брестская','Гродно':'Гродненская','Витебск':'Витебская','Гомель':'Гомельская','Могилёв':'Могилёвская',
+  'Пинск':'Брестская','Несвиж':'Минская','Мир':'Гродненская','Нарочь':'Минская','Браслав':'Витебская','Беловежская пуща':'Брестская',
+  'Бобруйск':'Могилёвская','Барановичи':'Брестская','Борисов':'Минская','Орша':'Витебская','Мозырь':'Гомельская','Солигорск':'Минская',
+  'Новополоцк':'Витебская','Молодечно':'Минская','Лида':'Гродненская','Полоцк':'Витебская','Жлобин':'Гомельская','Речица':'Гомельская',
+  'Слуцк':'Минская','Логойск':'Минская'};
+// белорусское и латинское написание городов (для «каля Брэста», «near Minsk»)
+var ZB_CITY_ALIAS={'брэст':'Брест','вицебск':'Витебск','магилев':'Могилёв','minsk':'Минск','brest':'Брест','grodno':'Гродно','hrodna':'Гродно',
+  'vitebsk':'Витебск','gomel':'Гомель','homel':'Гомель','mogilev':'Могилёв','pinsk':'Пинск'};
+function zbPlaceNorm(s){ return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/і/g,'и').replace(/ў/g,'в'); }
+// слово → регулярка «город в любом падеже»: Минск/Минске/Минском, Гомель/Гомеля, Гродно, Орша/Оршей, Барановичи/Барановичами
+function zbCityWordRe(n){
+  var l=n.slice(-1), st=n.slice(0,-1), end;
+  if(l==='ь')end='(?:ь|я|ю|ем|е|и|ью)';
+  else if(l==='а')end='(?:а|ы|и|е|у|ой|ей|ою|ею)';
+  else if(l==='о')end='(?:о|а|у|ом|е)';
+  else if(l==='и')end='(?:и|ей|ам|ами|ах)';
+  else { st=n; end='(?:а|у|ом|е|ам)?'; }
+  return new RegExp('^'+st+end+'$');
+}
+var _zbPlaceCities=null;
+function zbPlaceCities(){
+  if(_zbPlaceCities)return _zbPlaceCities;
+  var seen={}, out=[];
+  var add=function(word,name){ var k=zbPlaceNorm(word); if(seen[k])return; seen[k]=1;
+    out.push({name:name, re:/^[a-z]/.test(k)?new RegExp('^'+k+'$'):zbCityWordRe(k)}); };
+  [].concat(typeof AI_CITIES!=='undefined'?AI_CITIES:[], typeof ZB_CITY_LIST!=='undefined'?ZB_CITY_LIST:[]).forEach(function(c){ if(c.indexOf(' ')<0)add(c,c); });
+  for(var a in ZB_CITY_ALIAS)add(a,ZB_CITY_ALIAS[a]);
+  _zbPlaceCities=out; return out;
+}
+// город, который начинается со слова T[j]: {name, n — сколько слов занял} или null
+function zbCityAt(T,j){
+  var w=T[j]; if(!w)return null;
+  if(/^беловежск/.test(w)&&/^пущ/.test(T[j+1]||''))return {name:'Беловежская пуща',n:2};
+  var L=zbPlaceCities();
+  for(var i=0;i<L.length;i++){ if(L[i].re.test(w))return {name:L[i].name,n:1}; }
   return null;
+}
+// область по слову: «минская», «минской», «мин», «брест», «гродн», «minskaya»; needAdj — только прилагательное
+function zbRegionAdj(w,needAdj){
+  for(var i=0;i<ZB_REGION_DEF.length;i++){ var d=ZB_REGION_DEF[i];
+    for(var j=0;j<d.abbr.length;j++){
+      if(!needAdj&&w===d.abbr[j])return d.name;
+      if(new RegExp('^'+d.abbr[j]+'(?:ая|ой|ую|ою|ай)$').test(w))return d.name;
+    }
+    if(!needAdj&&d.lat.test(w))return d.name;
+  }
+  return null;
+}
+// область одним словом: «минобл», «минщина», «на брестчине», «гомельщины»
+function zbRegionWord(w){
+  var m=w.match(/^(мин|брест|гродн|гродно|вит|витеб|гом|гомел|мог|могил)обл(?:асть|асти|астью)?$/);
+  if(m)return zbRegionAdj(m[1],false);
+  for(var i=0;i<ZB_REGION_DEF.length;i++){ var f=ZB_REGION_DEF[i].folk;
+    for(var j=0;j<f.length;j++){ if(w.indexOf(f[j])===0&&/^(?:а|е|у|ы|ой|ою|ай)?$/.test(w.slice(f[j].length)))return ZB_REGION_DEF[i].name; } }
+  return null;
+}
+// «под», «возле», «около», «рядом с», «недалеко от», «в 20 км от», «пригород», «окрестности»… — сколько слов занял предлог (0 — нет)
+function zbNearPrep(T,i){
+  var w=T[i], w2=T[i+1]||'';
+  if(/^(?:под|возле|около|вблизи|близ|пад|каля|near|окрестност[а-я]*|пригород[а-я]*)$/.test(w))return 1;
+  if((w==='рядом'&&/^(?:с|со)$/.test(w2))||(/^(?:недалеко|неподалеку|неподалеко)$/.test(w)&&w2==='от')||(w==='побач'&&w2==='з'))return 2;
+  if(/^(?:км|километр[а-я]*)$/.test(w)&&w2==='от')return 2;
+  return 0;
+}
+function zbPlaceFromText(q){
+  var t=zbPlaceNorm(q).replace(/[’'ʼ`]/g,'').replace(/\./g,'. ');
+  var T=t.split(/[^а-яa-z0-9]+/).filter(Boolean), used={}, region=null, cities=[], i, r;
+  var take=function(name,from,n){ if(!region)region=name; for(var k=from;k<from+n;k++)used[k]=1; };
+  for(i=0;i<T.length;i++){
+    if((r=zbRegionWord(T[i]))){ take(r,i,1); continue; }
+    if(i+1<T.length&&ZB_OBL_WORD.test(T[i+1])&&(r=zbRegionAdj(T[i],false))){ take(r,i,2); i++; continue; } // «минская обл», «брест обл»
+    if(ZB_OBL_WORD.test(T[i])&&i+1<T.length&&(r=zbRegionAdj(T[i+1],true))){ take(r,i,2); i++; continue; } // «обл. минская»
+    var k=zbNearPrep(T,i);
+    if(k){ var j=i+k; if(/^(?:г|гор|город|города|горада)$/.test(T[j]||''))j++;
+      var c=zbCityAt(T,j); if(c&&ZB_CITY_REGION[c.name]){ take(ZB_CITY_REGION[c.name]+' область',i,j-i+c.n); i=j+c.n-1; continue; } }
+  }
+  for(i=0;i<T.length;i++){
+    if(used[i])continue;
+    var c2=zbCityAt(T,i); if(!c2)continue;
+    var prev=T[i-1]||'';
+    if(prev==='из'){ i+=c2.n-1; continue; } // «из Минска» — откуда, а не куда
+    if(c2.name==='Мир'&&!/^(?:в|во|у|г|город|пгт|поселок)$/.test(prev)){ continue; } // «мир», «улица Мира» — не город без «в»
+    if(cities.indexOf(c2.name)<0)cities.push(c2.name);
+    i+=c2.n-1;
+  }
+  return {region:region, city:(region&&cities.length)?cities[0]:null, cities:cities};
+}
+// Область, которую гость назвал сам («в Минской области», «под Минском», «минобл»…), или null.
+// Просто «в Минске» — город, не область; «Пинск, Брестская область» — город (null).
+function zbRegionFromText(q){
+  var pl=zbPlaceFromText(q);
+  return (pl.region&&!pl.city)?pl.region:null;
 }
 // Город из адреса объекта: «проспект Победителей, д. 20, Минск» → «Минск».
 // Нужен шаринг-ссылкам на отели, открытые из каталога/витрины (там нет города поиска).
