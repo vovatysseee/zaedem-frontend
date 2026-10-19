@@ -291,6 +291,15 @@ async function run(browser, base, vp) {
       const { ctx, page, errors } = await newPage(browser, base, vp);
       await page.goto(base + prefix + '/');
       await page.waitForTimeout(1200);
+      // 19.10: подсказка «Куда едете? Минс|к» печатается по таймеру — кадр на снимке зависел от момента съёмки, и пиксельное
+      // сравнение с main иногда падало. Перед снимком замораживаем текст (таймер сайта продолжает идти, но записать в строку
+      // уже не может) — одинаково для новой версии и для main. Код сайта ради этого не менялся.
+      await page.evaluate(() => {
+        const el = document.getElementById('cap-top'); if (!el) return;
+        const d = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+        d.set.call(el, 'Куда едете?');
+        Object.defineProperty(el, 'textContent', { get() { return d.get.call(el); }, set() {}, configurable: true });
+      });
       const main = await page.evaluate(() => document.getElementById('main-page').innerHTML);
       const shotMain = await page.screenshot({ animations: 'disabled', caret: 'hide' });
       await page.evaluate(d => {
