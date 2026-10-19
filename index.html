@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Заедем.by — Бронирование отелей Беларуси</title>
-<meta name="description" content="Бронирование отелей, агроусадеб и апартаментов по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
+<title>Заедем.by — Белорусская платформа бронирования жилья</title>
+<meta name="description" content="Белорусская платформа бронирования жилья: отели, агроусадьбы и апартаменты по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
 <meta name="theme-color" content="#0F2D1D">
 
 <!-- Open Graph (превью при отправке ссылки в Telegram, ВК, WhatsApp) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Заедем.by">
-<meta property="og:title" content="Заедем.by — Бронирование отелей Беларуси">
-<meta property="og:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
+<meta property="og:title" content="Заедем.by — Белорусская платформа бронирования жилья">
+<meta property="og:description" content="Белорусская платформа бронирования жилья: отели, усадьбы и апартаменты по всей Беларуси. Умный поиск, цены в белорусских рублях, оплата онлайн.">
 <meta property="og:url" content="https://zaedem.by">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:image" content="https://zaedem.by/og-image.png?v=2">
@@ -22,11 +22,11 @@
 <meta property="og:image:alt" content="Заедем.by — бронирование жилья в Беларуси">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://zaedem.by/og-image.png?v=2">
-<meta name="twitter:title" content="Заедем.by — Бронирование отелей Беларуси">
-<meta name="twitter:description" content="Отели, усадьбы и апартаменты по всей Беларуси. Мгновенное подтверждение.">
+<meta name="twitter:title" content="Заедем.by — Белорусская платформа бронирования жилья">
+<meta name="twitter:description" content="Белорусская платформа бронирования жилья: отели, усадьбы и апартаменты по всей Беларуси. Мгновенное подтверждение.">
 
 <!-- Favicon (временный, из буквы — заменим на логотип позже) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2D1D'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='38' font-weight='900' fill='%23c9f135' text-anchor='middle'%3E3%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F2D1D'/%3E%3Cpath d='M32.18 44.4Q27.8 44.4 25.14 42.65Q22.47 40.89 21.19 37.2L26.09 35.47Q27.8 40.17 32.18 40.17Q34.58 40.17 35.82 39.17Q37.06 38.18 37.06 36.38Q37.06 34.51 35.59 33.68Q34.11 32.85 30.97 32.85H29.88V28.64H30.97Q33.78 28.64 35.11 27.75Q36.45 26.86 36.45 25Q36.45 23.31 35.31 22.42Q34.17 21.53 32.16 21.53Q28.23 21.53 26.82 26.11L21.84 24.98Q23.12 21.18 25.69 19.34Q28.26 17.5 32.25 17.5Q36.54 17.5 39.14 19.35Q41.74 21.19 41.74 24.31Q41.74 26.71 40.42 28.3Q39.11 29.9 36.54 30.55Q39.35 30.96 40.88 32.56Q42.41 34.15 42.41 36.6Q42.41 40.17 39.64 42.28Q36.88 44.4 32.18 44.4Z' fill='%23c9f135'/%3E%3C/svg%3E">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0F2D1D">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -5980,6 +5980,138 @@ function zbBkStatus(bk){
   if(typeof OST_REVIEW_ST!=='undefined'&&OST_REVIEW_ST.indexOf(s)>=0)return 'review';
   return (bk&&bk.status)||'';
 }
+// ── 19.10: ваучер брони и «Как заселиться» ─────────────────────────────────────────────────────────
+// 19.10: время, способ оплаты и тексты готовит сервер (порция 39 бэкенда): check_in_text / check_out_text
+// («с 15:00», «до 12:00», «по правилам объекта») и payment_method_ru («Банковская карта») приходят в брони,
+// страница их только показывает. Раньше строку времени печатали как есть («с 15:00:00»), а свои пересчёты
+// страница не делает, чтобы не разойтись с письмом и PDF-ваучером. Нет поля (старый ответ) — «по правилам объекта».
+var ZB_NO_TIME='по правилам объекта';
+function zbCkStr(v,max){return typeof v==='string'?v.trim().slice(0,max||1500):'';}
+// 19.10: в ссылки из ответа сервера пускаем только http(s) (и viber://chat у мессенджера): javascript: и прочее ссылкой не становится
+function zbSafeUrl(u){
+  if(typeof u!=='string')return '';
+  u=u.trim();
+  return /^https?:\/\/[^\s"'<>]+$/i.test(u)?u:'';
+}
+// 19.10: «Как заселиться» — ручка бэкенда GET /api/bookings/booking/{num}/checkin?email=…
+// 200 {available:true,…}; 403 — номер/email не совпали, 409 — бронь не подтверждена, 410 — дата выезда прошла:
+// на них (и на любой ошибке) блока нет, ваучер печатается как раньше. Спрашиваем только подтверждённую бронь.
+var ZB_CHECKIN_PATH='/api/bookings/booking/{num}/checkin';
+var ZB_CHECKIN={};
+function zbCkAllowed(bk){return zbBkStatus(bk)==='confirmed';}
+// разбор ответа: только нужные поля, всё — строками; ссылки карты — из map сервера, сами не собираем
+function zbCkNorm(raw){
+  if(!raw||typeof raw!=='object'||raw.available!==true)return null;
+  var k=(raw.checkin&&typeof raw.checkin==='object')?raw.checkin:null;
+  var h=(raw.host&&typeof raw.host==='object')?raw.host:null;
+  var m=(raw.map&&typeof raw.map==='object')?raw.map:null;
+  return {
+    address:zbCkStr(raw.address,300),
+    mapYa:m?zbSafeUrl(m.yandex):'', mapGo:m?zbSafeUrl(m.google):'',
+    directions:zbCkStr(raw.directions)||(k?zbCkStr(k.directions):''),
+    inText:zbCkStr(raw.check_in_text,60), outText:zbCkStr(raw.check_out_text,60),
+    pending:raw.checkin_pending===true,
+    contactless:!!(k&&k.contactless), keys:k?zbCkStr(k.keys,300):'', keysAddr:k?zbCkStr(k.keys_address,300):'',
+    instructions:k?zbCkStr(k.instructions):'', extra:k?zbCkStr(k.extra_info):'',
+    phone:zbCkStr((k&&k.phone)||(h&&h.phone),40), email:k?zbCkStr(k.email,120):'',
+    tg:h?zbCkStr(h.telegram,200):'', wa:h?zbCkStr(h.whatsapp,200):'', viber:h?zbCkStr(h.viber,200):''
+  };
+}
+function zbCkLoad(bk){
+  var num=bk&&bk.booking_num;
+  if(!num||!zbCkAllowed(bk))return Promise.resolve(null);
+  if(ZB_CHECKIN[num])return ZB_CHECKIN[num];
+  var email=window._mngEmail||bk.guest_email||'';
+  return (ZB_CHECKIN[num]=fetch(API+ZB_CHECKIN_PATH.replace('{num}',encodeURIComponent(num))+'?email='+encodeURIComponent(email))
+    .then(function(r){return r.status===200?r.json():null;})
+    .then(zbCkNorm)
+    .catch(function(){return null;}));
+}
+function zbCkTel(v){
+  var d=String(v).replace(/[^\d+]/g,'');
+  return d.replace(/\D/g,'').length>=5?'<a href="tel:'+zbEsc(d)+'">'+zbEsc(v)+'</a>':zbEsc(v);
+}
+function zbCkMail(v){
+  return /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]+$/.test(v)?'<a href="mailto:'+zbEsc(v)+'">'+zbEsc(v)+'</a>':zbEsc(v);
+}
+// мессенджеры хозяина приходят готовыми ссылками (t.me, wa.me, viber://chat); подпись — из ссылки
+function zbCkMsg(kind,u){
+  var ok=kind==='viber'?/^viber:\/\/chat\?number=%2B\d{5,15}$/.test(u):!!zbSafeUrl(u);
+  if(!u||!ok)return '';
+  var t=u;
+  try{
+    if(kind==='telegram')t='@'+decodeURIComponent(u.replace(/^https?:\/\/(t\.me|telegram\.me)\//i,''));
+    else t='+'+u.replace(/^.*[=\/]/,'').replace(/\D/g,'');
+  }catch(e){}
+  return '<a href="'+zbEsc(u)+'"'+(kind==='viber'?'':' target="_blank" rel="noopener"')+'>'+zbEsc(t)+'</a>';
+}
+function zbCkText(v){return zbEsc(v).replace(/\n/g,'<br>');}
+function zbCkRow(l,h){return '<div class="zbci-row"><div class="zbci-l">'+l+'</div><div class="zbci-v">'+h+'</div></div>';}
+// 19.10: части блока: how — «Как заселиться», con — «Контакты объекта», map — ссылки на карту, dir — «Как добраться».
+// Отменённая и неподтверждённая бронь — без контактов и карты (ci туда не попадает вовсе).
+function zbCkParts(bk,ci){
+  var how=[],con=[];
+  if(!zbCkAllowed(bk))ci=null;
+  if(ci){
+    if(ci.contactless)how.push(zbCkRow('Заселение','Бесконтактное'));
+    if(ci.keys)how.push(zbCkRow('Как получить ключи',zbCkText(ci.keys)));
+    if(ci.keysAddr)how.push(zbCkRow('Где получить ключи',zbCkText(ci.keysAddr)));
+    how.push(zbCkRow('Время','заезд '+zbEsc(ci.inText||bk.check_in_text||ZB_NO_TIME)+' · выезд '+zbEsc(ci.outText||bk.check_out_text||ZB_NO_TIME)));
+    if(ci.instructions)how.push(zbCkRow('Инструкция',zbCkText(ci.instructions)));
+    if(ci.extra)how.push(zbCkRow('Сведения от объекта',zbCkText(ci.extra)));
+    if(ci.pending)how.push('<div class="zbci-note">Сведения о заселении придут в письме</div>');
+    if(ci.phone)con.push(zbCkRow('Телефон',zbCkTel(ci.phone)));
+    if(ci.email)con.push(zbCkRow('Почта',zbCkMail(ci.email)));
+    var mg=[['Telegram','telegram',ci.tg],['WhatsApp','whatsapp',ci.wa],['Viber','viber',ci.viber]];
+    for(var i=0;i<mg.length;i++){var l=zbCkMsg(mg[i][1],mg[i][2]);if(l)con.push(zbCkRow(mg[i][0],l));}
+  }
+  return {how:how.join(''),con:con.join(''),
+    map:ci?{ya:ci.mapYa,go:ci.mapGo}:null, dir:ci?ci.directions:'', addr:ci?ci.address:''};
+}
+// ссылки на карту: Яндекс и Google — как прислал сервер; нет ссылок — пусто
+function zbCkMapLinks(m){
+  if(!m||(!m.ya&&!m.go))return '';
+  var a=[];
+  if(m.ya)a.push('<a class="zbci-map vmap" href="'+zbEsc(m.ya)+'" target="_blank" rel="noopener">Яндекс Карты</a>');
+  if(m.go)a.push('<a class="zbci-map vmap" href="'+zbEsc(m.go)+'" target="_blank" rel="noopener">Google Maps</a>');
+  return '<span class="zbci-maps">Открыть на карте: '+a.join(' · ')+'</span>';
+}
+// 19.10: «Как добраться» — текст directions из ответа ручки (поле появится в следующей порции бэкенда); нет поля — нет блока
+function zbCkDirRow(dir){return dir?zbCkRow('Как добраться',zbCkText(dir)):'';}
+// блок в карточке «Моих броней»: раскрывающийся, только когда ручка ответила
+function zbCkCabinetHTML(bk,ci){
+  if(!ci||!zbCkAllowed(bk))return '';
+  var p=zbCkParts(bk,ci), addr=p.addr||zbCkStr(bk.hotel_address,300), ml=zbCkMapLinks(p.map);
+  var body=(addr?zbCkRow('Адрес',zbEsc(addr)+(ml?'<br>'+ml:'')):(ml?zbCkRow('Карта',ml):''))+zbCkDirRow(p.dir)+p.how+(p.con?'<div class="zbci-sep"></div>'+p.con:'');
+  if(!body)return '';
+  return '<details class="zbci"><summary>🔑 Как заселиться</summary><div class="zbci-body">'+body+'</div></details>';
+}
+function zbCkCss(){
+  if(document.getElementById('zbci-css'))return;
+  var st=document.createElement('style'); st.id='zbci-css';
+  st.textContent='.zbci{border:1.5px solid var(--sand3);border-radius:12px;margin-bottom:14px;background:#fff}'
+    +'.zbci summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;padding:10px 14px;font-size:13px;font-weight:700;color:#0F2D1D;-webkit-tap-highlight-color:transparent}'
+    +'.zbci summary::-webkit-details-marker{display:none}'
+    +'.zbci summary::after{content:"▾";font-size:12px;color:var(--muted);transition:transform .15s}'
+    +'.zbci[open] summary::after{transform:rotate(180deg)}'
+    +'.zbci-body{padding:0 14px 12px}'
+    +'.zbci-row{display:flex;gap:10px;padding:5px 0;font-size:13px;line-height:1.55}'
+    +'.zbci-l{flex:0 0 96px;color:var(--muted);font-size:12px;padding-top:1px}'
+    +'.zbci-v{flex:1;min-width:0;font-weight:600;color:#111;overflow-wrap:anywhere}'
+    +'.zbci-v a,.zbci-maps a{color:var(--green);text-decoration:none;font-weight:600}'
+    +'.zbci-maps{display:inline-block;margin-top:3px;font-size:12.5px;font-weight:400;color:var(--muted)}'
+    +'.zbci-note{margin:6px 0 2px;padding:9px 12px;border-radius:10px;background:var(--sand2);font-size:12.5px;color:#444}'
+    +'.zbci-sep{border-top:1px solid var(--sand3);margin:8px 0 4px}'
+    +'@media(max-width:400px){.zbci-row{flex-direction:column;gap:1px}.zbci-l{flex:none}}';
+  document.head.appendChild(st);
+}
+function zbCkMount(bk){
+  zbCkLoad(bk).then(function(ci){
+    var html=zbCkCabinetHTML(bk,ci); if(!html)return;
+    var slots=document.querySelectorAll('.zbci-slot');
+    for(var i=0;i<slots.length;i++){if(slots[i].getAttribute('data-num')===bk.booking_num)slots[i].innerHTML=html;}
+  });
+}
 function openCabinet(bookings){
   const b=bookings[0];
   function fmtDate(d){
@@ -5998,6 +6130,7 @@ function openCabinet(bookings){
     const map={confirmed:'#0F2D1D',pending:'#a06000',cancelled:'#c00',completed:'#555',failed:'#555',review:'#a06000'};
     return map[s]||'var(--muted)';
   }
+  zbCkCss();
   document.getElementById('cabinet-body').innerHTML=`
     <button onclick="document.getElementById('cabinet-modal').classList.remove('open')" style="float:right;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
     <div style="clear:both">
@@ -6026,9 +6159,11 @@ function openCabinet(bookings){
             <div style="font-size:12px;color:var(--muted)">${zbEsc(bk.guest_name)}</div>
             <div style="font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:800;color:#0F2D1D">${parseFloat(bk.total_price||0).toFixed(0)} ${bk.currency||'BYN'}</div>
           </div>
+          <!-- 19.10: «Как заселиться» — раскрывающийся блок, появляется, когда ручка бэкенда ответила -->
+          <div class="zbci-slot" data-num="${zbEsc(bk.booking_num)}"></div>
           <!-- Кнопки управления -->
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button onclick="printBooking(${JSON.stringify(bk).replace(/'/g,String.fromCharCode(39)).replace(/"/g,'&quot;')})" style="flex:1;min-width:120px;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center;gap:6px">
+            <button onclick="printBooking(${JSON.stringify(bk).replace(/&/g,'&amp;').replace(/'/g,String.fromCharCode(39)).replace(/"/g,'&quot;')})" style="flex:1;min-width:120px;background:var(--sand2);border:1.5px solid var(--sand3);border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center;gap:6px">
               🖨 Распечатать ваучер
             </button>
             ${bk.status==='confirmed'&&new Date(bk.check_in)>new Date()?`
@@ -6039,18 +6174,34 @@ function openCabinet(bookings){
         </div>`).join('')}
     </div>`;
   document.getElementById('cabinet-modal').classList.add('open');
+  bookings.forEach(zbCkMount);
 }
 
 function printBooking(bk){
   // bk — объект брони, поддерживаем и старый вызов со строкой (fallback)
   if(typeof bk==='string') bk={booking_num:bk};
-  const num=bk.booking_num||'—';
+  // 19.10: окно открываем сразу (иначе его закроет блокировщик всплывающих окон), а ваучер пишем, когда ручка
+  // «Как заселиться» ответила: она уже грузилась при открытии «Моих броней», обычно ответ есть сразу.
+  // Не ответила за 3 секунды, 403/409/410 или ошибка — ваучер как раньше, без блока.
+  const w=window.open('','_blank','width=640,height=800');
+  if(!w)return;
+  Promise.race([zbCkLoad(bk),new Promise(function(ok){setTimeout(function(){ok(null);},3000);})])
+    .catch(function(){return null;})
+    .then(function(ci){ try{ zbVoucherWrite(w,bk,ci); }catch(e){} });
+}
+function zbVoucherWrite(w,bk,ci){
+  const num=zbEsc(bk.booking_num||'—');
   function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});}
   const statusMap={confirmed:'✅ Подтверждено',pending:'⏳ Ожидает',cancelled:'❌ Отменено',completed:'🏁 Завершено',failed:'Не подтверждена',review:'⏳ Проверяется'};
   const statusLabel=statusMap[zbBkStatus(bk)]||bk.status||'—';
   const price=bk.total_price?parseFloat(bk.total_price).toFixed(0)+' '+(bk.currency||'BYN'):'—';
-  const w=window.open('','_blank','width=640,height=800');
-  if(!w)return;
+  // 19.10: время и способ оплаты — готовые тексты сервера («с 15:00», «до 12:00», «по правилам объекта», «Банковская карта»);
+  // ответ «Как заселиться» свежее данных брони, поэтому у него приоритет
+  const tin=(ci&&ci.inText)||bk.check_in_text||ZB_NO_TIME, tout=(ci&&ci.outText)||bk.check_out_text||ZB_NO_TIME;
+  const P=zbCkParts(bk,ci);
+  const addr=P.addr||bk.hotel_address;
+  function vb(title,inner){return inner?'<div class="vblock"><div class="vtitle">'+title+'</div>'+inner+'</div>':'';}
+  const cancel=zbCkStr(bk.cancel_rules,2000);
   w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>Ваучер ${num}</title>
   <style>
@@ -6077,31 +6228,50 @@ function printBooking(bk){
     .footer{margin-top:28px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center}
     .print-btn{background:#0F2D1D;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:20px;display:block}
     hr{border:none;border-top:2px solid #0F2D1D;margin:20px 0}
-    @media print{.print-btn{display:none!important}body{margin:10px auto}}
+    .vblock{margin:16px 0 4px;break-inside:avoid;page-break-inside:avoid}
+    .vtitle{font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px}
+    .vtext{font-size:12.5px;color:#333;line-height:1.7;white-space:pre-line;overflow-wrap:anywhere}
+    .zbci-row{display:flex;gap:10px;padding:3px 0;font-size:13px;line-height:1.55}
+    .zbci-l{flex:0 0 108px;color:#888;font-size:12px}
+    .zbci-v{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+    .zbci-v a,.vmap{color:#1a5c38;text-decoration:none}
+    .zbci-maps{display:block;margin-top:4px;font-size:12.5px;color:#666}
+    .vmap{font-weight:600}
+    .zbci-note{margin:6px 0 2px;padding:9px 12px;border-radius:8px;background:#f7f5f0;font-size:12.5px;color:#444}
+    .vdir{margin:10px 0 14px}
+    @media(max-width:420px){.zbci-row{flex-direction:column;gap:1px}.zbci-l{flex:none}}
+    @media print{.print-btn{display:none!important}body{margin:10px auto}.vmap:after{content:" (" attr(href) ")";font-weight:400;font-size:10px;color:#555;overflow-wrap:anywhere}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()">🖨 Распечатать</button>
   <div class="logo">Заедем.by</div>
-  <div class="logo-sub">Белорусский агрегатор отелей · zaedem.by</div>
+  <div class="logo-sub">Белорусская платформа бронирования жилья · zaedem.by</div>
   <hr>
   <div class="num">${num}</div>
   <div class="voucher-label">Ваучер бронирования</div>
   <div class="hotel-name">${zbEsc(bk.hotel_name||'—')}</div>
-  ${bk.hotel_address?`<div style="font-size:12px;color:#888;margin-top:3px">📍 ${bk.hotel_address}</div>`:''}
+  ${addr?`<div style="font-size:12px;color:#888;margin-top:3px;overflow-wrap:anywhere">📍 ${zbEsc(addr)}</div>`:''}
+  ${zbCkMapLinks(P.map)}
+  ${P.dir?`<div class="vblock vdir"><div class="vtitle">Как добраться</div><div class="vtext">${zbEsc(P.dir)}</div></div>`:''}
   <div class="room-name">${zbEsc(bk.room_name||'')}</div>
   <span class="status-badge">${statusLabel}</span>
   <div class="grid">
-    <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)}${bk.check_in_time?` · с ${bk.check_in_time}`:''}</div></div>
-    <div class="cell"><div class="cell-label">Выезд</div><div class="cell-val">${fd(bk.check_out)}${bk.check_out_time?` · до ${bk.check_out_time}`:''}</div></div>
+    <div class="cell"><div class="cell-label">Заезд</div><div class="cell-val">${fd(bk.check_in)} · ${zbEsc(tin)}</div></div>
+    <div class="cell"><div class="cell-label">Выезд</div><div class="cell-val">${fd(bk.check_out)} · ${zbEsc(tout)}</div></div>
     <div class="cell"><div class="cell-label">Ночей</div><div class="cell-val">${bk.nights||'—'}</div></div>
     <div class="cell"><div class="cell-label">Гостей</div><div class="cell-val">${bk.guests_count||1}</div></div>
   </div>
   <div class="row"><span class="label">Гость</span><span class="val">${zbEsc(bk.guest_name||'—')}</span></div>
   <div class="row"><span class="label">Email</span><span class="val">${zbEsc(bk.guest_email||'—')}</span></div>
   ${bk.guest_phone?`<div class="row"><span class="label">Телефон</span><span class="val">${zbEsc(bk.guest_phone)}</span></div>`:''}
-  <div class="row"><span class="label">Способ оплаты</span><span class="val">${zbEsc(bk.payment_method||'—')}</span></div>
-  ${bk.hotel_phone?`<div class="row"><span class="label">Телефон отеля</span><span class="val">${zbEsc(bk.hotel_phone)}</span></div>`:''}
-  ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${(Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · ')}</div></div>`:''}
+  <div class="row"><span class="label">Способ оплаты</span><span class="val">${zbEsc(bk.payment_method_ru||'—')}</span></div>
+  ${vb('Контакты объекта',P.con)}
+  ${vb('🔑 Как заселиться',P.how)}
+  ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${zbEsc((Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · '))}</div></div>`:''}
   <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
+  ${/* 19.10: сборы, которые объект берёт на месте (уборка, налог и т. п.), и правила дома — из брони (бэкенд отдаёт onsite_fees, house_rules) */''}
+  ${vb('Оплачивается на месте',bk.onsite_fees&&String(bk.onsite_fees).trim()&&'<div class="vtext">'+zbEsc(String(bk.onsite_fees).trim())+'</div><div class="zbci-note">Оплачивается объекту при заселении, в сумму брони не входит.</div>')}
+  ${vb('Правила дома',bk.house_rules&&String(bk.house_rules).trim()&&'<div class="vtext">'+zbEsc(String(bk.house_rules).trim())+'</div>')}
+  ${vb('Правила отмены',cancel&&'<div class="vtext">'+zbEsc(cancel)+'</div>')}
   <div class="footer">Заедем.by · ООО «ЗАЕДЕМБАЙ» · УНП 291928518 · 225716, г. Пинск, ул. Пушкина, 5, офис 119<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
   </body></html>`);
   w.document.close();
