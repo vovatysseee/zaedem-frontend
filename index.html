@@ -6268,6 +6268,9 @@ function zbVoucherWrite(w,bk,ci){
   ${vb('🔑 Как заселиться',P.how)}
   ${(bk.amenities&&(Array.isArray(bk.amenities)?bk.amenities.length:String(bk.amenities).trim()))?`<div style="margin:16px 0 4px"><div style="font-size:10px;color:#888;text-transform:uppercase;font-weight:600;letter-spacing:.5px;margin-bottom:7px">Удобства</div><div style="font-size:12px;color:#444;line-height:1.7">${zbEsc((Array.isArray(bk.amenities)?bk.amenities:String(bk.amenities).split(',')).map(function(a){return String(a).trim();}).filter(Boolean).slice(0,16).join(' · '))}</div></div>`:''}
   <div class="price-row"><span class="price-label">Итого к оплате</span><span class="price-val">${price}</span></div>
+  ${/* 19.10: сборы, которые объект берёт на месте (уборка, налог и т. п.), и правила дома — из брони (бэкенд отдаёт onsite_fees, house_rules) */''}
+  ${vb('Оплачивается на месте',bk.onsite_fees&&String(bk.onsite_fees).trim()&&'<div class="vtext">'+zbEsc(String(bk.onsite_fees).trim())+'</div><div class="zbci-note">Оплачивается объекту при заселении, в сумму брони не входит.</div>')}
+  ${vb('Правила дома',bk.house_rules&&String(bk.house_rules).trim()&&'<div class="vtext">'+zbEsc(String(bk.house_rules).trim())+'</div>')}
   ${vb('Правила отмены',cancel&&'<div class="vtext">'+zbEsc(cancel)+'</div>')}
   <div class="footer">Заедем.by · ООО «ЗАЕДЕМБАЙ» · УНП 291928518 · 225716, г. Пинск, ул. Пушкина, 5, офис 119<br>По вопросам бронирования: <a href="mailto:booking@zaedem.by" style="color:#aaa">booking@zaedem.by</a> · +375 44 77 66 539</div>
   </body></html>`);

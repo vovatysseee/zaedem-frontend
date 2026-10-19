@@ -58,7 +58,7 @@ const BASE = { hotel_id: '777', source: 'direct', hotel_name: 'Усадьба «
 const mk = (num, o) => Object.assign({}, BASE, { booking_num: num }, o || {});
 const BK = {
   bare: mk('ZB-100001'),                                                    // ручка отвечает 403
-  ostFull: mk('ZB-100002', { source: 'ostrovok', hotel_id: '8001' }),       // Островок, всё есть, directions есть
+  ostFull: mk('ZB-100002', { source: 'ostrovok', hotel_id: '8001', onsite_fees: 'Уборка — 20 BYN\nДепозит за ключи — 50 BYN', house_rules: 'Не курить в номере.\nТишина с 23:00.' }),       // Островок, всё есть, directions есть
   ostNoDir: mk('ZB-100003', { source: 'ostrovok', hotel_id: '8002' }),      // Островок, directions нет
   direct: mk('ZB-100004'),                                                  // своя бронь: host
   pending: mk('ZB-100005', { source: 'ostrovok', hotel_id: '8003' }),       // Островок не ответил
@@ -70,7 +70,7 @@ const BK = {
   pdf: mk('ZB-100012', { voucher_pdf_url: 'https://api.zaedem.by/x.pdf', pdf_url: '/api/x.pdf', is_test: true }),
   slow: mk('ZB-100013', { source: 'ostrovok', hotel_id: '8004' }),
   broken: mk('ZB-100014'), garbage: mk('ZB-100015'),
-  evil: mk('ZB-100016', { hotel_address: '<img src=x onerror="window.__xss=1"> ул. Злая, 1', cancel_rules: '<i onmouseover="window.__xss=6">правила</i>', payment_method_ru: '<b>Карта</b>' }),
+  evil: mk('ZB-100016', { hotel_address: '<img src=x onerror="window.__xss=1"> ул. Злая, 1', cancel_rules: '<i onmouseover="window.__xss=6">правила</i>', payment_method_ru: '<b>Карта</b>', onsite_fees: '<img src=x onerror="window.__xss=8">сбор', house_rules: '<svg onload="window.__xss=9">тишина' }),
 };
 
 // ── ответы GET /api/bookings/booking/:num/checkin?email= — форма services/stay_info.js guestBlock ──
@@ -227,6 +227,10 @@ async function run(browser, base, vp) {
   check(T + 'ваучер (Островок): «Контакты объекта» — телефон и почта (tel:, mailto:), длинная почта переносится', has(tx, 'Контакты объекта') && await pop.locator('a[href="tel:+375171112233"]').count() === 1 && await pop.locator('a[href="mailto:' + LONG_MAIL + '"]').count() === 1 && await noHScroll(pop));
   check(T + 'ваучер (Островок): блоки в порядке «адрес → как добраться → контакты → как заселиться → правила отмены»', (() => { const l = tx.toLowerCase(); const o = ['минская обл.', 'как добраться', 'контакты объекта', 'как заселиться', 'правила отмены'].map(x => l.indexOf(x)); return o.every(i => i >= 0) && o.every((v, i) => !i || v > o[i - 1]); })(), tx);
   check(T + 'ваучер (Островок): «с 15:00» / «до 12:00», оплата «Банковская карта», итог 420 BYN', /с 15:00(?!:)/.test(tx) && /до 12:00(?!:)/.test(tx) && /Способ оплаты\s*Банковская карта/.test(tx) && /Итого к оплате\s*420 BYN/.test(tx));
+  // 19.10: сборы на месте и правила дома — из брони (onsite_fees, house_rules), после «Итого», до «Правила отмены»
+  check(T + 'ваучер (Островок): «Оплачивается на месте» — строки сборов и пометка «в сумму брони не входит»', has(tx, 'Оплачивается на месте') && tx.indexOf('Уборка — 20 BYN') >= 0 && tx.indexOf('Депозит за ключи — 50 BYN') >= 0 && /в сумму брони не входит/.test(tx), tx);
+  check(T + 'ваучер (Островок): «Правила дома» из брони', has(tx, 'Правила дома') && tx.indexOf('Не курить в номере.') >= 0 && tx.indexOf('Тишина с 23:00.') >= 0, tx);
+  check(T + 'ваучер (Островок): порядок «Итого → на месте → правила дома → правила отмены»', (() => { const l = tx.toLowerCase(); const o = ['итого к оплате', 'оплачивается на месте', 'правила дома', 'правила отмены'].map(x => l.indexOf(x)); return o.every(i => i >= 0) && o.every((v, i) => !i || v > o[i - 1]); })(), tx);
   check(T + 'ваучер (Островок): блоки не разрываются при печати (break-inside: avoid)', await pop.evaluate(() => { const b = Array.from(document.querySelectorAll('.vblock')); return b.length >= 4 && b.every(x => /avoid/.test(getComputedStyle(x).breakInside)); }));
   await pop.screenshot({ path: path.join(SHOTS, vp.tag + '_3_vaucher_ostrovok_vse_polya.png'), fullPage: true });
   await pop.emulateMedia({ media: 'print' });
